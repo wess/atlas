@@ -1,0 +1,21 @@
+{
+  "name": "atlas",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "test": "bun test",
+    "lint": "bunx biome lint packages/",
+    "format": "bunx biome format packages/",
+    "check": "bunx biome check packages/",
+    "lint:fix": "bunx biome lint --write packages/",
+    "format:fix": "bunx biome format --write packages/",
+    "check:fix": "bunx biome check --write packages/"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.10",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

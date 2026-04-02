@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "paths": {
+      "@atlas/config": ["./packages/config/index.ts"],
+      "@atlas/db": ["./packages/db/index.ts"],
+      "@atlas/cache": ["./packages/cache/index.ts"],
+      "@atlas/request": ["./packages/request/index.ts"],
+      "@atlas/request/providers": ["./packages/request/providers/index.ts"],
+      "@atlas/server": ["./packages/server/index.ts"],
+      "@atlas/server/ws": ["./packages/server/ws/index.ts"],
+      "@atlas/server/sse": ["./packages/server/sse/index.ts"],
+      "@atlas/auth": ["./packages/auth/index.ts"],
+      "@atlas/storage": ["./packages/storage/index.ts"],
+      "@atlas/ui": ["./packages/ui/index.ts"],
+      "@atlas/ui/*": ["./packages/ui/*/index.tsx"]
+    }
+  }
+}

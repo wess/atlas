@@ -1,0 +1,15 @@
+{
+  "name": "@atlas/auth",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": { "import": "./index.ts" }
+  },
+  "dependencies": {
+    "@atlas/db": "workspace:*",
+    "@atlas/server": "workspace:*"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

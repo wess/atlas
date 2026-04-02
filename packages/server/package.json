@@ -1,0 +1,13 @@
+{
+  "name": "@atlas/server",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": { "import": "./index.ts" },
+    "./ws": { "import": "./ws/index.ts" },
+    "./sse": { "import": "./sse/index.ts" }
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

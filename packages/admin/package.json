@@ -1,0 +1,23 @@
+{
+  "name": "@atlas/admin",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": { "import": "./index.ts" }
+  },
+  "dependencies": {
+    "@atlas/db": "workspace:*",
+    "@atlas/server": "workspace:*",
+    "@atlas/auth": "workspace:*",
+    "@mantine/core": "^7.0.0",
+    "@mantine/hooks": "^7.0.0",
+    "@mantine/form": "^7.0.0",
+    "@tanstack/react-table": "^8.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "lucide-react": "^1.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
