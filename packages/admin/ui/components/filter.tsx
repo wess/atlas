@@ -1,6 +1,5 @@
 import { ActionIcon, Button, Group, Select, Stack, TextInput } from "@mantine/core";
 import { Plus, X } from "lucide-react";
-import React from "react";
 
 export type FilterRow = {
   field: string;

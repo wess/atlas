@@ -1,0 +1,26 @@
+{
+  "name": "{{name}}",
+  "type": "module",
+  "scripts": {
+    "dev": "atlas dev",
+    "start": "bun run server.ts",
+    "test": "bun test",
+    "migrate:up": "atlas migrate up",
+    "migrate:down": "atlas migrate down"
+  },
+  "dependencies": {
+    "@atlas/config": "latest",
+    "@atlas/server": "latest",
+    "@atlas/db": "latest",
+    "@atlas/auth": "latest",
+    "@atlas/storage": "latest",
+    "@atlas/migrate": "latest",
+    "@atlas/admin": "latest",
+    "@atlas/cache": "latest",
+    "@atlas/request": "latest"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  }
+}

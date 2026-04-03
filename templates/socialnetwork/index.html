@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{name}}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+    h1 { margin-bottom: 20px; }
+    .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    input, textarea, button { display: block; width: 100%; padding: 8px 12px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+    button { background: #333; color: white; border: none; cursor: pointer; }
+    button:hover { background: #555; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tabs button { width: auto; padding: 8px 16px; background: #ddd; color: #333; }
+    .tabs button.active { background: #333; color: white; }
+    .post { border-bottom: 1px solid #eee; padding: 12px 0; }
+    .post:last-child { border-bottom: none; }
+    .post .meta { font-size: 12px; color: #888; }
+    .post .content { margin: 8px 0; }
+    .post .actions { display: flex; gap: 12px; font-size: 13px; }
+    .post .actions a { color: #555; cursor: pointer; text-decoration: none; }
+    #app { display: none; }
+    .notification { background: #e8f5e9; padding: 8px 12px; border-radius: 4px; margin-bottom: 8px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>Social Network</h1>
+
+  <div id="auth">
+    <div class="card">
+      <h3>Sign Up</h3>
+      <input id="signup-email" placeholder="Email" />
+      <input id="signup-username" placeholder="Username" />
+      <input id="signup-name" placeholder="Name" />
+      <input id="signup-password" type="password" placeholder="Password" />
+      <button onclick="signup()">Sign Up</button>
+    </div>
+    <div class="card">
+      <h3>Login</h3>
+      <input id="login-email" placeholder="Email" />
+      <input id="login-password" type="password" placeholder="Password" />
+      <button onclick="login()">Login</button>
+    </div>
+  </div>
+
+  <div id="app">
+    <div class="card">
+      <div id="notifications"></div>
+    </div>
+    <div class="card">
+      <h3>New Post</h3>
+      <textarea id="post-content" placeholder="What's on your mind?" rows="3"></textarea>
+      <button onclick="createPost()">Post</button>
+    </div>
+    <div class="tabs">
+      <button class="active" onclick="showTab('feed')">Feed</button>
+      <button onclick="showTab('profile')">Profile</button>
+    </div>
+    <div id="feed-tab"></div>
+    <div id="profile-tab" style="display:none"></div>
+  </div>
+
+  <script>
+    let token = null
+    let ws = null
+
+    async function signup() {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: document.getElementById("signup-email").value,
+          username: document.getElementById("signup-username").value,
+          name: document.getElementById("signup-name").value,
+          password: document.getElementById("signup-password").value,
+        }),
+      })
+      const data = await res.json()
+      if (data.token) {
+        token = data.token
+        onAuth()
+      } else {
+        alert(data.error)
+      }
+    }
+
+    async function login() {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: document.getElementById("login-email").value,
+          password: document.getElementById("login-password").value,
+        }),
+      })
+      const data = await res.json()
+      if (data.token) {
+        token = data.token
+        onAuth()
+      } else {
+        alert(data.error)
+      }
+    }
+
+    function onAuth() {
+      document.getElementById("auth").style.display = "none"
+      document.getElementById("app").style.display = "block"
+      connectWs()
+      loadFeed()
+    }
+
+    function connectWs() {
+      ws = new WebSocket(`ws://${location.host}?token=${token}`)
+      ws.onmessage = (e) => {
+        const notification = JSON.parse(e.data)
+        const el = document.createElement("div")
+        el.className = "notification"
+        el.textContent = notification.type === "like"
+          ? "Someone liked your post!"
+          : "You have a new follower!"
+        document.getElementById("notifications").prepend(el)
+      }
+    }
+
+    async function createPost() {
+      const content = document.getElementById("post-content").value
+      if (!content) return
+      await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content }),
+      })
+      document.getElementById("post-content").value = ""
+      loadFeed()
+    }
+
+    async function loadFeed() {
+      const res = await fetch("/api/feed", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const posts = await res.json()
+      const el = document.getElementById("feed-tab")
+      el.innerHTML = posts.length === 0
+        ? '<div class="card">No posts yet. Follow some users!</div>'
+        : posts.map(renderPost).join("")
+    }
+
+    function renderPost(post) {
+      return `<div class="card post">
+        <div class="meta">@${post.username} &middot; ${new Date(post.created_at).toLocaleString()}</div>
+        <div class="content">${post.content}</div>
+        <div class="actions">
+          <a onclick="likePost(${post.id})">${post.like_count} likes</a>
+        </div>
+      </div>`
+    }
+
+    async function likePost(id) {
+      await fetch(`/api/posts/${id}/like`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      loadFeed()
+    }
+
+    function showTab(tab) {
+      document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"))
+      event.target.classList.add("active")
+      document.getElementById("feed-tab").style.display = tab === "feed" ? "block" : "none"
+      document.getElementById("profile-tab").style.display = tab === "profile" ? "block" : "none"
+    }
+  </script>
+</body>
+</html>

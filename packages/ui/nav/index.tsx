@@ -1,5 +1,4 @@
 import { Anchor, Breadcrumbs, NavLink as MantineNavLink, Stack } from "@mantine/core";
-import { FileText, Home, LayoutDashboard, Settings, Users } from "lucide-react";
 import type React from "react";
 
 export { FileText, Home, LayoutDashboard, Settings, Users } from "lucide-react";

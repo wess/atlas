@@ -1,0 +1,20 @@
+{
+  "name": "{{name}}",
+  "type": "module",
+  "scripts": {
+    "dev": "atlas dev",
+    "start": "bun run server.ts",
+    "test": "bun test",
+    "lint": "bunx biome lint src/"
+  },
+  "dependencies": {
+    "@atlas/config": "latest",
+    "@atlas/server": "latest",
+    "@atlas/cli": "latest"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@biomejs/biome": "latest",
+    "typescript": "^5"
+  }
+}

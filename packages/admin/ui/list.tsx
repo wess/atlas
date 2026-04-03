@@ -6,7 +6,6 @@ import {
   Group,
   Pagination,
   Paper,
-  Stack,
   Table,
   TextInput,
   Title,
@@ -14,7 +13,7 @@ import {
 import { useDisclosure } from "@mantine/hooks";
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, Filter, Plus, Search } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BulkBar } from "./components/bulkbar.tsx";
 import { FilterBuilder, type FilterRow } from "./components/filter.tsx";
 
@@ -76,7 +75,7 @@ export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProp
 
   useEffect(() => {
     fetchData(1);
-  }, [search, sort, filters]);
+  }, [fetchData]);
 
   const toggleSort = (field: string) => {
     setSort((prev) => {
@@ -148,7 +147,7 @@ export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProp
       });
     }
     return cols;
-  }, [schema.columns, selectedIds, data.length, sort]);
+  }, [schema.columns, selectedIds, data.length, sort, toggleSort, toggleSelect, toggleAll]);
 
   const reactTable = useReactTable({
     data,

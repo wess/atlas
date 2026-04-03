@@ -1,6 +1,6 @@
 import { Button, Checkbox, Group, NumberInput, Paper, Stack, Textarea, TextInput, Title } from "@mantine/core";
 import { ArrowLeft, Save } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 
 type SchemaColumn = {
   name: string;

@@ -12,9 +12,9 @@ test("pipe wraps a function", () => {
 });
 
 test("pipeline composes pipes in order", async () => {
-  const addA = pipe((c) => assign(c, { ...c.assigns, trace: ((c.assigns.trace as string) ?? "") + "A" }));
-  const addB = pipe((c) => assign(c, { ...c.assigns, trace: ((c.assigns.trace as string) ?? "") + "B" }));
-  const handler = pipe((c) => assign(c, { ...c.assigns, trace: ((c.assigns.trace as string) ?? "") + "H" }));
+  const addA = pipe((c) => assign(c, { ...c.assigns, trace: `${(c.assigns.trace as string) ?? ""}A` }));
+  const addB = pipe((c) => assign(c, { ...c.assigns, trace: `${(c.assigns.trace as string) ?? ""}B` }));
+  const handler = pipe((c) => assign(c, { ...c.assigns, trace: `${(c.assigns.trace as string) ?? ""}H` }));
 
   const app = pipeline(addA, addB)(handler);
   const conn = createConn(new Request("http://localhost/"));

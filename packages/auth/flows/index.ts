@@ -73,7 +73,7 @@ export const requireAuth =
   (opts: RequireAuthOptions): PipeFn =>
   async (conn: Conn) => {
     const authHeader = conn.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return halt(conn, 401, { error: "Missing or invalid authorization header" });
     }
 

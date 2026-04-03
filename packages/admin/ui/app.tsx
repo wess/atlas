@@ -1,5 +1,5 @@
 import { AppShell, MantineProvider } from "@mantine/core";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AdminSidebar } from "./components/sidebar.tsx";
 import { Create } from "./create.tsx";
 import { Dashboard } from "./dashboard.tsx";

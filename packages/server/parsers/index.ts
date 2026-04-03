@@ -1,4 +1,3 @@
-import type { Conn } from "../conn/index.ts";
 import type { PipeFn } from "../pipe/index.ts";
 
 export const parseJson: PipeFn = async (conn) => {

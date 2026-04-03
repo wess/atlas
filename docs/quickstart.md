@@ -148,6 +148,8 @@ import {
   json,
   halt,
   assign,
+  get,
+  post,
 } from "@atlas/server"
 import {
   hash,
@@ -249,9 +251,9 @@ const adminPanel = admin({
 serve({
   port: config.port,
   hostname: "0.0.0.0",
-  routes: router({
+  routes: [
     // Auth
-    "POST /auth/signup": pipeline(parseJson)(
+    post("/auth/signup", pipeline(parseJson)(
       signup({
         db,
         table: users,
@@ -263,9 +265,9 @@ serve({
             name: user.name,
           }),
       })
-    ),
+    )),
 
-    "POST /auth/login": pipeline(parseJson)(
+    post("/auth/login", pipeline(parseJson)(
       login({
         db,
         table: users,
@@ -277,18 +279,18 @@ serve({
             user: { id: user.id, email: user.email, name: user.name },
           }),
       })
-    ),
+    )),
 
     // Protected API
-    "GET /api/me": pipeline(authGuard)(handleGetMe),
+    get("/api/me", pipeline(authGuard)(handleGetMe)),
 
-    "POST /api/upload": pipeline(authGuard, parseMultipart)(handleUpload),
+    post("/api/upload", pipeline(authGuard, parseMultipart)(handleUpload)),
 
-    "GET /api/files": pipeline(authGuard)(handleListFiles),
+    get("/api/files", pipeline(authGuard)(handleListFiles)),
 
     // Admin
-    ...adminPanel.mount({}),
-  }),
+    ...adminPanel.mount([]),
+  ],
 
   development: true,
 })
@@ -468,6 +470,81 @@ const db = connect({
 ```
 
 Update migrations path as needed. Everything else stays the same.
+
+### Add AI
+
+```ts
+import { createProvider, chat, chatStream } from "@atlas/ai"
+
+const openai = createProvider("openai", { apiKey: process.env.OPENAI_API_KEY })
+
+const reply = await chat(openai, {
+  model: "gpt-4o",
+  messages: [{ role: "user", content: "Summarize this document" }],
+})
+
+// Streaming
+for await (const chunk of chatStream(openai, { model: "gpt-4o", messages })) {
+  process.stdout.write(chunk.content)
+}
+```
+
+Add the AI UI block to your frontend:
+
+```tsx
+import { ChatPanel } from "@atlas/ui/ai"
+
+<ChatPanel endpoint="/api/chat" />
+```
+
+### Add External API Calls
+
+```ts
+import { createClient, github } from "@atlas/request"
+
+const gh = github({ token: process.env.GITHUB_TOKEN })
+const repos = await gh.get("/user/repos").json()
+```
+
+### Add MCP Debugging
+
+```ts
+import { createMcpServer } from "@atlas/mcp"
+
+const mcp = createMcpServer({ db, routes: myRoutes, config })
+mcp.start()
+```
+
+Or launch via the CLI: `atlas mcp`
+
+## Templates
+
+Scaffold a complete project with `atlas init`:
+
+```bash
+atlas init myapp --template <template>
+```
+
+| Template | Description |
+|----------|-------------|
+| `minimal` | Just server + config |
+| `api` | REST API with db, auth, migrations |
+| `fullstack` | API + React frontend |
+| `admin` | API + admin panel |
+| `worker` | Background job processor |
+| `realtime` | WebSocket + SSE |
+| `socialnetwork` | Users, posts, follows, likes, feeds, media, real-time |
+| `cms` | Headless CMS with content types, publishing, webhooks |
+| `ai` | Chatbot, RAG, agents, embeddings, streaming |
+
+Examples:
+
+```bash
+atlas init myapi --template api
+atlas init mysite --template fullstack
+atlas init mybot --template ai
+atlas init mysocial --template socialnetwork
+```
 
 ## Troubleshooting
 

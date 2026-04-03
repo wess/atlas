@@ -13,7 +13,7 @@ import {
   Title,
 } from "@mantine/core";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 type SchemaColumn = {
   name: string;
@@ -113,7 +113,7 @@ export const Detail = ({ table, id, schema, basePath, onNavigate }: DetailProps)
       }
     };
     load();
-  }, [basePath, table, id]);
+  }, [basePath, table, id, schema.relations]);
 
   const handleChange = (name: string, value: unknown) => {
     setRecord((prev) => ({ ...prev, [name]: value }));

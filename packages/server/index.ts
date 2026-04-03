@@ -15,4 +15,5 @@ export { pipe, pipeline } from "./pipe/index.ts";
 // response
 export { json, redirect, stream, text } from "./response/index.ts";
 // router
-export { router, serve } from "./router/index.ts";
+export { del, get, head, options, patch, post, put, router, serve } from "./router/index.ts";
+export type { Route } from "./router/index.ts";

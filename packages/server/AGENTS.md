@@ -18,7 +18,15 @@ Bun.serve wrapper with an Elixir Plug-inspired pipe system.
 - `pipeline(...pipes)(handler)` — compose pipes, short-circuits on halt
 
 ### Router (`router/index.ts`)
-- `router(routes)` — create fetch handler from `"METHOD /path"` route map
+- `Route` — type: `{ method, pattern, handler }`
+- `get(path, handler)` — create GET route
+- `post(path, handler)` — create POST route
+- `put(path, handler)` — create PUT route
+- `patch(path, handler)` — create PATCH route
+- `del(path, handler)` — create DELETE route
+- `head(path, handler)` — create HEAD route
+- `options(path, handler)` — create OPTIONS route
+- `router(...routes)` — create fetch handler from Route objects
 - `serve(options)` — start Bun.serve with routes, port, hostname, websocket
 
 ### Response (`response/index.ts`)
@@ -55,7 +63,7 @@ Bun.serve wrapper with an Elixir Plug-inspired pipe system.
 ## Usage
 
 ```ts
-import { pipe, pipeline, router, serve, json, assign, parseJson } from "@atlas/server"
+import { pipe, pipeline, router, serve, json, assign, parseJson, get, post } from "@atlas/server"
 
 const logger = pipe((c) => {
   console.log(`${c.method} ${c.path}`)
@@ -66,20 +74,21 @@ const authed = pipeline(logger, parseJson)
 
 serve({
   port: 3000,
-  routes: {
-    "GET /":        pipe((c) => json(c, 200, { status: "ok" })),
-    "GET /users/:id": authed(
+  routes: [
+    get("/", pipe((c) => json(c, 200, { status: "ok" }))),
+    get("/users/:id", authed(
       pipe((c) => json(c, 200, { id: c.params.id }))
-    ),
-    "POST /users":  authed(
+    )),
+    post("/users", authed(
       pipe((c) => json(c, 201, { created: true, body: c.body }))
-    ),
-  },
+    )),
+  ],
 })
 ```
 
 ## Architecture
 - All functions are pure and return new Conn (immutable)
 - Pipes compose via `pipeline()`, halt short-circuits
-- Router maps `"METHOD /path"` strings to PipeFn handlers
+- Route builders (`get`, `post`, `put`, etc.) create typed Route objects
+- `router(...routes)` matches requests against Route objects
 - No classes, fully functional

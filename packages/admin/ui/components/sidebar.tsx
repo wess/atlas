@@ -1,6 +1,5 @@
 import { Divider, NavLink, Stack, Title } from "@mantine/core";
 import { Database, LayoutDashboard, Search } from "lucide-react";
-import React from "react";
 
 export type SidebarProps = {
   models: { table: string }[];
@@ -9,7 +8,7 @@ export type SidebarProps = {
   onNavigate: (path: string) => void;
 };
 
-export const AdminSidebar = ({ models, active, basePath, onNavigate }: SidebarProps) => (
+export const AdminSidebar = ({ models, active, _basePath, onNavigate }: SidebarProps) => (
   <Stack gap={0} p="md">
     <Title order={4} mb="md">
       Admin

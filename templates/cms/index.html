@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{name}} Admin</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+    h1 { margin-bottom: 8px; }
+    h2 { margin-bottom: 12px; font-size: 18px; }
+    h3 { margin-bottom: 8px; font-size: 15px; }
+    .subtitle { color: #888; margin-bottom: 20px; font-size: 14px; }
+    .card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    input, select, textarea, button { display: block; width: 100%; padding: 8px 12px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+    textarea { min-height: 80px; font-family: monospace; }
+    button { background: #333; color: white; border: none; cursor: pointer; }
+    button:hover { background: #555; }
+    button.secondary { background: #ddd; color: #333; }
+    button.secondary:hover { background: #ccc; }
+    button.danger { background: #c33; }
+    button.danger:hover { background: #a22; }
+    .inline { display: flex; gap: 8px; }
+    .inline > * { flex: 1; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tabs button { width: auto; padding: 8px 16px; background: #ddd; color: #333; }
+    .tabs button.active { background: #333; color: white; }
+    .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+    .row:last-child { border-bottom: none; }
+    .row .meta { font-size: 12px; color: #888; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .badge.draft { background: #fef3c7; color: #92400e; }
+    .badge.published { background: #d1fae5; color: #065f46; }
+    .badge.archived { background: #e5e7eb; color: #374151; }
+    .hidden { display: none; }
+    .empty { color: #888; font-size: 14px; padding: 20px 0; text-align: center; }
+    #app { display: none; }
+  </style>
+</head>
+<body>
+  <h1>{{name}}</h1>
+  <p class="subtitle">Headless CMS Admin</p>
+
+  <div id="auth">
+    <div class="card">
+      <h3>Login</h3>
+      <input id="login-email" placeholder="Email" />
+      <input id="login-password" type="password" placeholder="Password" />
+      <button onclick="login()">Login</button>
+    </div>
+    <div class="card">
+      <h3>Register</h3>
+      <input id="reg-email" placeholder="Email" />
+      <input id="reg-name" placeholder="Name" />
+      <input id="reg-password" type="password" placeholder="Password" />
+      <button onclick="register()">Register</button>
+    </div>
+  </div>
+
+  <div id="app">
+    <div class="tabs">
+      <button class="active" onclick="showTab('types')">Content Types</button>
+      <button onclick="showTab('entries')">Entries</button>
+      <button onclick="showTab('media')">Media</button>
+      <button onclick="showTab('keys')">API Keys</button>
+      <button onclick="showTab('webhooks')">Webhooks</button>
+    </div>
+
+    <div id="tab-types">
+      <div class="card">
+        <h3>New Content Type</h3>
+        <div class="inline">
+          <input id="type-name" placeholder="name (slug, e.g. posts)" />
+          <input id="type-display" placeholder="Display Name (e.g. Blog Posts)" />
+        </div>
+        <textarea id="type-fields" placeholder='[{"name":"title","type":"text","required":true},{"name":"body","type":"richtext"}]'></textarea>
+        <button onclick="createType()">Create Type</button>
+      </div>
+      <div class="card">
+        <h3>Content Types</h3>
+        <div id="types-list"><div class="empty">No content types yet</div></div>
+      </div>
+    </div>
+
+    <div id="tab-entries" class="hidden">
+      <div class="card">
+        <h3>New Entry</h3>
+        <select id="entry-type"></select>
+        <input id="entry-slug" placeholder="slug" />
+        <textarea id="entry-data" placeholder='{"title":"Hello World","body":"..."}'></textarea>
+        <button onclick="createEntry()">Create Entry</button>
+      </div>
+      <div class="card">
+        <h3>Entries</h3>
+        <div id="entries-list"><div class="empty">No entries yet</div></div>
+      </div>
+    </div>
+
+    <div id="tab-media" class="hidden">
+      <div class="card">
+        <h3>Upload Media</h3>
+        <input type="file" id="media-file" />
+        <input id="media-alt" placeholder="Alt text (optional)" />
+        <button onclick="uploadMedia()">Upload</button>
+      </div>
+      <div class="card">
+        <h3>Media Library</h3>
+        <div id="media-list"><div class="empty">No media yet</div></div>
+      </div>
+    </div>
+
+    <div id="tab-keys" class="hidden">
+      <div class="card">
+        <h3>Create API Key</h3>
+        <input id="key-name" placeholder="Key name (e.g. Frontend)" />
+        <button onclick="createKey()">Create Key</button>
+      </div>
+      <div class="card">
+        <h3>API Keys</h3>
+        <div id="keys-list"><div class="empty">No API keys yet</div></div>
+      </div>
+    </div>
+
+    <div id="tab-webhooks" class="hidden">
+      <div class="card">
+        <h3>Add Webhook</h3>
+        <input id="webhook-url" placeholder="https://example.com/webhook" />
+        <input id="webhook-events" placeholder="Events (comma-separated, e.g. entry.published,entry.unpublished)" />
+        <button onclick="createWebhook()">Add Webhook</button>
+      </div>
+      <div class="card">
+        <h3>Webhooks</h3>
+        <div id="webhooks-list"><div class="empty">No webhooks yet</div></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let token = null
+    const api = (path, opts = {}) =>
+      fetch(path, {
+        ...opts,
+        headers: {
+          ...(opts.headers || {}),
+          ...(opts.body && !(opts.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+          ...(token ? { Authorization: "Bearer " + token } : {}),
+        },
+      }).then((r) => r.json())
+
+    async function login() {
+      const data = await api("/admin/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: document.getElementById("login-email").value,
+          password: document.getElementById("login-password").value,
+        }),
+      })
+      if (data.token) { token = data.token; onAuth() }
+      else alert(data.error)
+    }
+
+    async function register() {
+      const data = await api("/admin/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          email: document.getElementById("reg-email").value,
+          name: document.getElementById("reg-name").value,
+          password: document.getElementById("reg-password").value,
+        }),
+      })
+      if (data.token) { token = data.token; onAuth() }
+      else alert(data.error)
+    }
+
+    function onAuth() {
+      document.getElementById("auth").style.display = "none"
+      document.getElementById("app").style.display = "block"
+      loadTypes()
+      loadEntries()
+      loadMedia()
+      loadKeys()
+      loadWebhooks()
+    }
+
+    function showTab(name) {
+      document.querySelectorAll(".tabs button").forEach((b) => b.classList.remove("active"))
+      event.target.classList.add("active");
+      ["types", "entries", "media", "keys", "webhooks"].forEach((t) => {
+        document.getElementById("tab-" + t).classList.toggle("hidden", t !== name)
+      })
+    }
+
+    async function loadTypes() {
+      const rows = await api("/admin/api/types")
+      const el = document.getElementById("types-list")
+      if (rows.length === 0) { el.innerHTML = '<div class="empty">No content types yet</div>'; return }
+      el.innerHTML = rows.map((t) =>
+        '<div class="row"><div><strong>' + t.display_name + '</strong> <span class="meta">(' + t.name + ')</span>' +
+        '<br><span class="meta">' + (typeof t.fields === "string" ? JSON.parse(t.fields) : t.fields).length + ' fields</span></div>' +
+        '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteType(' + t.id + ')">Delete</button></div>'
+      ).join("")
+      const sel = document.getElementById("entry-type")
+      sel.innerHTML = rows.map((t) => '<option value="' + t.id + '">' + t.display_name + '</option>').join("")
+    }
+
+    async function createType() {
+      let fields
+      try { fields = JSON.parse(document.getElementById("type-fields").value) }
+      catch { alert("Invalid JSON for fields"); return }
+      await api("/admin/api/types", {
+        method: "POST",
+        body: JSON.stringify({
+          name: document.getElementById("type-name").value,
+          displayName: document.getElementById("type-display").value,
+          fields,
+        }),
+      })
+      document.getElementById("type-name").value = ""
+      document.getElementById("type-display").value = ""
+      document.getElementById("type-fields").value = ""
+      loadTypes()
+    }
+
+    async function deleteType(id) {
+      if (!confirm("Delete this content type?")) return
+      await api("/admin/api/types/" + id, { method: "DELETE" })
+      loadTypes()
+    }
+
+    async function loadEntries() {
+      const rows = await api("/admin/api/entries")
+      const el = document.getElementById("entries-list")
+      if (rows.length === 0) { el.innerHTML = '<div class="empty">No entries yet</div>'; return }
+      el.innerHTML = rows.map((e) =>
+        '<div class="row"><div><strong>' + e.slug + '</strong> <span class="badge ' + e.status + '">' + e.status + '</span>' +
+        '<br><span class="meta">' + (e.type_name || "") + ' &middot; by ' + (e.author_name || "") + '</span></div>' +
+        '<div class="inline" style="width:auto">' +
+        (e.status !== "published" ? '<button style="width:auto;padding:4px 12px" onclick="publishEntry(' + e.id + ')">Publish</button>' : '') +
+        (e.status === "published" ? '<button class="secondary" style="width:auto;padding:4px 12px" onclick="unpublishEntry(' + e.id + ')">Unpublish</button>' : '') +
+        '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteEntry(' + e.id + ')">Delete</button>' +
+        '</div></div>'
+      ).join("")
+    }
+
+    async function createEntry() {
+      let data
+      try { data = JSON.parse(document.getElementById("entry-data").value) }
+      catch { alert("Invalid JSON for data"); return }
+      await api("/admin/api/entries", {
+        method: "POST",
+        body: JSON.stringify({
+          contentTypeId: Number(document.getElementById("entry-type").value),
+          slug: document.getElementById("entry-slug").value,
+          data,
+        }),
+      })
+      document.getElementById("entry-slug").value = ""
+      document.getElementById("entry-data").value = ""
+      loadEntries()
+    }
+
+    async function publishEntry(id) {
+      await api("/admin/api/entries/" + id + "/publish", { method: "POST" })
+      loadEntries()
+    }
+
+    async function unpublishEntry(id) {
+      await api("/admin/api/entries/" + id + "/unpublish", { method: "POST" })
+      loadEntries()
+    }
+
+    async function deleteEntry(id) {
+      if (!confirm("Delete this entry?")) return
+      await api("/admin/api/entries/" + id, { method: "DELETE" })
+      loadEntries()
+    }
+
+    async function loadMedia() {
+      const rows = await api("/admin/api/media")
+      const el = document.getElementById("media-list")
+      if (rows.length === 0) { el.innerHTML = '<div class="empty">No media yet</div>'; return }
+      el.innerHTML = rows.map((m) =>
+        '<div class="row"><div><strong>' + m.filename + '</strong>' +
+        '<br><span class="meta">' + m.content_type + ' &middot; ' + Math.round(m.size / 1024) + ' KB</span></div>' +
+        '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteMedia(' + m.id + ')">Delete</button></div>'
+      ).join("")
+    }
+
+    async function uploadMedia() {
+      const file = document.getElementById("media-file").files[0]
+      if (!file) { alert("Select a file"); return }
+      const fd = new FormData()
+      fd.append("file", file)
+      const alt = document.getElementById("media-alt").value
+      if (alt) fd.append("alt", alt)
+      await api("/admin/api/media", { method: "POST", body: fd })
+      document.getElementById("media-file").value = ""
+      document.getElementById("media-alt").value = ""
+      loadMedia()
+    }
+
+    async function deleteMedia(id) {
+      if (!confirm("Delete this media?")) return
+      await api("/admin/api/media/" + id, { method: "DELETE" })
+      loadMedia()
+    }
+
+    async function loadKeys() {
+      const rows = await api("/admin/api/keys")
+      const el = document.getElementById("keys-list")
+      if (rows.length === 0) { el.innerHTML = '<div class="empty">No API keys yet</div>'; return }
+      el.innerHTML = rows.map((k) =>
+        '<div class="row"><div><strong>' + k.name + '</strong>' +
+        '<br><code style="font-size:11px;color:#666">' + k.key.slice(0, 12) + '...</code>' +
+        '<br><span class="meta">Last used: ' + (k.last_used_at || "never") + '</span></div>' +
+        '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteKey(' + k.id + ')">Revoke</button></div>'
+      ).join("")
+    }
+
+    async function createKey() {
+      const res = await api("/admin/api/keys", {
+        method: "POST",
+        body: JSON.stringify({ name: document.getElementById("key-name").value }),
+      })
+      if (res.key) alert("API Key created. Full key (save it now):\n\n" + res.key)
+      document.getElementById("key-name").value = ""
+      loadKeys()
+    }
+
+    async function deleteKey(id) {
+      if (!confirm("Revoke this API key?")) return
+      await api("/admin/api/keys/" + id, { method: "DELETE" })
+      loadKeys()
+    }
+
+    async function loadWebhooks() {
+      const rows = await api("/admin/api/webhooks")
+      const el = document.getElementById("webhooks-list")
+      if (rows.length === 0) { el.innerHTML = '<div class="empty">No webhooks yet</div>'; return }
+      el.innerHTML = rows.map((w) => {
+        const events = typeof w.events === "string" ? JSON.parse(w.events) : w.events
+        return '<div class="row"><div><strong>' + w.url + '</strong>' +
+          '<br><span class="meta">' + events.join(", ") + ' &middot; ' + (w.active ? "active" : "paused") + '</span></div>' +
+          '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteWebhook(' + w.id + ')">Delete</button></div>'
+      }).join("")
+    }
+
+    async function createWebhook() {
+      const events = document.getElementById("webhook-events").value.split(",").map((e) => e.trim()).filter(Boolean)
+      await api("/admin/api/webhooks", {
+        method: "POST",
+        body: JSON.stringify({
+          url: document.getElementById("webhook-url").value,
+          events,
+        }),
+      })
+      document.getElementById("webhook-url").value = ""
+      document.getElementById("webhook-events").value = ""
+      loadWebhooks()
+    }
+
+    async function deleteWebhook(id) {
+      if (!confirm("Delete this webhook?")) return
+      await api("/admin/api/webhooks/" + id, { method: "DELETE" })
+      loadWebhooks()
+    }
+  </script>
+</body>
+</html>

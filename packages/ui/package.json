@@ -26,6 +26,9 @@
     },
     "./cache": {
       "import": "./cache/index.tsx"
+    },
+    "./ai": {
+      "import": "./ai/index.tsx"
     }
   },
   "dependencies": {

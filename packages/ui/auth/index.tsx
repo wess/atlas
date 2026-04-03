@@ -4,7 +4,7 @@ import type React from "react";
 import { useState } from "react";
 
 export type AuthPageProps = {
-  onSubmit: (data: Record<string, string>) => Promise<{ error?: string } | void>;
+  onSubmit: (data: Record<string, string>) => Promise<{ error?: string } | undefined>;
   title?: string;
 };
 

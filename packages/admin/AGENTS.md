@@ -5,7 +5,7 @@ Django-style admin panel that auto-generates CRUD API routes from @atlas/db sche
 ## Exports
 
 ### Factory
-- `admin(config: AdminConfig)` — creates admin routes from config, returns `{ routes, mount }`
+- `admin(config: AdminConfig)` — creates admin routes from config, returns `{ routes: Route[], mount: (existing: Route[]) => Route[] }`
 - `model(config: ModelConfig)` — creates a model configuration
 
 ### Types
@@ -42,7 +42,7 @@ List endpoint query params: `?page=1&limit=20&sort=name&order=asc&search=foo&fil
 ```ts
 import { admin, model } from "@atlas/admin"
 import { defineSchema, column, connect } from "@atlas/db"
-import { serve } from "@atlas/server"
+import { serve, get, pipe, json } from "@atlas/server"
 
 const users = defineSchema("users", {
   id: column.serial().primaryKey(),
@@ -81,9 +81,9 @@ const panel = admin({
 
 serve({
   port: 3000,
-  routes: panel.mount({
-    "GET /": pipe(c => json(c, 200, { status: "ok" })),
-  }),
+  routes: panel.mount([
+    get("/", pipe(c => json(c, 200, { status: "ok" }))),
+  ]),
 })
 ```
 

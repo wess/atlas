@@ -1,6 +1,5 @@
 import { Button, Group, Text } from "@mantine/core";
 import { Download, Trash2 } from "lucide-react";
-import React from "react";
 
 export type BulkBarProps = {
   selectedCount: number;

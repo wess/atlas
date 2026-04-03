@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { Connection, ConnectOptions } from "../drivers/types.ts";
+import type { ConnectOptions } from "../drivers/types.ts";
 
 test("ConnectOptions type accepts postgres config", () => {
   const opts: ConnectOptions = { driver: "postgres", url: "postgres://localhost/test", pool: 5 };

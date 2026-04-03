@@ -44,6 +44,13 @@ All accept `onSubmit` returning `{ error?: string }` and optional `title`.
 - `CacheInspector` — Table view of cache entries with invalidate/flush actions.
 - `CacheStatus` — Badge showing connection status, entry count, and hit rate.
 
+### ai (`@atlas/ui/ai`)
+- `ChatWindow` — Full chat interface with scrollable message list, auto-scroll, loading indicator, and `PromptInput` at the bottom. Props: `messages`, `onSend`, `loading?`, `title?`, `placeholder?`, `height?`.
+- `MessageBubble` — Single message display with user (right-aligned) or assistant (left-aligned) styling and basic markdown rendering. Props: `role`, `content`, `timestamp?`.
+- `PromptInput` — Textarea with send button. Enter to send, Shift+Enter for newline, loading/disabled states. Props: `onSend`, `loading?`, `placeholder?`, `disabled?`.
+- `AiSearch` — Debounced semantic search input with results dropdown showing relevance scores. Props: `onSearch`, `placeholder?`, `debounceMs?`.
+- `GenerateButton` — One-click AI content generation with loading state and Sparkles icon. Props: `onGenerate`, `label?`, `onResult`, `variant?` (`"button"` | `"icon"`).
+
 ## Usage
 
 ```tsx

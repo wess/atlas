@@ -1,7 +1,10 @@
 {
   "name": "atlas",
   "private": true,
-  "workspaces": ["packages/*"],
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "test": "bun test",
     "lint": "bunx biome lint packages/",
@@ -9,7 +12,8 @@
     "check": "bunx biome check packages/",
     "lint:fix": "bunx biome lint --write packages/",
     "format:fix": "bunx biome format --write packages/",
-    "check:fix": "bunx biome check --write packages/"
+    "check:fix": "bunx biome check --write packages/",
+    "tidy": "bun run format:fix && bun run lint:fix"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.10",

@@ -1,6 +1,5 @@
 import { Group, Paper, SimpleGrid, Text, Title } from "@mantine/core";
 import { Database } from "lucide-react";
-import React from "react";
 
 export type DashboardProps = {
   models: { table: string; count: number }[];

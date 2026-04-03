@@ -1,0 +1,11 @@
+Atlas is a modern web application framework built with Bun. It provides a modular architecture with packages for routing, database access, authentication, caching, AI integration, and more.
+
+The Atlas server package uses a functional pipeline model. Requests flow through a series of pipe functions that transform a connection object. Each pipe can inspect, modify, or halt the connection. Response helpers like json(), text(), and stream() produce the final output.
+
+Atlas supports multiple AI providers including OpenAI, Anthropic, and Ollama. The AI package provides chat management, embeddings, vector search, RAG (retrieval-augmented generation), structured output, and an agent loop with tool calling.
+
+The agent system allows you to define tools that the AI model can invoke. Each tool has a name, description, and JSON schema for its parameters. The agent loop sends messages to the model, executes any requested tool calls, feeds results back, and repeats until the model produces a final text response.
+
+RAG combines document retrieval with AI generation. Documents are split into chunks, each chunk is embedded into a vector, and vectors are stored for similarity search. When a question is asked, the query is embedded, similar chunks are retrieved, and the AI generates an answer using the retrieved context.
+
+The vector store uses cosine similarity to find the most relevant document chunks for a given query. This enables semantic search that understands meaning rather than just matching keywords.

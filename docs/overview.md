@@ -17,6 +17,8 @@ Atlas is a collection of composable, functional Bun/TypeScript packages for buil
 
 @atlas/cache (optional, can use @atlas/config)
 @atlas/request (standalone — no sibling deps)
+@atlas/mcp (depends on @atlas/db, @atlas/server, @atlas/config)
+@atlas/ai (standalone — no sibling deps, no external deps)
 
 @atlas/ui (frontend, optional browser-side usage)
 ```
@@ -56,9 +58,15 @@ const query = from(users).where(q => q("email").equals("user@test.com"))
 const result = await db.one(query)
 ```
 
-### HTTP
+### Server
 
 `@atlas/server` wraps `Bun.serve` with a Plug-inspired pipe system. Requests flow through immutable `Conn` objects that pipes transform.
+
+Sub-modules:
+- `@atlas/server` — Core HTTP routing with `get()`, `post()`, `put()`, `patch()`, `del()` route builders
+- `@atlas/server/ws` — WebSocket support
+- `@atlas/server/sse` — Server-Sent Events
+- `@atlas/server/adapter` — Adapter pattern for deploying to different runtimes
 
 ```ts
 const logger = pipe(c => { console.log(c.method); return c })
@@ -68,9 +76,9 @@ const auth = pipe(c => {
 })
 
 serve({
-  routes: router({
-    "GET /users": pipeline(logger, auth)(handler),
-  }),
+  routes: [
+    get("/users", pipeline(logger, auth)(handler)),
+  ],
 })
 ```
 
@@ -139,6 +147,7 @@ const repos = await github.get("/user/repos").json()
 
 - **Command parser** — Define commands, flags, subcommands; parse argv
 - **Foreman** — Procfile parser and concurrent process runner with colored output
+- **Built-in commands** — `atlas init` (scaffold project), `atlas add` (add packages), `atlas dev` (start dev server), `atlas mcp` (launch MCP server)
 
 ```ts
 cli("myapp", [
@@ -174,6 +183,7 @@ Tracks applied migrations in `schema_migrations` table. Works with Postgres and 
 - `@atlas/ui/storage` — File upload and image preview
 - `@atlas/ui/nav` — Navigation components
 - `@atlas/ui/cache` — Cache inspector and status badge
+- `@atlas/ui/ai` — Chat panel, message list, streaming display
 
 Each block is independently importable and tree-shakeable.
 
@@ -198,10 +208,71 @@ const panel = admin({
   ],
 })
 
-serve({ routes: panel.mount({ "GET /": ... }) })
+serve({ routes: panel.mount([]) })
 ```
 
 Serves SPA at `/admin` with full CRUD UI.
+
+### MCP
+
+`@atlas/mcp` provides a Model Context Protocol server for AI/LLM debugging and introspection. It exposes your app's database, routes, config, and logs to AI agents through the standard MCP protocol.
+
+```ts
+import { createMcpServer } from "@atlas/mcp"
+
+const mcp = createMcpServer({
+  db,
+  routes: myRoutes,
+  config,
+})
+
+mcp.start()
+```
+
+Launch via CLI: `atlas mcp`. AI agents can then query your database, inspect routes, view config, and read logs interactively.
+
+### AI
+
+`@atlas/ai` provides a unified interface for AI/LLM operations with zero external dependencies — it calls provider REST APIs directly.
+
+- **Providers** — `createProvider()` for OpenAI, Anthropic, or custom endpoints
+- **Chat** — `chat()` for completions, `chatStream()` for streaming (async iterable)
+- **Embeddings** — `embed()` for vector generation
+- **RAG** — `rag()` pipeline: embed query, retrieve documents, generate answer
+- **Agents** — `agent()` for tool-using autonomous agents with configurable loops
+
+```ts
+import { createProvider, chat, chatStream, embed, rag, agent } from "@atlas/ai"
+
+const openai = createProvider("openai", { apiKey: process.env.OPENAI_API_KEY })
+
+const reply = await chat(openai, {
+  model: "gpt-4o",
+  messages: [{ role: "user", content: "Hello" }],
+})
+
+for await (const chunk of chatStream(openai, { model: "gpt-4o", messages })) {
+  process.stdout.write(chunk.content)
+}
+```
+
+No external dependencies. Works with any OpenAI-compatible or Anthropic API.
+
+## Templates
+
+Atlas ships with 9 project templates, scaffolded via `atlas init --template <name>`:
+
+| Template | Description | Key Packages |
+|----------|-------------|-------------|
+| `minimal` | Just server + config | config, server |
+| `api` | REST API with db, auth, migrations | config, db, migrate, server, auth |
+| `fullstack` | API + React frontend | config, db, server, auth, ui |
+| `admin` | API + admin panel | config, db, server, auth, admin |
+| `worker` | Background job processor | config, db, cache, cli |
+| `realtime` | WebSocket + SSE | config, server |
+| `socialnetwork` | Users, posts, follows, likes, feeds, media, real-time | config, db, server, auth, cache, storage |
+| `cms` | Headless CMS with content types, publishing, webhooks | config, db, server, auth, storage, admin |
+| `ai` | Chatbot, RAG, agents, embeddings, streaming | config, server, ai |
 
 ## Composition Patterns
 
@@ -219,12 +290,12 @@ await migrate.up(db)
 
 // 4. HTTP with pipes
 serve({
-  routes: router({
-    "POST /auth/signup": signup({ db, table: users, ... }),
-    "POST /auth/login": login({ db, table: users, ... }),
-    "GET /api/users": pipeline(requireAuth)(listUsers),
-    "POST /api/files": pipeline(requireAuth, parseMultipart)(uploadFile),
-  }),
+  routes: [
+    post("/auth/signup", signup({ db, table: users, ... })),
+    post("/auth/login", login({ db, table: users, ... })),
+    get("/api/users", pipeline(requireAuth)(listUsers)),
+    post("/api/files", pipeline(requireAuth, parseMultipart)(uploadFile)),
+  ],
 })
 ```
 
@@ -237,11 +308,11 @@ Use `@atlas/ui` blocks on the client:
 import admin from "./admin.html" // HTML file that imports React SPA
 
 serve({
-  routes: router({
-    "GET /admin": admin,
-    "GET /admin/*": admin,
+  routes: [
+    get("/admin", admin),
+    get("/admin/*", admin),
     ...apiRoutes,
-  }),
+  ],
 })
 ```
 
@@ -304,7 +375,7 @@ LLMs can read `packages/db/AGENTS.md` instead of traversing 20+ source files. Th
 | config | none |
 | db | `zod` |
 | migrate | none |
-| http | none |
+| server | none |
 | auth | none |
 | storage | none |
 | cache | none |
@@ -312,6 +383,8 @@ LLMs can read `packages/db/AGENTS.md` instead of traversing 20+ source files. Th
 | cli | none |
 | ui | `react`, `@mantine/*`, `@tanstack/*`, `lucide-react` |
 | admin | `react`, `@mantine/*`, `@tanstack/*`, `lucide-react` |
+| mcp | none |
+| ai | none |
 
 Total: Only `zod` on the backend. Frontend uses React + Mantine + TanStack.
 

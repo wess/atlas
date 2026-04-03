@@ -1,6 +1,6 @@
 # @atlas/cli
 
-CLI framework and Foreman-style process manager. Zero external dependencies.
+CLI framework, Foreman-style process manager, and project scaffolding tool. Zero external dependencies.
 
 ## Modules
 
@@ -23,6 +23,107 @@ Procfile parser and parallel process runner with color-coded output.
 - `foreman(procs)` — spawn all processes, prefix output with colored names, handle SIGINT/SIGTERM
 
 Type: `ProcSpec` (alias for `Record<string, string>`)
+
+### init/questions.ts
+
+Interactive question definitions for project scaffolding.
+
+- `questions` — array of `Question` objects (name, database, features, frontend, port)
+- `getQuestionSpec()` — returns questions array (for LLM/AI programmatic access)
+- `askQuestions()` — interactive stdin prompt, returns `Answers`
+- `applyDefaults(partial?)` — non-interactive, fills defaults with optional overrides
+
+Types: `Question`, `Answers`
+
+### init/templates.ts
+
+Project file generators based on user answers.
+
+- `generatePackageJson(answers)` — package.json with selected atlas deps
+- `generateEnv(answers)` — .env with db, cache, storage, auth config
+- `generateServerTs(answers)` — working server.ts with selected features
+- `generateTsconfig()` — standard bun tsconfig
+- `generateProcfile(answers)` — Procfile for atlas dev
+- `generateGitignore()` — standard gitignore
+- `generateSchemaTs(answers)` — example db schema (postgres or sqlite)
+- `generateProject(answers)` — returns all files as `{ path, content }[]`
+
+### init/index.ts
+
+The `atlas init` command. Flags: `--yes/-y` (skip prompts), `--name/-n` (project name).
+
+### add/index.ts
+
+The `atlas add` command. Maps short names (auth, db, cache, etc.) to `@atlas/*` packages and runs `bun add`.
+
+### entry.ts
+
+CLI bin entry point. Registers init, add, and dev commands, then calls `cli("atlas", commands)`.
+
+## CLI Commands
+
+### atlas init
+
+Create a new Atlas project interactively.
+
+```sh
+atlas init              # interactive prompts
+atlas init -y           # use all defaults
+atlas init -y -n myapp  # defaults with custom name
+```
+
+### atlas add
+
+Add Atlas packages to an existing project.
+
+```sh
+atlas add auth cache    # installs @atlas/auth @atlas/cache
+atlas add               # lists available packages
+```
+
+### atlas dev
+
+Start development servers from Procfile.
+
+```sh
+atlas dev
+```
+
+## LLM/AI Programmatic Usage
+
+The questions and templates are designed for programmatic access:
+
+```ts
+import { applyDefaults, generateProject } from "@atlas/cli"
+
+// Generate a project with specific answers (no interactive prompts)
+const answers = applyDefaults({
+  name: "my-api",
+  database: "postgres",
+  features: ["auth", "cache", "migrate"],
+  frontend: false,
+  port: "4000",
+})
+
+const files = generateProject(answers)
+// files = [{ path: "package.json", content: "..." }, ...]
+```
+
+To inspect available questions:
+
+```ts
+import { getQuestionSpec } from "@atlas/cli"
+
+const questions = getQuestionSpec()
+// Returns typed Question[] with id, prompt, type, options, default
+```
+
+## Global Installation
+
+```sh
+bun add -g @atlas/cli
+atlas init
+```
 
 ## Usage
 

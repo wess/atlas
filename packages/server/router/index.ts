@@ -4,7 +4,19 @@ import type { PipeFn } from "../pipe/index.ts";
 import type { WsConfig } from "../ws/index.ts";
 import { ws as createWs } from "../ws/index.ts";
 
-type RouteMap = Record<string, PipeFn>;
+export type Route = {
+  readonly method: string;
+  readonly pattern: string;
+  readonly handler: PipeFn;
+};
+
+export const get = (path: string, handler: PipeFn): Route => ({ method: "GET", pattern: path, handler });
+export const post = (path: string, handler: PipeFn): Route => ({ method: "POST", pattern: path, handler });
+export const put = (path: string, handler: PipeFn): Route => ({ method: "PUT", pattern: path, handler });
+export const patch = (path: string, handler: PipeFn): Route => ({ method: "PATCH", pattern: path, handler });
+export const del = (path: string, handler: PipeFn): Route => ({ method: "DELETE", pattern: path, handler });
+export const head = (path: string, handler: PipeFn): Route => ({ method: "HEAD", pattern: path, handler });
+export const options = (path: string, handler: PipeFn): Route => ({ method: "OPTIONS", pattern: path, handler });
 
 const connToResponse = (conn: Conn): Response => {
   if (conn.body instanceof ReadableStream) {
@@ -21,17 +33,27 @@ const connToResponse = (conn: Conn): Response => {
   return new Response(null, { status: conn.status, headers: conn.respHeaders });
 };
 
-const parseRoute = (route: string): { method: string; pattern: string } => {
-  const spaceIdx = route.indexOf(" ");
-  return {
-    method: route.slice(0, spaceIdx).toUpperCase(),
-    pattern: route.slice(spaceIdx + 1),
-  };
-};
-
 const matchRoute = (pattern: string, path: string): Record<string, string> | null => {
   const patternParts = pattern.split("/");
   const pathParts = path.split("/");
+
+  // Handle wildcard patterns (e.g. /admin/*)
+  const lastPart = patternParts[patternParts.length - 1];
+  if (lastPart === "*") {
+    if (pathParts.length < patternParts.length - 1) return null;
+    const params: Record<string, string> = {};
+    for (let i = 0; i < patternParts.length - 1; i++) {
+      const pp = patternParts[i]!;
+      const val = pathParts[i]!;
+      if (pp.startsWith(":")) {
+        params[pp.slice(1)] = val;
+      } else if (pp !== val) {
+        return null;
+      }
+    }
+    return params;
+  }
+
   if (patternParts.length !== pathParts.length) return null;
   const params: Record<string, string> = {};
   for (let i = 0; i < patternParts.length; i++) {
@@ -46,23 +68,18 @@ const matchRoute = (pattern: string, path: string): Record<string, string> | nul
   return params;
 };
 
-export const router = (routes: RouteMap) => {
-  const entries = Object.entries(routes).map(([route, handler]) => ({
-    ...parseRoute(route),
-    handler,
-  }));
-
+export const router = (...routes: Route[]) => {
   return async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
-    for (const { method, pattern, handler } of entries) {
-      if (req.method.toUpperCase() !== method) continue;
-      const params = matchRoute(pattern, url.pathname);
+    for (const route of routes) {
+      if (req.method.toUpperCase() !== route.method) continue;
+      const params = matchRoute(route.pattern, url.pathname);
       if (params === null) continue;
       try {
         const conn = createConn(req, params);
-        const result = await handler(conn);
+        const result = await route.handler(conn);
         return connToResponse(result);
-      } catch (err) {
+      } catch (_err) {
         return new Response(JSON.stringify({ error: "Internal Server Error" }), {
           status: 500,
           headers: { "content-type": "application/json" },
@@ -76,12 +93,13 @@ export const router = (routes: RouteMap) => {
 type ServeOptions = {
   port?: number;
   hostname?: string;
-  routes: RouteMap | ((req: Request) => Promise<Response>);
+  routes: Route[] | ((req: Request) => Promise<Response>);
   websocket?: WsConfig | any;
+  development?: boolean;
 };
 
 export const serve = (options: ServeOptions) => {
-  const handler = typeof options.routes === "function" ? options.routes : router(options.routes);
+  const fetch = typeof options.routes === "function" ? options.routes : router(...options.routes);
 
   if (
     options.websocket &&
@@ -99,7 +117,7 @@ export const serve = (options: ServeOptions) => {
         if (req.headers.get("upgrade") === "websocket") {
           if (upgrade(req, server)) return undefined as any;
         }
-        return handler(req);
+        return fetch(req);
       },
       websocket,
     });
@@ -108,7 +126,7 @@ export const serve = (options: ServeOptions) => {
   return Bun.serve({
     port: options.port ?? 3000,
     hostname: options.hostname ?? "0.0.0.0",
-    fetch: handler,
+    fetch,
     websocket: options.websocket,
   });
 };

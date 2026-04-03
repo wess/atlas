@@ -2,6 +2,9 @@
   "name": "@atlas/cli",
   "version": "0.0.1",
   "type": "module",
+  "bin": {
+    "atlas": "./entry.ts"
+  },
   "exports": {
     ".": { "import": "./index.ts" }
   },

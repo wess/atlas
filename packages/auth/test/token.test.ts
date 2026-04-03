@@ -10,7 +10,7 @@ test("sign and verify JWT", async () => {
 
 test("verify rejects tampered token", async () => {
   const jwt = await token.sign({ userId: 1 }, "secret");
-  expect(token.verify(jwt + "x", "secret")).rejects.toThrow();
+  expect(token.verify(`${jwt}x`, "secret")).rejects.toThrow();
 });
 
 test("verify rejects wrong secret", async () => {

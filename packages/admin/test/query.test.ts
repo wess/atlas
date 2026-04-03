@@ -30,7 +30,7 @@ beforeEach(async () => {
   });
 
   const adm = admin({ db, models: [model({ schema: users })] });
-  app = router(adm.routes);
+  app = router(...adm.routes);
 });
 
 test("POST /admin/api/query executes query with filters", async () => {

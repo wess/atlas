@@ -1,19 +1,6 @@
-import {
-  Button,
-  Code,
-  Group,
-  MultiSelect,
-  NumberInput,
-  Paper,
-  Select,
-  Stack,
-  Table,
-  Text,
-  TextInput,
-  Title,
-} from "@mantine/core";
+import { Button, Code, Group, MultiSelect, NumberInput, Paper, Select, Stack, Table, Text, Title } from "@mantine/core";
 import { Eye, Play } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { FilterBuilder, type FilterRow } from "./components/filter.tsx";
 
 type SchemaModel = {

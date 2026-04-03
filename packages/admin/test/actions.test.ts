@@ -33,13 +33,13 @@ beforeEach(async () => {
           {
             name: "deactivate",
             label: "Deactivate Users",
-            handler: async (db, ids) => ({ message: `Deactivated ${ids.length} users` }),
+            handler: async (_db, ids) => ({ message: `Deactivated ${ids.length} users` }),
           },
         ],
       }),
     ],
   });
-  app = router(adm.routes);
+  app = router(...adm.routes);
 });
 
 test("POST /admin/api/users/bulk delete removes records", async () => {

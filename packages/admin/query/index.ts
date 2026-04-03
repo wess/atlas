@@ -1,7 +1,7 @@
 import { requireAuth } from "@atlas/auth";
 import { from } from "@atlas/db";
-import type { PipeFn } from "@atlas/server";
-import { json, parseJson, pipe, pipeline } from "@atlas/server";
+import type { PipeFn, Route } from "@atlas/server";
+import { json, parseJson, pipe, pipeline, post } from "@atlas/server";
 import type { AdminConfig } from "../config/index.ts";
 
 export type QueryFilter = {
@@ -81,42 +81,48 @@ const buildQuery = (payload: QueryPayload) => {
   return query;
 };
 
-export const generateQueryRoutes = (config: AdminConfig): Record<string, PipeFn> => {
+export const generateQueryRoutes = (config: AdminConfig): Route[] => {
   const base = config.basePath ?? "/admin";
   const withAuth = config.auth
     ? (handler: PipeFn): PipeFn => pipeline(requireAuth(config.auth!))(handler)
     : (handler: PipeFn): PipeFn => handler;
 
-  return {
-    [`POST ${base}/api/query`]: withAuth(
-      pipeline(parseJson)(
-        pipe(async (c) => {
-          const payload = c.body as QueryPayload;
-          const modelCfg = config.models.find((m) => m.schema.table === payload.table);
-          if (!modelCfg) return json(c, 400, { error: `Unknown table: ${payload.table}` });
+  return [
+    post(
+      `${base}/api/query`,
+      withAuth(
+        pipeline(parseJson)(
+          pipe(async (c) => {
+            const payload = c.body as QueryPayload;
+            const modelCfg = config.models.find((m) => m.schema.table === payload.table);
+            if (!modelCfg) return json(c, 400, { error: `Unknown table: ${payload.table}` });
 
-          const query = buildQuery(payload);
-          const sql = query.toSql(config.db.dialect);
-          const rows = await config.db.all(query);
+            const query = buildQuery(payload);
+            const sql = query.toSql(config.db.dialect);
+            const rows = await config.db.all(query);
 
-          return json(c, 200, { data: rows, sql: sql.text, params: sql.values });
-        }),
+            return json(c, 200, { data: rows, sql: sql.text, params: sql.values });
+          }),
+        ),
       ),
     ),
 
-    [`POST ${base}/api/query/preview`]: withAuth(
-      pipeline(parseJson)(
-        pipe(async (c) => {
-          const payload = c.body as QueryPayload;
-          const modelCfg = config.models.find((m) => m.schema.table === payload.table);
-          if (!modelCfg) return json(c, 400, { error: `Unknown table: ${payload.table}` });
+    post(
+      `${base}/api/query/preview`,
+      withAuth(
+        pipeline(parseJson)(
+          pipe(async (c) => {
+            const payload = c.body as QueryPayload;
+            const modelCfg = config.models.find((m) => m.schema.table === payload.table);
+            if (!modelCfg) return json(c, 400, { error: `Unknown table: ${payload.table}` });
 
-          const query = buildQuery(payload);
-          const sql = query.toSql(config.db.dialect);
+            const query = buildQuery(payload);
+            const sql = query.toSql(config.db.dialect);
 
-          return json(c, 200, { sql: sql.text, params: sql.values });
-        }),
+            return json(c, 200, { sql: sql.text, params: sql.values });
+          }),
+        ),
       ),
     ),
-  };
+  ];
 };

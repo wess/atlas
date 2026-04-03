@@ -1,0 +1,31 @@
+{
+  "name": "{{name}}",
+  "type": "module",
+  "scripts": {
+    "dev": "atlas dev",
+    "start": "bun run server.ts",
+    "test": "bun test",
+    "lint": "bunx biome lint src/",
+    "migrate:up": "atlas migrate up",
+    "migrate:down": "atlas migrate down",
+    "migrate:new": "atlas migrate new"
+  },
+  "dependencies": {
+    "@atlas/config": "latest",
+    "@atlas/server": "latest",
+    "@atlas/db": "latest",
+    "@atlas/auth": "latest",
+    "@atlas/migrate": "latest",
+    "@atlas/ui": "latest",
+    "@atlas/cli": "latest",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@biomejs/biome": "latest",
+    "typescript": "^5"
+  }
+}

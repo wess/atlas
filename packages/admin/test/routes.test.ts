@@ -44,7 +44,7 @@ beforeEach(async () => {
       model({ schema: posts, readOnly: true }),
     ],
   });
-  app = router(adm.routes);
+  app = router(...adm.routes);
 });
 
 test("GET /admin/api/schema returns model metadata", async () => {

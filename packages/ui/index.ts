@@ -7,3 +7,4 @@ export { Breadcrumb, NavLink, Sidebar } from "./nav/index.tsx";
 export { AppShell, AtlasProvider } from "./provider/index.tsx";
 export { FileUpload, ImagePreview } from "./storage/index.tsx";
 export { ActionColumn, createTable, DateColumn, TextColumn } from "./table/index.tsx";
+export { AiSearch, ChatWindow, GenerateButton, MessageBubble, PromptInput } from "./ai/index.tsx";

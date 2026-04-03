@@ -1,6 +1,5 @@
 import { Badge, Button, Group, Paper, Table, Text, Title } from "@mantine/core";
 import { Database, RefreshCw, Trash2 } from "lucide-react";
-import React from "react";
 
 export type CacheEntry = {
   key: string;

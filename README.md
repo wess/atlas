@@ -23,6 +23,8 @@ No framework lock-in. No classes. Just functions and immutable data flowing thro
 | `@atlas/cli` | CLI framework and Foreman process manager | none |
 | `@atlas/ui` | React + Mantine frontend blocks (forms, tables, auth UI) | `react`, `@mantine/*`, `@tanstack/*` |
 | `@atlas/admin` | Django-style auto-generated admin panel | `react`, `@mantine/*`, `@tanstack/*` |
+| `@atlas/mcp` | MCP server for AI/LLM debugging and introspection | none |
+| `@atlas/ai` | AI providers, chat, embeddings, RAG, agents, streaming | none |
 
 ## Quick Start
 
@@ -56,7 +58,7 @@ Create `server.ts`:
 import { defineConfig, env } from "@atlas/config"
 import { connect } from "@atlas/db"
 import { migrate } from "@atlas/migrate"
-import { serve, router, pipeline, parseJson, json } from "@atlas/server"
+import { serve, router, pipeline, parseJson, json, get, post } from "@atlas/server"
 import { signup, login, requireAuth, token } from "@atlas/auth"
 import { users } from "./schema"
 
@@ -73,16 +75,16 @@ const api = pipeline(parseJson)
 
 serve({
   port: config.port,
-  routes: router({
-    "POST /signup": api(
+  routes: [
+    post("/signup", api(
       signup({
         db,
         table: users,
         fields: ["email", "password"],
         onSuccess: (c, user) => json(c, 201, { id: user.id, email: user.email }),
       })
-    ),
-    "POST /login": api(
+    )),
+    post("/login", api(
       login({
         db,
         table: users,
@@ -91,11 +93,11 @@ serve({
         onSuccess: (c, user) =>
           json(c, 200, { token: await token.sign({ id: user.id }, config.secret) }),
       })
-    ),
-    "GET /me": pipeline(requireAuth({ secret: config.secret }))(
+    )),
+    get("/me", pipeline(requireAuth({ secret: config.secret }))(
       (c) => json(c, 200, { id: c.assigns.auth.id })
-    ),
-  }),
+    )),
+  ],
 })
 ```
 
@@ -177,22 +179,24 @@ await migrate.up(db, "./migrations")
 await migrate.status(db, "./migrations")
 ```
 
-### http
+### server
 
-Immutable Conn + pipes + router. Build APIs functionally.
+Immutable Conn + pipes + router + WebSocket + SSE + adapter pattern. Build APIs functionally.
 
 ```ts
-import { pipe, pipeline, router, serve, json } from "@atlas/server"
+import { pipe, pipeline, router, serve, json, get, post } from "@atlas/server"
+import { ws } from "@atlas/server/ws"
+import { sse } from "@atlas/server/sse"
 
 const logger = pipe(c => { console.log(c.method, c.path); return c })
 const cors = pipe(c => putHeader(c, "access-control-allow-origin", "*"))
 
 serve({
   port: 3000,
-  routes: router({
-    "GET /": pipeline(logger, cors)(c => json(c, 200, { ok: true })),
-    "POST /users": pipeline(logger, cors, parseJson)(handler),
-  }),
+  routes: [
+    get("/", pipeline(logger, cors)(c => json(c, 200, { ok: true }))),
+    post("/users", pipeline(logger, cors, parseJson)(handler)),
+  ],
 })
 ```
 
@@ -256,7 +260,7 @@ const repos = await gh.get("/user/repos").json()
 
 ### cli
 
-CLI command parser and Procfile-based process manager.
+CLI framework, Foreman process manager, and built-in commands: `atlas init`, `atlas add`, `atlas dev`, `atlas mcp`.
 
 ```ts
 import { cli, command, flag, foreman } from "@atlas/cli"
@@ -271,17 +275,26 @@ cli("myapp", [
 await foreman({ web: "bun run server.ts", worker: "bun run worker.ts" })
 ```
 
+Built-in commands:
+- `atlas init` — scaffold a new Atlas project
+- `atlas add <package>` — add an Atlas package to your project
+- `atlas dev` — start development server with Foreman
+- `atlas mcp` — launch the MCP server for AI/LLM debugging
+
 ### ui
 
-React + Mantine frontend blocks (forms, tables, auth pages, file upload, nav).
+React + Mantine frontend blocks (forms, tables, auth pages, file upload, nav, AI chat).
 
 ```tsx
 import { AtlasProvider, AppShell } from "@atlas/ui/provider"
 import { LoginPage } from "@atlas/ui/auth"
 import { createTable, TextColumn } from "@atlas/ui/table"
+import { ChatPanel, MessageList } from "@atlas/ui/ai"
 
 // each block is independently importable
 ```
+
+Blocks: `provider`, `forms`, `table`, `auth`, `storage`, `nav`, `cache`, `ai`.
 
 ### admin
 
@@ -298,10 +311,97 @@ const panel = admin({
   ],
 })
 
-serve({ routes: panel.mount({ "GET /": ... }) })
+serve({ routes: panel.mount([]) })
 ```
 
 Serves admin SPA at `/admin` with list, detail, create views, search, filters, bulk actions.
+
+### mcp
+
+MCP (Model Context Protocol) server for AI/LLM debugging and introspection. Exposes your app's database, routes, config, and logs to AI agents for interactive debugging sessions.
+
+```ts
+import { createMcpServer } from "@atlas/mcp"
+
+const mcp = createMcpServer({
+  db,
+  routes: myRoutes,
+  config,
+})
+
+mcp.start()
+```
+
+Launch via the CLI:
+```bash
+atlas mcp
+```
+
+Gives AI agents access to query your database, inspect routes, view config, and read logs — all through the standard MCP protocol.
+
+### ai
+
+AI providers, chat completions, embeddings, RAG pipelines, agents, and streaming. Zero external dependencies — uses provider REST APIs directly.
+
+```ts
+import { createProvider, chat, embed, rag, agent } from "@atlas/ai"
+
+const openai = createProvider("openai", { apiKey: process.env.OPENAI_API_KEY })
+
+// Chat completion
+const reply = await chat(openai, {
+  model: "gpt-4o",
+  messages: [{ role: "user", content: "Hello" }],
+})
+
+// Embeddings
+const vectors = await embed(openai, {
+  model: "text-embedding-3-small",
+  input: ["search query"],
+})
+
+// RAG pipeline
+const answer = await rag({
+  provider: openai,
+  model: "gpt-4o",
+  query: "What is Atlas?",
+  documents: myDocs,
+})
+
+// Agents
+const codeAgent = agent({
+  provider: openai,
+  model: "gpt-4o",
+  tools: [searchTool, executeTool],
+  system: "You are a coding assistant.",
+})
+
+const result = await codeAgent.run("Fix the failing test")
+```
+
+Supports OpenAI, Anthropic, and custom providers. Streaming via `chatStream()` returns an async iterable.
+
+## Templates
+
+Scaffold a new project with `atlas init --template <name>`:
+
+| Template | Description |
+|----------|-------------|
+| `minimal` | Just server + config |
+| `api` | REST API with db, auth, migrations |
+| `fullstack` | API + React frontend |
+| `admin` | API + admin panel |
+| `worker` | Background job processor |
+| `realtime` | WebSocket + SSE |
+| `socialnetwork` | Users, posts, follows, likes, feeds, media, real-time |
+| `cms` | Headless CMS with content types, publishing, webhooks |
+| `ai` | Chatbot, RAG, agents, embeddings, streaming |
+
+```bash
+atlas init myapp --template api
+atlas init myapp --template fullstack
+atlas init myapp --template ai
+```
 
 ## Development
 

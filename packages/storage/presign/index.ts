@@ -1,4 +1,4 @@
-import { createHash, createHmac } from "node:crypto";
+import { createHmac } from "node:crypto";
 import { hmacSha256, sha256 } from "../signing/index.ts";
 import type { Store } from "../store/index.ts";
 
@@ -25,7 +25,7 @@ export const presign = (store: Store, key: string, opts?: { expires?: number; me
 
   const url = new URL(`/${store.bucket}/${key}`, store.endpoint);
   const now = new Date();
-  const amzDate = now.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const amzDate = `${now.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
   const dateStamp = amzDate.slice(0, 8);
   const scope = `${dateStamp}/${store.region}/s3/aws4_request`;
   const credential = `${store.accessKey}/${scope}`;

@@ -31,6 +31,13 @@
         "typescript": "^5",
       },
     },
+    "packages/ai": {
+      "name": "@atlas/ai",
+      "version": "0.0.1",
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
     "packages/auth": {
       "name": "@atlas/auth",
       "version": "0.0.1",
@@ -68,6 +75,16 @@
       "version": "0.0.1",
       "dependencies": {
         "zod": "^3.23.0",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
+    "packages/mcp": {
+      "name": "@atlas/mcp",
+      "version": "0.0.1",
+      "bin": {
+        "atlas-mcp": "./entry.ts",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -124,6 +141,8 @@
   "packages": {
     "@atlas/admin": ["@atlas/admin@workspace:packages/admin"],
 
+    "@atlas/ai": ["@atlas/ai@workspace:packages/ai"],
+
     "@atlas/auth": ["@atlas/auth@workspace:packages/auth"],
 
     "@atlas/cache": ["@atlas/cache@workspace:packages/cache"],
@@ -133,6 +152,8 @@
     "@atlas/config": ["@atlas/config@workspace:packages/config"],
 
     "@atlas/db": ["@atlas/db@workspace:packages/db"],
+
+    "@atlas/mcp": ["@atlas/mcp@workspace:packages/mcp"],
 
     "@atlas/migrate": ["@atlas/migrate@workspace:packages/migrate"],
 

@@ -1,0 +1,14 @@
+{
+  "name": "@atlas/mcp",
+  "version": "0.0.1",
+  "type": "module",
+  "bin": {
+    "atlas-mcp": "./entry.ts"
+  },
+  "exports": {
+    ".": { "import": "./index.ts" }
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

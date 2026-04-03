@@ -49,7 +49,7 @@ const getCanonicalQueryString = (url: URL): string => {
 };
 
 const getCanonicalHeaders = (headers: Headers, signedHeaderKeys: string[]): string =>
-  signedHeaderKeys.map((k) => `${k}:${(headers.get(k) ?? "").trim().replace(/\s+/g, " ")}`).join("\n") + "\n";
+  `${signedHeaderKeys.map((k) => `${k}:${(headers.get(k) ?? "").trim().replace(/\s+/g, " ")}`).join("\n")}\n`;
 
 const getSignedHeaderKeys = (headers: Headers): string[] => [...headers.keys()].map((k) => k.toLowerCase()).sort();
 
@@ -57,7 +57,7 @@ export const signRequest = (opts: SigningOptions): SigningResult => {
   const { method, url, headers, body, accessKey, secretKey, region = "us-east-1", service = "s3" } = opts;
 
   const now = new Date();
-  const amzDate = now.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const amzDate = `${now.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
   const dateStamp = amzDate.slice(0, 8);
 
   const contentHash = sha256(body ?? "");

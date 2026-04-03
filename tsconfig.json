@@ -30,7 +30,10 @@
       "@atlas/auth": ["./packages/auth/index.ts"],
       "@atlas/storage": ["./packages/storage/index.ts"],
       "@atlas/ui": ["./packages/ui/index.ts"],
-      "@atlas/ui/*": ["./packages/ui/*/index.tsx"]
+      "@atlas/ui/*": ["./packages/ui/*/index.tsx"],
+      "@atlas/mcp": ["./packages/mcp/index.ts"],
+      "@atlas/migrate": ["./packages/migrate/index.ts"],
+      "@atlas/ai": ["./packages/ai/index.ts"]
     }
   }
 }

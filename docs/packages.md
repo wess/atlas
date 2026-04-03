@@ -139,12 +139,18 @@ migrations/
 
 ## @atlas/server
 
-Bun.serve wrapper with Plug-inspired pipe system.
+Bun.serve wrapper with Plug-inspired pipe system, WebSocket support, Server-Sent Events, and an adapter pattern for deploying to different runtimes.
 
 **Install:**
 ```bash
 bun add @atlas/server
 ```
+
+**Sub-modules:**
+- `@atlas/server` — Core HTTP routing and pipe system
+- `@atlas/server/ws` — WebSocket support
+- `@atlas/server/sse` — Server-Sent Events
+- `@atlas/server/adapter` — Adapter pattern for different runtimes
 
 **Core API:**
 
@@ -160,7 +166,8 @@ Pipes:
 - `parseJson`, `parseForm`, `parseMultipart` — Body parsers
 
 Router:
-- `router(routes)` — Create router from `"METHOD /path"` map
+- `get(path, handler)`, `post()`, `put()`, `patch()`, `del()`, `head()`, `options()` — Route builders
+- `router(...routes)` — Create fetch handler from Route objects
 - `serve(opts)` — Start server
 
 Response:
@@ -171,7 +178,7 @@ Response:
 
 **Minimal Example:**
 ```ts
-import { serve, router, pipe, pipeline, parseJson, json } from "@atlas/server"
+import { serve, router, pipe, pipeline, parseJson, json, get, post } from "@atlas/server"
 
 const logger = pipe(c => {
   console.log(`${c.method} ${c.path}`)
@@ -180,12 +187,12 @@ const logger = pipe(c => {
 
 serve({
   port: 3000,
-  routes: router({
-    "GET /": pipe(c => json(c, 200, { ok: true })),
-    "POST /users": pipeline(logger, parseJson)(
+  routes: [
+    get("/", pipe(c => json(c, 200, { ok: true }))),
+    post("/users", pipeline(logger, parseJson)(
       pipe(c => json(c, 201, c.body))
-    ),
-  }),
+    )),
+  ],
 })
 ```
 
@@ -372,7 +379,7 @@ const repos = await gh.get("/user/repos").json()
 
 ## @atlas/cli
 
-CLI framework and Foreman process manager.
+CLI framework, Foreman process manager, and built-in Atlas commands.
 
 **Install:**
 ```bash
@@ -388,6 +395,12 @@ Commands:
 
 Foreman:
 - `await foreman(procs)` — Run processes concurrently from Procfile or object
+
+Built-in commands:
+- `atlas init` — Scaffold a new Atlas project
+- `atlas add <package>` — Add an Atlas package to your project
+- `atlas dev` — Start development server with Foreman
+- `atlas mcp` — Launch the MCP server for AI/LLM debugging
 
 **Minimal Example:**
 ```ts
@@ -454,6 +467,10 @@ Nav:
 Cache:
 - `CacheInspector` — Table of cache entries
 - `CacheStatus` — Connection and hit rate badge
+
+AI:
+- `ChatPanel` — Full chat interface with streaming
+- `MessageList` — Message display component
 
 **Minimal Example:**
 ```tsx
@@ -526,11 +543,126 @@ const panel = admin({
 })
 
 serve({
-  routes: panel.mount({ "GET /": ... }),
+  routes: panel.mount([]),
 })
 ```
 
 **Dependencies:** `@atlas/db`, `@atlas/server`, `react`, `@mantine/*`, `@tanstack/*`, `lucide-react`
+
+---
+
+## @atlas/mcp
+
+MCP (Model Context Protocol) server for AI/LLM debugging and introspection.
+
+**Install:**
+```bash
+bun add @atlas/mcp
+```
+
+**Core API:**
+- `createMcpServer(opts)` — Create an MCP server instance
+- `mcp.start()` — Start listening for MCP connections
+
+Resources exposed to AI agents:
+- Database queries and schema introspection
+- Route listing and inspection
+- Config values (with secrets redacted)
+- Application logs
+
+**Minimal Example:**
+```ts
+import { createMcpServer } from "@atlas/mcp"
+
+const mcp = createMcpServer({
+  db,
+  routes: myRoutes,
+  config,
+})
+
+mcp.start()
+```
+
+Or launch via the CLI:
+```bash
+atlas mcp
+```
+
+**Dependencies:** `@atlas/db`, `@atlas/server`, `@atlas/config`
+
+---
+
+## @atlas/ai
+
+AI providers, chat completions, embeddings, RAG pipelines, agents, and streaming. Zero external dependencies.
+
+**Install:**
+```bash
+bun add @atlas/ai
+```
+
+**Core API:**
+
+Providers:
+- `createProvider(name, opts)` — Create a provider (openai, anthropic, or custom)
+
+Chat:
+- `await chat(provider, opts)` — Chat completion
+- `chatStream(provider, opts)` — Streaming chat (returns async iterable)
+
+Embeddings:
+- `await embed(provider, opts)` — Generate embedding vectors
+
+RAG:
+- `await rag(opts)` — RAG pipeline: embed query, retrieve documents, generate answer
+
+Agents:
+- `agent(opts)` — Create a tool-using autonomous agent
+- `await agent.run(prompt)` — Run agent loop until completion
+
+**Minimal Example:**
+```ts
+import { createProvider, chat, chatStream, embed, rag, agent } from "@atlas/ai"
+
+const openai = createProvider("openai", { apiKey: process.env.OPENAI_API_KEY })
+
+// Chat
+const reply = await chat(openai, {
+  model: "gpt-4o",
+  messages: [{ role: "user", content: "Hello" }],
+})
+
+// Streaming
+for await (const chunk of chatStream(openai, { model: "gpt-4o", messages })) {
+  process.stdout.write(chunk.content)
+}
+
+// Embeddings
+const vectors = await embed(openai, {
+  model: "text-embedding-3-small",
+  input: ["search query"],
+})
+
+// RAG
+const answer = await rag({
+  provider: openai,
+  model: "gpt-4o",
+  query: "What is Atlas?",
+  documents: myDocs,
+})
+
+// Agents
+const codeAgent = agent({
+  provider: openai,
+  model: "gpt-4o",
+  tools: [searchTool, executeTool],
+  system: "You are a coding assistant.",
+})
+
+const result = await codeAgent.run("Fix the failing test")
+```
+
+**Dependencies:** None
 
 ---
 
@@ -549,3 +681,20 @@ serve({
 | Build CLI | `@atlas/cli` |
 | Build React UI | `@atlas/ui` |
 | Add admin panel | `@atlas/admin` |
+| AI/LLM debugging | `@atlas/mcp` |
+| AI chat, embeddings, RAG, agents | `@atlas/ai` |
+| AI chat UI components | `@atlas/ui/ai` |
+
+## Templates
+
+| Template | Description | Key Packages |
+|----------|-------------|-------------|
+| `minimal` | Just server + config | config, server |
+| `api` | REST API with db, auth, migrations | config, db, migrate, server, auth |
+| `fullstack` | API + React frontend | config, db, server, auth, ui |
+| `admin` | API + admin panel | config, db, server, auth, admin |
+| `worker` | Background job processor | config, db, cache, cli |
+| `realtime` | WebSocket + SSE | config, server |
+| `socialnetwork` | Users, posts, follows, likes, feeds, media, real-time | config, db, server, auth, cache, storage |
+| `cms` | Headless CMS with content types, publishing, webhooks | config, db, server, auth, storage, admin |
+| `ai` | Chatbot, RAG, agents, embeddings, streaming | config, server, ai |

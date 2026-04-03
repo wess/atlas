@@ -1,11 +1,11 @@
 import type { Connection, Schema } from "@atlas/db";
-import type { PipeFn } from "@atlas/server";
-import { pipe } from "@atlas/server";
+import type { PipeFn, Route } from "@atlas/server";
+import { get, pipe } from "@atlas/server";
 import { generateQueryRoutes } from "../query/index.ts";
 import { generateRoutes } from "../routes/index.ts";
 import { adminHtml } from "../ui/shell.ts";
 
-export type CustomAction<T = unknown> = {
+export type CustomAction<_T = unknown> = {
   readonly name: string;
   readonly label: string;
   readonly handler: (db: Connection, ids: (string | number)[]) => Promise<{ message: string }>;
@@ -62,18 +62,10 @@ export const admin = (config: AdminConfig) => {
 
   const spaRoute: PipeFn = pipe((c) => htmlResponse(c, shell));
 
-  const allRoutes: Record<string, PipeFn> = {
-    ...crudRoutes,
-    ...queryRoutes,
-    [`GET ${base}`]: spaRoute,
-    [`GET ${base}/*`]: spaRoute,
-  };
+  const allRoutes: Route[] = [...crudRoutes, ...queryRoutes, get(base, spaRoute), get(`${base}/*`, spaRoute)];
 
   return {
     routes: allRoutes,
-    mount: (existingRoutes: Record<string, PipeFn>) => ({
-      ...existingRoutes,
-      ...allRoutes,
-    }),
+    mount: (existingRoutes: Route[]) => [...existingRoutes, ...allRoutes],
   };
 };
