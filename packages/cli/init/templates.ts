@@ -44,7 +44,10 @@ export const scaffoldFromTemplate = async (
 ): Promise<void> => {
   const templateDir = findTemplateDir(templateName);
   if (!templateDir) {
-    throw new Error(`Template "${templateName}" not found`);
+    const available = listTemplates();
+    throw new Error(
+      `Template "${templateName}" not found. Available templates: ${available.join(", ")}. Use 'atlas init' to see all options.`,
+    );
   }
 
   const files = collectFiles(templateDir);

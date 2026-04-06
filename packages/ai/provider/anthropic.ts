@@ -87,7 +87,9 @@ export const createAnthropic = (config: AnthropicConfig): AiProvider => {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`Anthropic API error ${res.status}: ${text}`);
+      throw new Error(
+        `Anthropic chat request failed (HTTP ${res.status}): ${text}. Verify ANTHROPIC_API_KEY is set and valid.`,
+      );
     }
 
     const data = await res.json();
@@ -128,7 +130,9 @@ export const createAnthropic = (config: AnthropicConfig): AiProvider => {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`Anthropic API error ${res.status}: ${text}`);
+      throw new Error(
+        `Anthropic stream request failed (HTTP ${res.status}): ${text}. Verify ANTHROPIC_API_KEY is set and valid.`,
+      );
     }
 
     const reader = res.body!.getReader();
@@ -195,7 +199,9 @@ export const createAnthropic = (config: AnthropicConfig): AiProvider => {
   };
 
   const embed = async (_opts: EmbedOptions): Promise<EmbedResponse> => {
-    throw new Error("Anthropic does not support embeddings. Use OpenAI or Ollama for embeddings.");
+    throw new Error(
+      "Anthropic does not support embeddings. Use OpenAI or Ollama for the embed() function. Example: createProvider({ provider: 'openai', key: '...' })",
+    );
   };
 
   return { name: "anthropic", chat, chatStream, embed };

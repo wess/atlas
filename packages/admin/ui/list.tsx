@@ -77,31 +77,31 @@ export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProp
     fetchData(1);
   }, [fetchData]);
 
-  const toggleSort = (field: string) => {
+  const toggleSort = useCallback((field: string) => {
     setSort((prev) => {
       if (prev?.field === field) {
         return prev.order === "asc" ? { field, order: "desc" } : null;
       }
       return { field, order: "asc" };
     });
-  };
+  }, []);
 
-  const toggleSelect = (id: string | number) => {
+  const toggleSelect = useCallback((id: string | number) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
-  const toggleAll = () => {
+  const toggleAll = useCallback(() => {
     if (selectedIds.size === data.length) {
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(data.map((r) => r.id as string | number)));
     }
-  };
+  }, [selectedIds.size, data]);
 
   const handleBulkAction = async (action: string) => {
     const ids = Array.from(selectedIds);

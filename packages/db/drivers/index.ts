@@ -9,7 +9,9 @@ export const connect = (options: ConnectOptions): Connection => {
     case "sqlite":
       return connectSqlite(options.path);
     default:
-      throw new Error(`Unknown driver: ${(options as any).driver}`);
+      throw new Error(
+        `Unknown database driver: "${(options as any).driver}". Supported drivers are "postgres" and "sqlite". Example: connect({ driver: "sqlite", path: ":memory:" })`,
+      );
   }
 };
 

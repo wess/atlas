@@ -79,11 +79,15 @@ export const router = (...routes: Route[]) => {
         const conn = createConn(req, params);
         const result = await route.handler(conn);
         return connToResponse(result);
-      } catch (_err) {
-        return new Response(JSON.stringify({ error: "Internal Server Error" }), {
-          status: 500,
-          headers: { "content-type": "application/json" },
-        });
+      } catch (err) {
+        console.error(`[atlas] Route error: ${req.method} ${url.pathname}`, err);
+        return new Response(
+          JSON.stringify({ error: "Internal Server Error", path: url.pathname, method: req.method }),
+          {
+            status: 500,
+            headers: { "content-type": "application/json" },
+          },
+        );
       }
     }
     return new Response("Not Found", { status: 404 });

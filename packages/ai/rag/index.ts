@@ -25,7 +25,10 @@ export const query = async (
   opts?: { model?: string },
 ): Promise<{ answer: string; sources: { id: string; score: number; text: string }[] }> => {
   const [queryEmbedding] = await embed(rag.ai, question);
-  if (!queryEmbedding) throw new Error("Failed to generate query embedding");
+  if (!queryEmbedding)
+    throw new Error(
+      "Failed to generate embedding for RAG query. The AI provider returned no embeddings. Verify your provider supports embeddings (Anthropic does not — use OpenAI or Ollama).",
+    );
 
   const results = rag.store.search(queryEmbedding, rag.topK ?? 5);
   const context = results

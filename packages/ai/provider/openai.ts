@@ -83,7 +83,9 @@ export const createOpenAi = (config: OpenAiConfig): AiProvider => {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`OpenAI API error ${res.status}: ${text}`);
+      throw new Error(
+        `OpenAI chat request failed (HTTP ${res.status}): ${text}. Verify OPENAI_API_KEY is set and valid.`,
+      );
     }
 
     const data = await res.json();
@@ -117,7 +119,9 @@ export const createOpenAi = (config: OpenAiConfig): AiProvider => {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`OpenAI API error ${res.status}: ${text}`);
+      throw new Error(
+        `OpenAI stream request failed (HTTP ${res.status}): ${text}. Verify OPENAI_API_KEY is set and valid.`,
+      );
     }
 
     const toolCallAccumulator: Map<number, { id: string; name: string; args: string }> = new Map();
@@ -168,7 +172,9 @@ export const createOpenAi = (config: OpenAiConfig): AiProvider => {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`OpenAI API error ${res.status}: ${text}`);
+      throw new Error(
+        `OpenAI embeddings request failed (HTTP ${res.status}): ${text}. Verify OPENAI_API_KEY is set and valid.`,
+      );
     }
 
     const data = await res.json();

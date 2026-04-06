@@ -97,7 +97,7 @@ export const askQuestions = async (): Promise<Answers> => {
       answers[q.id] = input || (q.default as string) || "";
     } else if (q.type === "select") {
       console.log(`\n${q.prompt}:`);
-      q.options!.forEach((o, i) => console.log(`  ${i + 1}) ${o.label}`));
+      for (const [i, o] of q.options!.entries()) console.log(`  ${i + 1}) ${o.label}`);
       const defaultIdx = q.options!.findIndex((o) => o.value === q.default) + 1;
       process.stdout.write(`Choose (${defaultIdx}): `);
       const { value } = await reader.read();
@@ -106,10 +106,10 @@ export const askQuestions = async (): Promise<Answers> => {
       answers[q.id] = q.options![idx]?.value ?? (q.default as string);
     } else if (q.type === "multiselect") {
       console.log(`\n${q.prompt}:`);
-      q.options!.forEach((o, i) => {
+      for (const [i, o] of q.options!.entries()) {
         const selected = (q.default as string[])?.includes(o.value) ? "*" : " ";
         console.log(`  ${i + 1}) [${selected}] ${o.label}`);
-      });
+      }
       process.stdout.write(`Select (comma-separated, e.g. 1,2,3): `);
       const { value } = await reader.read();
       const input = decoder.decode(value).trim();

@@ -75,6 +75,8 @@ export const createProvider = (config: ProviderConfig): AiProvider => {
     case "ollama":
       return createOllama(config);
     default:
-      throw new Error(`Unknown provider: ${(config as any).provider}`);
+      throw new Error(
+        `Unknown provider: '${(config as any).provider}'. Supported providers are 'openai', 'anthropic', and 'ollama'. Example: createProvider({ provider: 'openai', key: env('OPENAI_API_KEY') })`,
+      );
   }
 };

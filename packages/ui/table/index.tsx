@@ -43,8 +43,16 @@ export const ActionColumn = <T,>(config: { onEdit?: (row: T) => void; onDelete?:
   header: "Actions",
   cell: (info) => (
     <Group gap="xs">
-      {config.onEdit && <button onClick={() => config.onEdit!(info.row.original)}>Edit</button>}
-      {config.onDelete && <button onClick={() => config.onDelete!(info.row.original)}>Delete</button>}
+      {config.onEdit && (
+        <button type="button" onClick={() => config.onEdit!(info.row.original)}>
+          Edit
+        </button>
+      )}
+      {config.onDelete && (
+        <button type="button" onClick={() => config.onDelete!(info.row.original)}>
+          Delete
+        </button>
+      )}
     </Group>
   ),
 });

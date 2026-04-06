@@ -16,13 +16,14 @@ export const signup =
   (opts: SignupOptions): PipeFn =>
   async (conn: Conn) => {
     const body = conn.body as Record<string, unknown> | undefined;
-    if (!body) return halt(conn, 400, { error: "Missing request body" });
+    if (!body)
+      return halt(conn, 400, { error: "Missing request body. Send a JSON body with Content-Type: application/json." });
 
     const record: Record<string, unknown> = {};
     for (const field of opts.fields) {
       const value = body[field];
       if (value === undefined || value === null) {
-        return halt(conn, 422, { error: `Missing field: ${field}` });
+        return halt(conn, 422, { error: `Missing required field: ${field}. Include it in the JSON request body.` });
       }
       record[field] = field === "password" ? await hash(String(value)) : value;
     }
@@ -46,13 +47,16 @@ export const login =
   (opts: LoginOptions): PipeFn =>
   async (conn: Conn) => {
     const body = conn.body as Record<string, unknown> | undefined;
-    if (!body) return halt(conn, 400, { error: "Missing request body" });
+    if (!body)
+      return halt(conn, 400, { error: "Missing request body. Send a JSON body with Content-Type: application/json." });
 
     const identityValue = body[opts.identity];
     const passwordValue = body[opts.password];
 
     if (!identityValue || !passwordValue) {
-      return halt(conn, 422, { error: "Missing credentials" });
+      return halt(conn, 422, {
+        error: `Missing credentials. Send both '${opts.identity}' and '${opts.password}' in the JSON body.`,
+      });
     }
 
     const query = from(opts.table).where(opts.identity, "=", identityValue);
@@ -74,7 +78,9 @@ export const requireAuth =
   async (conn: Conn) => {
     const authHeader = conn.headers.get("authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return halt(conn, 401, { error: "Missing or invalid authorization header" });
+      return halt(conn, 401, {
+        error: "Missing or invalid authorization header. Send 'Authorization: Bearer <token>' with a valid JWT.",
+      });
     }
 
     const jwt = authHeader.slice(7);
@@ -82,7 +88,9 @@ export const requireAuth =
       const payload = await token.verify(jwt, opts.secret);
       return assign(conn, { auth: payload });
     } catch {
-      return halt(conn, 401, { error: "Invalid or expired token" });
+      return halt(conn, 401, {
+        error: "Invalid or expired token. The token could not be verified. Re-authenticate to get a fresh token.",
+      });
     }
   };
 
@@ -96,10 +104,11 @@ export const passwordReset =
   (opts: PasswordResetOptions): PipeFn =>
   async (conn: Conn) => {
     const body = conn.body as Record<string, unknown> | undefined;
-    if (!body) return halt(conn, 400, { error: "Missing request body" });
+    if (!body)
+      return halt(conn, 400, { error: "Missing request body. Send a JSON body with Content-Type: application/json." });
 
     const email = body.email as string | undefined;
-    if (!email) return halt(conn, 422, { error: "Missing email field" });
+    if (!email) return halt(conn, 422, { error: "Missing 'email' field in request body." });
 
     const query = from(opts.table).where("email", "=", email);
     const user = await opts.db.one(query);

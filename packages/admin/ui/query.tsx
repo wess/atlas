@@ -167,9 +167,9 @@ export const QueryBuilder = ({ models, basePath }: QueryBuilderProps) => {
               </Table.Thead>
               <Table.Tbody>
                 {results.map((row, i) => (
-                  <Table.Tr key={i}>
-                    {Object.values(row).map((v, j) => (
-                      <Table.Td key={j}>{typeof v === "object" ? JSON.stringify(v) : String(v ?? "")}</Table.Td>
+                  <Table.Tr key={String((row as Record<string, unknown>).id ?? i)}>
+                    {Object.entries(row).map(([k, v]) => (
+                      <Table.Td key={k}>{typeof v === "object" ? JSON.stringify(v) : String(v ?? "")}</Table.Td>
                     ))}
                   </Table.Tr>
                 ))}

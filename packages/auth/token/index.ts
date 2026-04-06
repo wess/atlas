@@ -40,13 +40,19 @@ export const sign = async (payload: TokenPayload, secret: string, opts?: { expir
 
 export const verify = async (token: string, secret: string): Promise<TokenPayload> => {
   const parts = token.split(".");
-  if (parts.length !== 3) throw new Error("Invalid token format");
+  if (parts.length !== 3)
+    throw new Error(
+      "Invalid token format. Expected a JWT with three dot-separated base64 segments (header.payload.signature).",
+    );
   const [header, payload, signature] = parts as [string, string, string];
   const valid = await hmacVerify(`${header}.${payload}`, signature, secret);
-  if (!valid) throw new Error("Invalid token signature");
+  if (!valid)
+    throw new Error(
+      "Invalid token signature. The token was signed with a different secret. Verify that AUTH_SECRET matches between token creation and verification.",
+    );
   const decoded = JSON.parse(decoder.decode(base64url.decode(payload))) as TokenPayload;
   if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {
-    throw new Error("Token expired");
+    throw new Error("Token expired. The token's exp claim is in the past. Issue a new token via the login endpoint.");
   }
   return decoded;
 };

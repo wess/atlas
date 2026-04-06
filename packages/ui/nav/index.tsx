@@ -32,13 +32,13 @@ export type BreadcrumbItem = {
 
 export const Breadcrumb = ({ items }: { items: BreadcrumbItem[] }) => (
   <Breadcrumbs>
-    {items.map((item, i) =>
+    {items.map((item) =>
       item.href ? (
-        <Anchor href={item.href} key={i}>
+        <Anchor href={item.href} key={item.label}>
           {item.label}
         </Anchor>
       ) : (
-        <span key={i}>{item.label}</span>
+        <span key={item.label}>{item.label}</span>
       ),
     )}
   </Breadcrumbs>

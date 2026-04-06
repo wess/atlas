@@ -47,7 +47,9 @@ export const createOllama = (config: OllamaConfig): AiProvider => {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`Ollama API error ${res.status}: ${text}`);
+      throw new Error(
+        `Ollama chat request failed (HTTP ${res.status}): ${text}. Is Ollama running at ${baseUrl}? Start it with 'ollama serve'.`,
+      );
     }
 
     const data = await res.json();
@@ -85,7 +87,9 @@ export const createOllama = (config: OllamaConfig): AiProvider => {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`Ollama API error ${res.status}: ${text}`);
+      throw new Error(
+        `Ollama stream request failed (HTTP ${res.status}): ${text}. Is Ollama running at ${baseUrl}? Start it with 'ollama serve'.`,
+      );
     }
 
     const reader = res.body!.getReader();
@@ -131,7 +135,9 @@ export const createOllama = (config: OllamaConfig): AiProvider => {
 
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(`Ollama API error ${res.status}: ${text}`);
+        throw new Error(
+          `Ollama embeddings request failed (HTTP ${res.status}): ${text}. Is Ollama running at ${baseUrl}? Start it with 'ollama serve'.`,
+        );
       }
 
       const data = await res.json();

@@ -27,11 +27,12 @@ export type MessageBubbleProps = {
 
 const renderContent = (content: string) => {
   const parts = content.split(/(```[\s\S]*?```)/g);
-  return parts.map((part, i) => {
+  return parts.map((part) => {
+    const key = part.slice(0, 40);
     if (part.startsWith("```") && part.endsWith("```")) {
       const code = part.slice(3, -3).replace(/^\w*\n/, "");
       return (
-        <Paper key={i} bg="dark.8" p="xs" my="xs" radius="sm">
+        <Paper key={key} bg="dark.8" p="xs" my="xs" radius="sm">
           <Text size="sm" ff="monospace" style={{ whiteSpace: "pre-wrap" }}>
             {code}
           </Text>
@@ -39,7 +40,7 @@ const renderContent = (content: string) => {
       );
     }
     return (
-      <Text key={i} size="sm" style={{ whiteSpace: "pre-wrap" }}>
+      <Text key={key} size="sm" style={{ whiteSpace: "pre-wrap" }}>
         {part}
       </Text>
     );
@@ -171,9 +172,10 @@ export const ChatWindow = ({
       )}
       <ScrollArea flex={1} viewportRef={viewport} mb="sm">
         <Stack gap="sm" p="xs">
-          {messages.map((msg, i) => (
-            <MessageBubble key={i} role={msg.role} content={msg.content} />
-          ))}
+          {messages.map((msg) => {
+            const key = `${msg.role}-${msg.content.slice(0, 32)}`;
+            return <MessageBubble key={key} role={msg.role} content={msg.content} />;
+          })}
           {loading && (
             <Group gap="xs">
               <Bot size={14} />

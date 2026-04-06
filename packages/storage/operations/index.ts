@@ -84,7 +84,9 @@ export const upload = async (store: Store, opts: UploadOptions): Promise<{ key: 
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Upload failed: ${res.status} ${text}`);
+    throw new Error(
+      `Storage upload failed for key '${opts.key}': HTTP ${res.status}. Response: ${text}. Check your S3_ENDPOINT, S3_BUCKET, and credentials.`,
+    );
   }
 
   return { key: opts.key, url: url.toString() };
@@ -93,7 +95,10 @@ export const upload = async (store: Store, opts: UploadOptions): Promise<{ key: 
 export const download = async (store: Store, key: string): Promise<Response> => {
   const url = makeUrl(store, key);
   const res = await signedFetch(store, "GET", url);
-  if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+  if (!res.ok)
+    throw new Error(
+      `Storage download failed for key '${key}': HTTP ${res.status}. Verify the key exists and credentials are correct.`,
+    );
   return res;
 };
 
@@ -101,7 +106,9 @@ export const remove = async (store: Store, key: string): Promise<void> => {
   const url = makeUrl(store, key);
   const res = await signedFetch(store, "DELETE", url);
   if (!res.ok && res.status !== 404) {
-    throw new Error(`Delete failed: ${res.status}`);
+    throw new Error(
+      `Storage delete failed for key '${key}': HTTP ${res.status}. Check your S3 credentials and permissions.`,
+    );
   }
 };
 
@@ -114,7 +121,9 @@ export const list = async (store: Store, prefix?: string): Promise<ListResult> =
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`List failed: ${res.status} ${text}`);
+    throw new Error(
+      `Storage list failed: HTTP ${res.status}. Response: ${text}. Check your S3_ENDPOINT and credentials.`,
+    );
   }
 
   const xml = await res.text();
@@ -127,9 +136,10 @@ export const list = async (store: Store, prefix?: string): Promise<ListResult> =
 const extractXmlValues = (xml: string, tag: string): string[] => {
   const results: string[] = [];
   const regex = new RegExp(`<${tag}>(.*?)</${tag}>`, "g");
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(xml)) !== null) {
+  let match = regex.exec(xml);
+  while (match !== null) {
     results.push(match[1]!);
+    match = regex.exec(xml);
   }
   return results;
 };

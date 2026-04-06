@@ -20,7 +20,9 @@ const compileQuery = (query: Query, counter: ParamCounter, values: any[]): strin
     case "truncate":
       return compileTruncate(query);
     default:
-      throw new Error(`Unknown query type: ${query.type}`);
+      throw new Error(
+        `Unknown query type: "${query.type}". Valid types are "select", "insert", "update", "delete". This usually means a malformed query chain.`,
+      );
   }
 };
 

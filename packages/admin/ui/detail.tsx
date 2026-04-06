@@ -190,10 +190,10 @@ export const Detail = ({ table, id, schema, basePath, onNavigate }: DetailProps)
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {(relations[rel.table] ?? []).map((row, i) => (
-                    <Table.Tr key={i}>
-                      {Object.values(row).map((v, j) => (
-                        <Table.Td key={j}>{String(v)}</Table.Td>
+                  {(relations[rel.table] ?? []).map((row) => (
+                    <Table.Tr key={String((row as Record<string, unknown>).id ?? JSON.stringify(row))}>
+                      {Object.entries(row).map(([k, v]) => (
+                        <Table.Td key={k}>{String(v)}</Table.Td>
                       ))}
                     </Table.Tr>
                   ))}

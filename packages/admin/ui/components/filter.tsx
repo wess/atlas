@@ -34,18 +34,21 @@ export const FilterBuilder = ({ filters, fields, onChange }: FilterBuilderProps)
 
   return (
     <Stack gap="xs">
-      {filters.map((f, i) => (
-        <Group key={i} gap="xs">
-          <Select size="xs" data={fields} value={f.field} onChange={(v) => update(i, { field: v ?? "" })} />
-          <Select size="xs" data={OPS} value={f.op} onChange={(v) => update(i, { op: v ?? "eq" })} />
-          {!["null", "notnull"].includes(f.op) && (
-            <TextInput size="xs" value={f.value} onChange={(e) => update(i, { value: e.currentTarget.value })} />
-          )}
-          <ActionIcon size="sm" color="red" variant="light" onClick={() => remove(i)}>
-            <X size={14} />
-          </ActionIcon>
-        </Group>
-      ))}
+      {filters.map((f, idx) => {
+        const key = `filter-${f.field}-${f.op}-${idx}`;
+        return (
+          <Group key={key} gap="xs">
+            <Select size="xs" data={fields} value={f.field} onChange={(v) => update(idx, { field: v ?? "" })} />
+            <Select size="xs" data={OPS} value={f.op} onChange={(v) => update(idx, { op: v ?? "eq" })} />
+            {!["null", "notnull"].includes(f.op) && (
+              <TextInput size="xs" value={f.value} onChange={(e) => update(idx, { value: e.currentTarget.value })} />
+            )}
+            <ActionIcon size="sm" color="red" variant="light" onClick={() => remove(idx)}>
+              <X size={14} />
+            </ActionIcon>
+          </Group>
+        );
+      })}
       <Button size="xs" variant="light" leftSection={<Plus size={14} />} onClick={add}>
         Add Filter
       </Button>
