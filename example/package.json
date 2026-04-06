@@ -1,0 +1,22 @@
+{
+  "name": "chirp",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "bun src/dev.ts"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  },
+  "dependencies": {
+    "react": "^19",
+    "react-dom": "^19",
+    "@atlas/cli": "workspace:*",
+    "@atlas/config": "workspace:*",
+    "@atlas/db": "workspace:*",
+    "@atlas/migrate": "workspace:*",
+    "@atlas/server": "workspace:*",
+    "@atlas/auth": "workspace:*"
+  }
+}

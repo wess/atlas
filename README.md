@@ -10,34 +10,27 @@ No framework lock-in. No classes. Just functions and immutable data flowing thro
 
 ## Install
 
-Atlas is not on npm. Install packages directly from GitHub:
+Atlas is not on npm. Clone the repo and reference packages via `file:`:
 
 ```bash
-bun add github:wess/atlas/packages/config
-bun add github:wess/atlas/packages/db
-bun add github:wess/atlas/packages/server
-bun add github:wess/atlas/packages/auth
+git clone https://github.com/wess/atlas.git atlas
 ```
 
-Or add them to your `package.json`:
+Add atlas as a workspace and reference the packages you need:
 
 ```json
 {
+  "workspaces": ["atlas/packages/*"],
   "dependencies": {
-    "@atlas/config": "github:wess/atlas/packages/config",
-    "@atlas/db": "github:wess/atlas/packages/db",
-    "@atlas/server": "github:wess/atlas/packages/server",
-    "@atlas/auth": "github:wess/atlas/packages/auth"
+    "@atlas/config": "workspace:*",
+    "@atlas/db": "workspace:*",
+    "@atlas/server": "workspace:*",
+    "@atlas/auth": "workspace:*"
   }
 }
 ```
 
-For local development alongside the atlas repo:
-
-```json
-{
-  "@atlas/server": "file:../atlas/packages/server"
-}
+Then `bun install`. Add `atlas/` to your `.gitignore`.
 ```
 
 ## Claude Command
@@ -101,7 +94,21 @@ The command runs fully autonomously — it plans the architecture, builds all fi
 Build a user API with authentication in 60 lines.
 
 ```bash
-bun add github:wess/atlas/packages/config github:wess/atlas/packages/db github:wess/atlas/packages/migrate github:wess/atlas/packages/server github:wess/atlas/packages/auth
+git clone https://github.com/wess/atlas.git atlas
+```
+
+Add to `package.json`:
+```json
+{
+  "workspaces": ["atlas/packages/*"],
+  "dependencies": {
+    "@atlas/config": "workspace:*",
+    "@atlas/db": "workspace:*",
+    "@atlas/migrate": "workspace:*",
+    "@atlas/server": "workspace:*",
+    "@atlas/auth": "workspace:*"
+  }
+}
 ```
 
 Create `.env`:

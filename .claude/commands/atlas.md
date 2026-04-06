@@ -1,60 +1,64 @@
-Build a complete, working project using Atlas packages. Fully autonomous — no user input after this point.
+Build a complete, working project using Atlas packages. Fully autonomous — no questions, no user input.
 
-The user's idea: $ARGUMENTS
+Idea: $ARGUMENTS
 
-## Reference
+## Phase 0: Bootstrap Atlas
 
-Read `docs/api.md` once — it has every Atlas export in one file. Only read individual `packages/<name>/AGENTS.md` if you need deep detail on a specific package's patterns.
+Check if the atlas repo is available locally:
+1. Look for `../atlas/docs/api.md` or `./atlas/docs/api.md`
+2. If not found, clone it: `git clone https://github.com/wess/atlas.git atlas`
+
+This gives you both the API reference and the packages for `file:` dependencies.
 
 ## Phase 1: Plan
 
-Decide which Atlas packages the idea needs. Design:
-- Data model (schemas, relationships)
-- Routes and API surface
-- File structure: `src/<feature>/index.ts`, all lowercase, no dashes/underscores
-- Environment variables needed
+Read `docs/api.md` from the atlas repo. Pick packages, design schemas, routes, and file list. No interviews. Decide and go.
 
-Keep the plan short. File list + one-line purpose each.
+Conventions: all lowercase filenames, no dashes/underscores, `src/<feature>/index.ts`, functional only, no classes.
 
-## Phase 1.5: Install
+## Phase 2: Install
 
-Install the required Atlas packages from GitHub:
+Add atlas as a workspace in the project's package.json and reference packages via `workspace:*`:
 
-```bash
-bun add github:wess/atlas/packages/config github:wess/atlas/packages/db github:wess/atlas/packages/server
+```json
+{
+  "workspaces": ["atlas/packages/*"],
+  "dependencies": {
+    "@atlas/server": "workspace:*",
+    "@atlas/db": "workspace:*"
+  }
+}
 ```
 
-Run a single `bun add` with all needed packages. Only install what the plan calls for. Available packages: config, db, migrate, server, auth, storage, cache, request, cli, ui, admin, mcp, ai.
+Then run `bun install`.
 
-## Phase 2: Build
+Available packages: config, db, migrate, server, auth, storage, cache, request, cli, ui, admin, mcp, ai.
 
-Launch parallel agents (subagent_type "oh-my-claudecode:executor") split by concern:
+## Phase 3: Build
 
-- **Foundation:** config, schemas, db setup, migrations, .env.example
-- **Server:** routes, pipes, handlers, websockets/SSE if needed
-- **Features:** auth, storage, cache, AI — whatever the idea requires
-- **Frontend (if needed):** React components using @atlas/ui blocks
+Launch parallel agents (subagent_type "oh-my-claudecode:executor") split by concern. Give each agent ONLY the plan items and API signatures relevant to their scope — not the full api.md. Scopes:
 
-Each agent gets: the plan, `docs/api.md` contents, and their specific scope. They write real code, not stubs.
+- **Foundation:** config, schemas, db, migrations, .env.example
+- **Server:** routes, pipes, handlers, websockets/SSE
+- **Features:** auth, storage, cache, AI — as needed
+- **Frontend (if needed):** @atlas/ui + Bun HTML imports
 
-## Phase 3: Verify
+Use foreman (`@atlas/cli`) for dev.ts when running multiple processes (api + web).
 
-One agent (subagent_type "oh-my-claudecode:verifier") checks:
-1. All imports resolve to real Atlas exports (per docs/api.md)
-2. File naming conventions (lowercase, no dashes)
-3. No non-Atlas packages where Atlas has a solution
-4. `bunx tsc --noEmit` passes
-5. Fix issues directly, don't report back
+Real implementations only. No stubs, no TODOs.
 
-## Phase 4: Deliver
+## Phase 4: Verify
 
-Brief summary: what was built, which packages, how to run it, required env vars.
+One agent (subagent_type "oh-my-claudecode:verifier") runs `bunx tsc --noEmit`, checks imports, fixes issues.
+
+## Phase 5: Deliver
+
+One paragraph: what was built, how to run it, env vars needed.
 
 ## Rules
 
-- Never ask the user for input
-- Atlas packages only, Bun only, functional only, no classes
-- Immutable data, small files, real implementations
-- Read `docs/api.md` not individual AGENTS.md files (unless deep detail needed on one package)
-- Launch agents in parallel where work is independent
-- Atlas is not on npm. Use git references (e.g. `"@atlas/server": "github:wess/atlas/packages/server"`) or `file:` for local dev
+- Zero user interaction
+- Atlas + Bun only, functional, immutable, no classes
+- Minimize token usage: plan agent reads api.md once, passes only relevant excerpts to build agents
+- Use `workspace:*` references with `"workspaces": ["atlas/packages/*"]` in package.json
+- Add `atlas/` to .gitignore in the generated project

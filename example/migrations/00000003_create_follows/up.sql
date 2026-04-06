@@ -1,0 +1,7 @@
+CREATE TABLE follows (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  followerId INTEGER NOT NULL REFERENCES users(id),
+  followingId INTEGER NOT NULL REFERENCES users(id),
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(followerId, followingId)
+);

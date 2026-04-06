@@ -29,7 +29,15 @@ export const signup =
     }
 
     const query = from(opts.table).insert(record);
-    const rows = await opts.db.execute(query);
+    let rows: any[];
+    try {
+      rows = await opts.db.execute(query);
+    } catch (err: any) {
+      if (err?.code === "SQLITE_CONSTRAINT_UNIQUE" || err?.message?.includes("unique") || err?.message?.includes("duplicate")) {
+        return halt(conn, 409, { error: "An account with these details already exists." });
+      }
+      throw err;
+    }
     const user = rows[0] ?? record;
 
     return opts.onSuccess(conn, user);
@@ -59,7 +67,7 @@ export const login =
       });
     }
 
-    const query = from(opts.table).where(opts.identity, "=", identityValue);
+    const query = from(opts.table).where(q => q(opts.identity).equals(identityValue));
     const user = (await opts.db.one(query)) as Record<string, unknown> | null;
     if (!user) return halt(conn, 401, { error: "Invalid credentials" });
 
@@ -110,7 +118,7 @@ export const passwordReset =
     const email = body.email as string | undefined;
     if (!email) return halt(conn, 422, { error: "Missing 'email' field in request body." });
 
-    const query = from(opts.table).where("email", "=", email);
+    const query = from(opts.table).where(q => q("email").equals(email));
     const user = await opts.db.one(query);
 
     if (!user) {

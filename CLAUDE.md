@@ -4,19 +4,24 @@ Composable, functional Bun/TypeScript building blocks. No classes, no mutation, 
 
 ## Usage
 
-Atlas is a private repo, not on npm. Reference packages via git:
+Atlas is a private repo, not on npm. Clone it and use as a workspace:
+
+```bash
+git clone https://github.com/wess/atlas.git atlas
+```
 
 ```json
 {
+  "workspaces": ["atlas/packages/*"],
   "dependencies": {
-    "@atlas/config": "github:wess/atlas/packages/config",
-    "@atlas/db": "github:wess/atlas/packages/db",
-    "@atlas/server": "github:wess/atlas/packages/server"
+    "@atlas/config": "workspace:*",
+    "@atlas/db": "workspace:*",
+    "@atlas/server": "workspace:*"
   }
 }
 ```
 
-For local development, `file:` references also work: `"@atlas/db": "file:../atlas/packages/db"`
+Add `atlas/` to `.gitignore`.
 
 ## Bun Only
 
