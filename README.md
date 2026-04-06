@@ -10,10 +10,13 @@ No framework lock-in. No classes. Just functions and immutable data flowing thro
 
 ## Install
 
-Atlas is not on npm. Clone the repo and reference packages via `file:`:
+Atlas is not on npm. Download the latest source and reference packages as workspaces:
 
 ```bash
-git clone https://github.com/wess/atlas.git atlas
+curl -sL https://github.com/wess/atlas/archive/refs/heads/main.zip -o /tmp/atlas.zip
+unzip -q /tmp/atlas.zip -d /tmp/atlas-expand
+mv /tmp/atlas-expand/atlas-main ./atlas
+rm -rf /tmp/atlas.zip /tmp/atlas-expand
 ```
 
 Add atlas as a workspace and reference the packages you need:
@@ -46,11 +49,13 @@ mkdir -p ~/.claude/commands
 curl -o ~/.claude/commands/atlas.md https://raw.githubusercontent.com/wess/atlas/main/.claude/commands/atlas.md
 ```
 
-Or clone the repo and copy manually:
+Or download and copy manually:
 
 ```bash
-git clone https://github.com/wess/atlas.git
-cp atlas/.claude/commands/atlas.md ~/.claude/commands/atlas.md
+curl -sL https://github.com/wess/atlas/archive/refs/heads/main.zip -o /tmp/atlas.zip
+unzip -q /tmp/atlas.zip -d /tmp/atlas-expand
+cp /tmp/atlas-expand/atlas-main/.claude/commands/atlas.md ~/.claude/commands/atlas.md
+rm -rf /tmp/atlas.zip /tmp/atlas-expand
 ```
 
 ### Usage
@@ -94,7 +99,10 @@ The command runs fully autonomously — it plans the architecture, builds all fi
 Build a user API with authentication in 60 lines.
 
 ```bash
-git clone https://github.com/wess/atlas.git atlas
+curl -sL https://github.com/wess/atlas/archive/refs/heads/main.zip -o /tmp/atlas.zip
+unzip -q /tmp/atlas.zip -d /tmp/atlas-expand
+mv /tmp/atlas-expand/atlas-main ./atlas
+rm -rf /tmp/atlas.zip /tmp/atlas-expand
 ```
 
 Add to `package.json`:

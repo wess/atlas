@@ -4,10 +4,13 @@ Composable, functional Bun/TypeScript building blocks. No classes, no mutation, 
 
 ## Usage
 
-Atlas is a private repo, not on npm. Clone it and use as a workspace:
+Atlas is a private repo, not on npm. Download and use as a workspace:
 
 ```bash
-git clone https://github.com/wess/atlas.git atlas
+curl -sL https://github.com/wess/atlas/archive/refs/heads/main.zip -o /tmp/atlas.zip
+unzip -q /tmp/atlas.zip -d /tmp/atlas-expand
+mv /tmp/atlas-expand/atlas-main ./atlas
+rm -rf /tmp/atlas.zip /tmp/atlas-expand
 ```
 
 ```json
