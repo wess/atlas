@@ -1,106 +1,56 @@
+# Atlas
 
-Default to using Bun instead of Node.js.
+Composable, functional Bun/TypeScript building blocks. No classes, no mutation, no Node.js alternatives.
 
-- Use `bun <file>` instead of `node <file>` or `ts-node <file>`
-- Use `bun test` instead of `jest` or `vitest`
-- Use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
-- Use `bun install` instead of `npm install` or `yarn install` or `pnpm install`
-- Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
-- Use `bunx <package> <command>` instead of `npx <package> <command>`
-- Bun automatically loads .env, so don't use dotenv.
+## Usage
 
-## APIs
+Atlas is a private repo, not on npm. Reference packages via git:
 
-- `Bun.serve()` supports WebSockets, HTTPS, and routes. Don't use `express`.
-- `bun:sqlite` for SQLite. Don't use `better-sqlite3`.
-- `Bun.redis` for Redis. Don't use `ioredis`.
-- `Bun.sql` for Postgres. Don't use `pg` or `postgres.js`.
-- `WebSocket` is built-in. Don't use `ws`.
-- Prefer `Bun.file` over `node:fs`'s readFile/writeFile
-- Bun.$`ls` instead of execa.
-
-## Testing
-
-Use `bun test` to run tests.
-
-```ts#index.test.ts
-import { test, expect } from "bun:test";
-
-test("hello world", () => {
-  expect(1).toBe(1);
-});
-```
-
-## Frontend
-
-Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
-
-Server:
-
-```ts#index.ts
-import index from "./index.html"
-
-Bun.serve({
-  routes: {
-    "/": index,
-    "/api/users/:id": {
-      GET: (req) => {
-        return new Response(JSON.stringify({ id: req.params.id }));
-      },
-    },
-  },
-  // optional websocket support
-  websocket: {
-    open: (ws) => {
-      ws.send("Hello, world!");
-    },
-    message: (ws, message) => {
-      ws.send(message);
-    },
-    close: (ws) => {
-      // handle close
-    }
-  },
-  development: {
-    hmr: true,
-    console: true,
+```json
+{
+  "dependencies": {
+    "@atlas/config": "github:wess/atlas/packages/config",
+    "@atlas/db": "github:wess/atlas/packages/db",
+    "@atlas/server": "github:wess/atlas/packages/server"
   }
-})
-```
-
-HTML files can import .tsx, .jsx or .js files directly and Bun's bundler will transpile & bundle automatically. `<link>` tags can point to stylesheets and Bun's CSS bundler will bundle.
-
-```html#index.html
-<html>
-  <body>
-    <h1>Hello, world!</h1>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
-```
-
-With the following `frontend.tsx`:
-
-```tsx#frontend.tsx
-import React from "react";
-import { createRoot } from "react-dom/client";
-
-// import .css files directly and it works
-import './index.css';
-
-const root = createRoot(document.body);
-
-export default function Frontend() {
-  return <h1>Hello, world!</h1>;
 }
-
-root.render(<Frontend />);
 ```
 
-Then, run index.ts
+For local development, `file:` references also work: `"@atlas/db": "file:../atlas/packages/db"`
 
-```sh
-bun --hot ./index.ts
-```
+## Bun Only
 
-For more information, read the Bun API docs in `node_modules/bun-types/docs/**.mdx`.
+`bun <file>` | `bun test` | `bun install` | `Bun.serve()` | `bun:sqlite` | `Bun.sql` | `Bun.redis` | `Bun.file` | No dotenv (Bun loads .env).
+
+## Packages
+
+| Import | Purpose |
+|--------|---------|
+| `@atlas/config` | Typed env vars via `defineConfig`, `env` |
+| `@atlas/db` | Query builder, schemas, changesets, Postgres/SQLite drivers |
+| `@atlas/migrate` | Timestamped SQL migrations |
+| `@atlas/server` | Pipe-based HTTP server, router, response helpers |
+| `@atlas/server/ws` | WebSocket channels, rooms |
+| `@atlas/server/sse` | Server-sent events |
+| `@atlas/auth` | Password hashing, JWT, sessions, auth flow pipes |
+| `@atlas/storage` | S3-compatible storage, presigned URLs |
+| `@atlas/cache` | Redis caching with TTL, cache-aside |
+| `@atlas/request` | HTTP client, retries, interceptors |
+| `@atlas/cli` | CLI framework, Foreman, scaffolding |
+| `@atlas/ui/*` | React + Mantine blocks (provider/forms/table/auth/storage/nav/cache/ai) |
+| `@atlas/admin` | Auto-generated CRUD admin from schemas |
+| `@atlas/mcp` | MCP server for AI debugging |
+| `@atlas/ai` | AI providers, chat, embeddings, RAG, agents, streaming |
+
+## Conventions
+
+- All lowercase filenames, no dashes/underscores/spaces
+- Structure: `src/<feature>/index.ts` not `src/feature-name.ts`
+- Small focused files, one concern each
+- Immutable data, return new objects
+- Pipes compose via `pipeline()`, `halt()` short-circuits
+
+## Reference
+
+Each package has `packages/<name>/AGENTS.md` with full API docs.
+Condensed reference: `docs/api.md` has all exports in one file.
