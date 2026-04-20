@@ -28,7 +28,7 @@ Add `atlas/` to `.gitignore`.
 
 ## Bun Only
 
-`bun <file>` | `bun test` | `bun install` | `Bun.serve()` | `bun:sqlite` | `Bun.sql` | `Bun.redis` | `Bun.file` | No dotenv (Bun loads .env).
+`bun <file>` | `bun test` | `bun install` | `Bun.serve()` | `bun:sqlite` | `Bun.sql` | `Bun.redis` | `Bun.file` | `Bun.password` | No dotenv (Bun loads .env).
 
 ## Packages
 
@@ -50,6 +50,8 @@ Add `atlas/` to `.gitignore`.
 | `@atlas/mcp` | MCP server for AI debugging |
 | `@atlas/ai` | AI providers, chat, embeddings, RAG, agents, streaming |
 
+Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. Subpath exports: `@atlas/server/ws`, `@atlas/server/sse`, `@atlas/ui/*`.
+
 ## Conventions
 
 - All lowercase filenames, no dashes/underscores/spaces
@@ -57,8 +59,22 @@ Add `atlas/` to `.gitignore`.
 - Small focused files, one concern each
 - Immutable data, return new objects
 - Pipes compose via `pipeline()`, `halt()` short-circuits
+- Zero external runtime deps except `zod` (in `@atlas/db`) and React/Mantine (in `@atlas/ui`, `@atlas/admin`) — wrap Bun/Web APIs, not packages
+
+## Scripts
+
+- `bun test` — run suite (tests live in `packages/*/test/`)
+- `bun run check` — biome lint + format check
+- `bun run tidy` — biome auto-fix (format + lint)
+- biome only; no prettier, no eslint
+
+## Examples & Templates
+
+- `example/` — Chirp, a working Twitter-like demo (auth, posts, follows, likes); `bun run dev`
+- `templates/` — 9 scaffolds: `minimal`, `api`, `admin`, `realtime`, `ai`, `fullstack`, `worker`, `socialnetwork`, `cms`
+- `.claude/commands/atlas.md` — `/atlas <description>` autonomous project builder
 
 ## Reference
 
-Each package has `packages/<name>/AGENTS.md` with full API docs.
-Condensed reference: `docs/api.md` has all exports in one file.
+Each package has `packages/<name>/AGENTS.md` with full API docs (exports, types, usage, deps).
+Condensed API: `docs/api.md`. Architecture deep-dive: `docs/overview.md`.
