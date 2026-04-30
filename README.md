@@ -85,6 +85,9 @@ The command runs fully autonomously — it plans the architecture, builds all fi
 | `@atlas/migrate` | Database migration manager | none |
 | `@atlas/server` | Bun.serve with Plug-inspired pipe system | none |
 | `@atlas/auth` | Password hashing, JWT, session management, auth flows | none |
+| `@atlas/security` | CSP/headers, rate limit, audit log, TOTP, revocable DB-backed sessions | none |
+| `@atlas/oauth` | OAuth 2.1 server: PKCE, refresh rotation, device flow, RFC 8414 discovery | none |
+| `@atlas/email` | Provider-agnostic transport (Resend) + invite/reset templates | none |
 | `@atlas/storage` | S3-compatible object storage with presigned URLs | none |
 | `@atlas/cache` | Redis-backed caching with TTL and cache-aside patterns | none |
 | `@atlas/request` | HTTP client with retries, interceptors, provider configs | none |

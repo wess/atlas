@@ -41,6 +41,9 @@ Add `atlas/` to `.gitignore`.
 | `@atlas/server/ws` | WebSocket channels, rooms |
 | `@atlas/server/sse` | Server-sent events |
 | `@atlas/auth` | Password hashing, JWT, sessions, auth flow pipes |
+| `@atlas/security` | CSP/headers, rate limit, audit log, TOTP, DB-backed revocable sessions |
+| `@atlas/oauth` | OAuth 2.1 server (PKCE, refresh rotation, device flow, discovery) |
+| `@atlas/email` | Provider-agnostic email transport + invite/reset templates |
 | `@atlas/storage` | S3-compatible storage, presigned URLs |
 | `@atlas/cache` | Redis caching with TTL, cache-aside |
 | `@atlas/request` | HTTP client, retries, interceptors |

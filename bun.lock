@@ -128,6 +128,17 @@
         "typescript": "^5",
       },
     },
+    "packages/security": {
+      "name": "@atlas/security",
+      "version": "0.0.1",
+      "dependencies": {
+        "@atlas/auth": "workspace:*",
+        "@atlas/db": "workspace:*",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
     "packages/server": {
       "name": "@atlas/server",
       "version": "0.0.1",
@@ -179,6 +190,8 @@
     "@atlas/migrate": ["@atlas/migrate@workspace:packages/migrate"],
 
     "@atlas/request": ["@atlas/request@workspace:packages/request"],
+
+    "@atlas/security": ["@atlas/security@workspace:packages/security"],
 
     "@atlas/server": ["@atlas/server@workspace:packages/server"],
 
