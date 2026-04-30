@@ -68,7 +68,11 @@ const signedFetch = async (
   return fetch(url.toString(), {
     method,
     headers,
-    body: bodyBytes,
+    // BodyInit's generic narrowing rejects Uint8Array<ArrayBufferLike>
+    // (it accepts ArrayBuffer-backed only). At runtime fetch accepts any
+    // Uint8Array, so cast at the boundary rather than reallocating. Cast
+    // via `unknown` because `BodyInit` isn't in Atlas's `lib: ["ESNext"]`.
+    body: bodyBytes as unknown as RequestInit["body"],
   });
 };
 
