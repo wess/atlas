@@ -2,6 +2,21 @@
 
 S3-compatible object storage with zero external dependencies.
 
+## Exports
+
+- `createStore(opts)` → `Store`
+- `upload(store, { key, body, contentType? })` → `Promise<{ key, url }>`
+- `download(store, key)` → `Promise<Response>`
+- `remove(store, key)` → `Promise<void>` (no-ops on 404)
+- `list(store, prefix?)` → `Promise<ListResult>`
+- `presign(store, key, { expires?, method? })` → `string`
+
+## Types
+
+- `Store = { endpoint, bucket, region, accessKey, secretKey }`
+- `UploadOptions = { key; body: string | Uint8Array | Blob | ReadableStream; contentType? }`
+- `ListResult = { keys: string[]; truncated: boolean }`
+
 ## Architecture
 
 - `store/` — Store type and createStore factory
@@ -65,3 +80,8 @@ S3_TEST=1 bun test packages/storage/ # includes operations (needs S3 server)
 - Functional style, no classes
 - Zero external dependencies (node:crypto only)
 - All files lowercase, no dashes or underscores
+
+## Dependencies
+
+- Sibling packages: none — `@atlas/storage` is standalone.
+- External: none. Uses `node:crypto` for AWS Signature V4 and `fetch` for transport.

@@ -81,13 +81,17 @@ export const router = (...routes: Route[]) => {
         return connToResponse(result);
       } catch (err) {
         console.error(`[atlas] Route error: ${req.method} ${url.pathname}`, err);
-        return new Response(
-          JSON.stringify({ error: "Internal Server Error", path: url.pathname, method: req.method }),
-          {
-            status: 500,
-            headers: { "content-type": "application/json" },
-          },
-        );
+        // Never echo the request path / method back in a 500 — it lets a
+        // probe correlate inputs with internal failures. Stack traces stay
+        // in the server log via console.error above.
+        const dev = process.env.NODE_ENV === "development";
+        const body = dev
+          ? { error: "Internal Server Error", path: url.pathname, method: req.method }
+          : { error: "Internal Server Error" };
+        return new Response(JSON.stringify(body), {
+          status: 500,
+          headers: { "content-type": "application/json" },
+        });
       }
     }
     return new Response("Not Found", { status: 404 });

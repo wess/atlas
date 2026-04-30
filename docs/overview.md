@@ -14,6 +14,9 @@ Atlas is a collection of composable, functional Bun/TypeScript packages for buil
 @atlas/migrate (depends on @atlas/db)
 @atlas/auth (depends on @atlas/db, @atlas/server)
 @atlas/admin (depends on @atlas/db, @atlas/server)
+@atlas/security (depends on @atlas/db, @atlas/auth)
+@atlas/oauth (depends on @atlas/db, @atlas/server, @atlas/auth)
+@atlas/email (standalone — no sibling deps)
 
 @atlas/cache (optional, can use @atlas/config)
 @atlas/request (standalone — no sibling deps)
@@ -99,6 +102,48 @@ const signupPipe = signup({
   onSuccess: (c, user) => json(c, 201, user),
 })
 ```
+
+### Security
+
+`@atlas/security` ships hardening primitives most apps end up writing themselves:
+
+- `withSecurityHeaders()` — strict default headers (HSTS, COOP/CORP, Permissions-Policy) and a CSP that defaults to `'self'`-only with no inline script in production. Also stashes the real Bun socket peer onto `req.peerIp` so downstream rate-limit / audit code does not have to trust client-supplied `X-Forwarded-For`.
+- `createDbRateLimit()` / `createMemoryRateLimit()` — atomic UPSERT on Postgres, transactional read-modify-write on SQLite, in-memory for tests.
+- `clientIp(req, { trustedProxies })` — only honors forwarded headers when the request actually arrived from a configured trusted proxy.
+- `createSessionStore()` — DB-backed, revocable JWT sessions with `last_used_at` tracking and a sweep helper. Pair with `@atlas/auth#requireAuth`.
+- `generateSecret` / `verifyTotp` / `otpauthUrl` / `generateBackupCodes` — pure `node:crypto` TOTP with backup codes.
+- `decideInline()` — safe-MIME allowlist for `Content-Disposition: inline` (never inlines SVG).
+- `createAuditLogger()` — fire-and-forget audit-event recorder; never throws, never blocks the response.
+
+### OAuth
+
+`@atlas/oauth` is an OAuth 2.1 server: PKCE-required authorization code, refresh-token rotation, device-code flow, RFC 8414 discovery, RFC 7009 revoke, and admin client management.
+
+```ts
+import { oauthRoutes } from "@atlas/oauth"
+
+serve({
+  routes: [
+    ...oauthRoutes({ db, issuer: "https://auth.example.com", findUser, ... }),
+    ...appRoutes,
+  ],
+})
+```
+
+`oauthRoutes(cfg)` returns every endpoint as a flat `Route[]` ready to spread into `serve`. Mount only what you need by calling the per-flow factories (`oauthAuthorizeRoutes`, `oauthTokenRoutes`, …) directly. Sweeps for expired auth codes / refresh tokens / device codes are exported separately so you can run them on a schedule.
+
+### Email
+
+`@atlas/email` is a provider-agnostic transport plus a small HTML shell and two stock templates.
+
+```ts
+import { createEmailer, inviteEmail } from "@atlas/email"
+
+const emailer = createEmailer({ apiKey: process.env.RESEND_API_KEY, from: process.env.RESEND_FROM })
+await emailer.send({ to: "user@example.com", ...inviteEmail({ inviterName, product, signupUrl }) })
+```
+
+`createEmailer` returns the real Resend transport when both env vars are set and a console transport otherwise — dev environments stay unblocked without configuring a sending domain. `send` never throws; failures come back as `{ ok: false, error }`. The included `layout()` is a 560px Outlook-friendly card; always pass user-supplied strings through `escapeHtml`.
 
 ### Storage
 
@@ -377,6 +422,9 @@ LLMs can read `packages/db/AGENTS.md` instead of traversing 20+ source files. Th
 | migrate | none |
 | server | none |
 | auth | none |
+| security | none |
+| oauth | none |
+| email | none |
 | storage | none |
 | cache | none |
 | request | none |
@@ -393,6 +441,6 @@ Total: Only `zod` on the backend. Frontend uses React + Mantine + TanStack.
 - **Monorepo** — Bun workspaces
 - **Testing** — `bun test` across all packages
 - **TypeScript** — Strict mode
-- **Linting** — ESLint (configurable per package)
+- **Linting** — Biome (run `bun run check` / `bun run tidy`)
 - **File naming** — All lowercase, no dashes or underscores, subdirectories for organization
 - **Environment** — `.env` in root (Postgres on localhost, SQLite in memory for tests)

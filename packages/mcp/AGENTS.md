@@ -65,6 +65,26 @@ bun run packages/mcp/entry.ts
 
 Environment variables: `DATABASE_URL`, `DATABASE_PATH`, `REDIS_URL`, `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_REGION`.
 
+## Types
+
+- `McpServer = { start(): Promise<void>; stop(): Promise<void> }`
+- `AtlasMcpContext = { db?, cache?, routes?, config?, storage?, migrationsDir?, logBuffer? }`
+- `Tool = { name; description; inputSchema; handler(input, ctx) → Promise<unknown> }`
+- `ToolInput` — JSON-schema-shaped input descriptor
+
+## Dependencies
+
+Sibling packages are *optional* — pass only the services you want exposed:
+
+- `@atlas/db` — enables `db.*` and `migrate.*` tools
+- `@atlas/cache` — enables `cache.*` tools
+- `@atlas/server` — enables `routes.list`
+- `@atlas/config` — enables `config.show` (secrets redacted)
+- `@atlas/storage` — enables `storage.*` tools
+- `@atlas/migrate` — enables `migrate.up` / `migrate.down`
+
+External: none. Pure JSON-RPC over stdio with Content-Length framing.
+
 ## Testing
 
 ```sh

@@ -2,6 +2,49 @@
 
 Unified AI provider abstraction with chat, embeddings, streaming, RAG, and agent support. Zero external dependencies -- uses fetch for all API calls.
 
+## Exports
+
+Provider:
+- `createProvider({ provider, key?, baseUrl? })` → `AiProvider` — provider is `"openai" | "anthropic" | "ollama"`
+- `AiProvider` exposes `.chat(opts)`, `.chatStream(opts)`, `.embed(opts)`
+
+Chat:
+- `createConversation(system?)` → `Conversation`
+- `addMessage(conv, msg)` → `Conversation` (immutable)
+- `send(provider, conv, content, opts?)` → `{ conversation, response }`
+- `userMessage`, `assistantMessage`, `systemMessage`, `toolMessage`
+
+Stream:
+- `parseSSE(text)` → events
+- `collectStream(stream)` → `ChatResponse`
+- `streamToSse(stream)` → `ReadableStream` (for HTTP responses)
+
+Embeddings:
+- `embed(provider, inputs, opts?)` → `number[][]`
+- `cosineSimilarity(a, b)` → `number`
+- `createVectorStore()` → `{ add, search, size }`
+
+Structured / tools:
+- `generateJson<T>(provider, prompt, opts?)` → `T`
+- `tool(name, description, schema)` → `ToolDefinition`
+
+RAG:
+- `index(rag, id, text)` → `Promise<void>` — `rag = { ai, store, topK? }`
+- `query(rag, question)` → `{ answer, sources }`
+
+Agents:
+- `runAgent({ ai, system?, tools, maxIterations? }, prompt)` → result
+
+Server pipe:
+- `withAi(provider)` → `PipeFn` — adds `provider` to `conn.assigns.ai`
+
+## Types
+
+- `ProviderConfig`, `Message`, `ChatOptions`, `ChatResponse`, `StreamChunk`
+- `EmbedOptions`, `EmbedResponse`, `ToolDef`, `ToolCall`
+- `Conversation`, `VectorStore`, `VectorEntry`, `RagOptions`
+- `AgentTool`, `AgentOptions`
+
 ## Provider setup
 
 ```ts
@@ -105,6 +148,11 @@ const aiPipe = withAi(openai)
 - `rag/` -- Retrieval-augmented generation pipeline
 - `agents/` -- Tool-use agent loop with iteration limits
 - `pipes/` -- Server middleware integration
+
+## Dependencies
+
+- `@atlas/server` — only for the `withAi` pipe; the rest of the package stands alone.
+- External: none. All provider calls go through `fetch`.
 
 ## Testing
 

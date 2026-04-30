@@ -62,36 +62,38 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
             const order = (c.query.order ?? "asc").toUpperCase() as "ASC" | "DESC";
             const search = c.query.search;
 
-            let query = from(table);
-
-            // Search across searchable fields
-            if (search && modelCfg.searchFields?.length) {
-              const fields = modelCfg.searchFields;
-              query = query.where((q) => q.or(...fields.map((f) => q(f).like(`%${search}%`))));
-            }
-
-            // Apply filters
-            if (modelCfg.filterFields) {
-              for (const field of modelCfg.filterFields) {
-                const val = c.query[`filter.${field}`];
-                if (val !== undefined) {
-                  query = query.where((q) => q(field).equals(val));
+            // Build the where chain once and apply it to both the data query
+            // and the count query so pagination metadata reflects the filtered
+            // result set, not the whole table.
+            const applyFilters = <T extends ReturnType<typeof from>>(q: T): T => {
+              let next = q as any;
+              if (search && modelCfg.searchFields?.length) {
+                const fields = modelCfg.searchFields;
+                next = next.where((b: any) => b.or(...fields.map((f) => b(f).like(`%${search}%`))));
+              }
+              if (modelCfg.filterFields) {
+                for (const field of modelCfg.filterFields) {
+                  const val = c.query[`filter.${field}`];
+                  if (val !== undefined) {
+                    next = next.where((b: any) => b(field).equals(val));
+                  }
                 }
               }
-            }
+              return next as T;
+            };
 
-            // Sort
+            let query = applyFilters(from(table));
+
             if (sort) {
               query = query.orderBy(sort, order);
             }
 
-            // Select specific fields for list view
             if (modelCfg.listFields?.length) {
               query = query.select(...modelCfg.listFields);
             }
 
-            // Count
-            const countResult = await config.db.one(from(table).select(raw("count(*) as total")));
+            const countQuery = applyFilters(from(table)).select(raw("count(*) as total"));
+            const countResult = await config.db.one(countQuery);
             const total = countResult?.total ?? 0;
 
             const rows = await config.db.all(query.limit(limit).offset(offset));

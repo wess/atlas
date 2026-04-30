@@ -19,8 +19,17 @@ const getSigningKey = (secretKey: string, dateStamp: string, region: string, ser
   return hmacSha256(kService, "aws4_request");
 };
 
+// S3 caps presigned URL lifetime at 7 days (604800s). Anything above is
+// rejected at fetch time, so clamp here and surface a clear error if the
+// caller asks for a non-positive value.
+const MAX_PRESIGN_SECONDS = 604800;
+
 export const presign = (store: Store, key: string, opts?: { expires?: number; method?: string }): string => {
-  const expires = opts?.expires ?? 3600;
+  const requested = opts?.expires ?? 3600;
+  if (!Number.isFinite(requested) || requested <= 0) {
+    throw new Error("presign: `expires` must be a positive number of seconds");
+  }
+  const expires = Math.min(Math.floor(requested), MAX_PRESIGN_SECONDS);
   const method = opts?.method ?? "GET";
 
   const url = new URL(`/${store.bucket}/${key}`, store.endpoint);

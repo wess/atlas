@@ -1,6 +1,24 @@
 export const escapeHtml = (s: string): string =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
+/**
+ * Validate a URL is safe to drop into an HTML `href`. Only `http`, `https`,
+ * and `mailto` are returned escaped; anything else (`javascript:`, `data:`,
+ * `vbscript:`, malformed) collapses to `#` so it can't execute in a permissive
+ * email client.
+ */
+export const safeHref = (url: string): string => {
+  try {
+    const u = new URL(url);
+    if (u.protocol === "http:" || u.protocol === "https:" || u.protocol === "mailto:") {
+      return escapeHtml(url);
+    }
+  } catch {
+    // not an absolute URL — fall through
+  }
+  return "#";
+};
+
 export type LayoutOptions = {
   readonly title: string;
   readonly body: string;
@@ -95,14 +113,15 @@ export const inviteEmail = (opts: InviteEmailOptions): RenderedEmail => {
     ? `<blockquote style="border-left: 3px solid ${opts.accent ?? "#5e81ac"}; padding: 4px 14px; color: #3b4252; margin: 16px 0; font-style: italic;">${escapeHtml(opts.note)}</blockquote>`
     : "";
 
+  const safeSignup = safeHref(opts.signupUrl);
   const body = `
     <p><strong>${escapeHtml(inviter)}</strong> invited you to join ${escapeHtml(opts.product)}. ${escapeHtml(tagline)}</p>
     ${noteBlock}
     <p style="margin: 24px 0;">
-      <a href="${opts.signupUrl}" class="btn">Accept invite</a>
+      <a href="${safeSignup}" class="btn">Accept invite</a>
     </p>
     <p style="font-size: 13px; color: #4c566a;">Or paste this URL into your browser:<br>
-      <a href="${opts.signupUrl}" style="word-break: break-all;">${escapeHtml(opts.signupUrl)}</a>
+      <a href="${safeSignup}" style="word-break: break-all;">${escapeHtml(opts.signupUrl)}</a>
     </p>
     <p style="font-size: 13px; color: #4c566a;">If you weren't expecting this, you can ignore the email.</p>
   `;
@@ -136,13 +155,14 @@ export const passwordResetEmail = (opts: PasswordResetOptions): RenderedEmail =>
     `This link expires in ${expiry} minutes. If you didn't request a reset, you can ignore this email.`,
   ].join("\n");
 
+  const safeReset = safeHref(opts.resetUrl);
   const body = `
     <p>Someone requested a password reset for your ${escapeHtml(opts.product)} account.</p>
     <p style="margin: 24px 0;">
-      <a href="${opts.resetUrl}" class="btn">Reset password</a>
+      <a href="${safeReset}" class="btn">Reset password</a>
     </p>
     <p style="font-size: 13px; color: #4c566a;">Or paste this URL into your browser:<br>
-      <a href="${opts.resetUrl}" style="word-break: break-all;">${escapeHtml(opts.resetUrl)}</a>
+      <a href="${safeReset}" style="word-break: break-all;">${escapeHtml(opts.resetUrl)}</a>
     </p>
     <p style="font-size: 13px; color: #4c566a;">This link expires in ${expiry} minutes. If you didn't request a reset, you can ignore this email.</p>
   `;

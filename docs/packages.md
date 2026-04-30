@@ -257,6 +257,171 @@ const guard = requireAuth({ secret: SECRET })
 
 ---
 
+## @atlas/security
+
+Security primitives: hardening headers + CSP, rate limiting (DB or memory), audit logging, TOTP/2FA, and DB-backed revocable JWT sessions.
+
+**Install:**
+```bash
+bun add @atlas/security @atlas/db @atlas/auth
+```
+
+**Core API:**
+
+Headers:
+- `withSecurityHeaders(fetch, opts?)` — Wrap a fetch handler with HSTS, CSP, COOP/CORP, Referrer-Policy, Permissions-Policy. Also stashes the Bun socket peer onto `req.peerIp`.
+- `developmentCsp` / `productionCsp` — Preset CSP strings.
+- `decideInline(mime, name, wantInline)` — Safe-MIME allowlist for `Content-Disposition: inline` (never inlines SVG).
+
+Rate limit:
+- `createDbRateLimit({ db })` / `createMemoryRateLimit()` — Returns `RateLimit` with `.check(bucket, max, windowSec)`.
+- `clientIp(req, { trustedProxies? })` — Real client IP; only honors `X-Forwarded-For` when the request arrived from a configured trusted proxy.
+- `userAgent(req)`, `parseTrustedProxies(env)`.
+
+Audit:
+- `createAuditLogger({ db })` — Fire-and-forget audit logger; never throws, never blocks the response.
+
+TOTP:
+- `generateSecret()`, `totpAt(secret, t)`, `verifyTotp(secret, code, { window? })`, `otpauthUrl(opts)`, `generateBackupCodes(n?)`.
+
+Sessions:
+- `createSessionStore<U>({ db, secret, ttlSeconds })` — DB-backed JWT sessions with `.issue`, `.isActive`, `.touch`, `.revoke`, `.revokeAll`, `.sweepExpired`.
+
+**Minimal Example:**
+```ts
+import {
+  withSecurityHeaders, clientIp, parseTrustedProxies,
+  createDbRateLimit, createSessionStore, verifyTotp,
+} from "@atlas/security"
+
+const trustedProxies = parseTrustedProxies(process.env.TRUSTED_PROXIES)
+const limiter = createDbRateLimit({ db })
+const sessions = createSessionStore({ db, secret: process.env.JWT_SECRET!, ttlSeconds: 86400 * 7 })
+
+const fetch = withSecurityHeaders(buildFetch(routes), { dev: process.env.NODE_ENV !== "production" })
+Bun.serve({ port: 3000, fetch })
+
+// per-route
+const ip = clientIp(req, { trustedProxies })
+const { ok, retryAfterSeconds } = await limiter.check(`signup:${ip}`, 5, 3600)
+
+// 2FA verification
+if (!verifyTotp(user.totp_secret, code, { window: 1 })) return halt(401)
+```
+
+**Schema:** rate-limit / audit / sessions tables — see `packages/security/AGENTS.md`.
+
+**Dependencies:** `@atlas/db`, `@atlas/auth` (sessions only)
+
+---
+
+## @atlas/oauth
+
+OAuth 2.1 authorization server. PKCE-required code flow, refresh-token rotation, device-code flow, RFC 8414 discovery, RFC 7009 revoke, and admin client management.
+
+**Install:**
+```bash
+bun add @atlas/oauth @atlas/db @atlas/server @atlas/auth
+```
+
+**Core API:**
+
+Routes:
+- `oauthRoutes(cfg, { basePath?, adminBasePath? })` — Returns every endpoint as a flat `Route[]`.
+- `oauthAuthorizeRoutes` / `oauthTokenRoutes` / `oauthRevokeRoutes` / `oauthDeviceRoutes` / `oauthDiscoveryRoutes` / `oauthClientRoutes` — Per-flow factories for partial mounts.
+
+Clients:
+- `findClient(db, clientId)`, `verifyClientCredentials(db, clientId, secret)`.
+
+Sweeps (run on a schedule):
+- `sweepExpired(db)`, `sweepExpiredAuthCodes(db)`, `sweepExpiredRefreshTokens(db)`, `sweepExpiredDeviceCodes(db)`.
+
+Helpers:
+- `parseScope`, `formatScope`, `includesScopes`, `isAllowedRedirect`, `verifyPkceS256`, `randomId`, `shortId`, `sha256`, `newUserCode`, `normalizeUserCode`.
+
+Constants:
+- `ACCESS_TOKEN_TTL_SECONDS`, `REFRESH_TOKEN_TTL_SECONDS`, `AUTH_CODE_TTL_SECONDS`, `DEVICE_CODE_TTL_SECONDS`, `DEVICE_POLL_INTERVAL_SECONDS`.
+
+**Minimal Example:**
+```ts
+import { oauthRoutes, sweepExpired } from "@atlas/oauth"
+import { serve } from "@atlas/server"
+
+serve({
+  port: 3000,
+  routes: [
+    ...oauthRoutes({
+      db,
+      issuer: "https://auth.example.com",
+      findUser: async (id) => db.one(from(users).where(q => q("id").equals(id))),
+      // … audit, login URL, consent URL, etc.
+    }),
+    ...appRoutes,
+  ],
+})
+
+// nightly cleanup
+setInterval(() => sweepExpired(db), 24 * 60 * 60 * 1000)
+```
+
+**Dependencies:** `@atlas/db`, `@atlas/server`, `@atlas/auth`
+
+---
+
+## @atlas/email
+
+Provider-agnostic email transport plus a small HTML shell and ready-made invite + password-reset templates. Zero external dependencies.
+
+**Install:**
+```bash
+bun add @atlas/email
+```
+
+**Core API:**
+
+Transports:
+- `createEmailer({ apiKey?, from? })` — Auto-picks Resend when both env vars are set, otherwise the console transport.
+- `createResendEmailer({ apiKey, from })` — Real Resend transport.
+- `createConsoleEmailer()` — Dev fallback; logs subject/body and returns `{ ok: true, logged: true }`.
+
+Types:
+- `Emailer = { enabled, send(msg) → Promise<SendResult> }`
+- `EmailMessage = { to, subject, html, text?, replyTo?, from? }`
+- `SendResult = { ok: true, id?, logged? } | { ok: false, error }`
+
+Templates:
+- `inviteEmail(opts)` — `{ subject, html, text }` invite email; supports `brand` and `accent`.
+- `passwordResetEmail(opts)` — Same shape; reset email.
+- `layout({ title, body, brand?, footer?, accent? })` — 560px Outlook-friendly card.
+- `escapeHtml(s)` — Always wrap untrusted input.
+
+**Minimal Example:**
+```ts
+import { createEmailer, inviteEmail } from "@atlas/email"
+
+const emailer = createEmailer({
+  apiKey: process.env.RESEND_API_KEY,
+  from: process.env.RESEND_FROM,
+})
+
+const result = await emailer.send({
+  to: "user@example.com",
+  ...inviteEmail({
+    inviterName: "Wess",
+    product: "Atlas",
+    signupUrl: "https://app.example.com/signup?invite=…",
+  }),
+})
+
+if (!result.ok) audit.log({ event: "email.failed", metadata: { error: result.error } })
+```
+
+`send` never throws — failures come back as `{ ok: false, error }`. Surface those (or audit-log them) rather than ignoring.
+
+**Dependencies:** None
+
+---
+
 ## @atlas/storage
 
 S3-compatible object storage with presigned URLs.
@@ -675,6 +840,9 @@ const result = await codeAgent.run("Fix the failing test")
 | Run migrations | `@atlas/migrate` |
 | Create HTTP API | `@atlas/server` |
 | Add auth (password, JWT) | `@atlas/auth` |
+| Harden headers, rate limit, audit, 2FA, sessions | `@atlas/security` |
+| Run an OAuth 2.1 server (PKCE, device flow) | `@atlas/oauth` |
+| Send email (invites, resets) | `@atlas/email` |
 | Upload files | `@atlas/storage` |
 | Cache data | `@atlas/cache` |
 | Call external APIs | `@atlas/request` |

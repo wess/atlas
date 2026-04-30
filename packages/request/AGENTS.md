@@ -102,6 +102,21 @@ Available providers: `github`, `stripe`, `openai`, `resend`.
 - `providers/index.ts` -- preconfigured clients
 - `index.ts` -- re-exports
 
+## Types
+
+- `RequestOptions = { method?, headers?, json?, body?, retry?, signal?, ... }`
+- `Client = { get, post, put, patch, del, request }` — all return `Promise<Response>`
+- `ClientOptions = { baseUrl, headers?, retry?, interceptors? }`
+- `RetryOptions = { attempts?, delay?, backoff?, retryOn? }`
+- `Interceptors = { request?: RequestInterceptor[]; response?: ResponseInterceptor[] }`
+- `RequestInterceptor = (url, init) => { url, init }` (or Promise of)
+- `ResponseInterceptor = (res) => Response` (or Promise of)
+
+## Dependencies
+
+- Sibling packages: none — `@atlas/request` is standalone.
+- External: none. Built on the platform `fetch`.
+
 ## Testing
 
 ```sh

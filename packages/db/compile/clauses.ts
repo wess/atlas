@@ -140,17 +140,20 @@ export const compileConflict = (
     ? spec.updateColumns
     : insertColumns.filter((col) => !spec.target.includes(col) && !(spec.excludeFromUpdate ?? []).includes(col));
 
-  const setClauses = columnsToUpdate.map((col) => `${validateIdentifier(col)} = EXCLUDED.${col}`);
+  const setClauses = columnsToUpdate.map((col) => {
+    const ident = validateIdentifier(col);
+    return `${ident} = EXCLUDED.${ident}`;
+  });
 
   if (spec.setExtra) {
     for (const [col, val] of Object.entries(spec.setExtra)) {
-      validateIdentifier(col);
+      const ident = validateIdentifier(col);
       if (isFragment(val)) {
         const renumbered = renumberParams(val.sql, counter);
         values.push(...val.values);
-        setClauses.push(`${col} = ${renumbered}`);
+        setClauses.push(`${ident} = ${renumbered}`);
       } else {
-        setClauses.push(`${col} = ${counter.next()}`);
+        setClauses.push(`${ident} = ${counter.next()}`);
         values.push(val);
       }
     }

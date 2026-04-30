@@ -33,7 +33,11 @@ export const signup =
     try {
       rows = await opts.db.execute(query);
     } catch (err: any) {
-      if (err?.code === "SQLITE_CONSTRAINT_UNIQUE" || err?.message?.includes("unique") || err?.message?.includes("duplicate")) {
+      if (
+        err?.code === "SQLITE_CONSTRAINT_UNIQUE" ||
+        err?.message?.includes("unique") ||
+        err?.message?.includes("duplicate")
+      ) {
         return halt(conn, 409, { error: "An account with these details already exists." });
       }
       throw err;
@@ -67,7 +71,7 @@ export const login =
       });
     }
 
-    const query = from(opts.table).where(q => q(opts.identity).equals(identityValue));
+    const query = from(opts.table).where((q) => q(opts.identity).equals(identityValue));
     const user = (await opts.db.one(query)) as Record<string, unknown> | null;
     if (!user) return halt(conn, 401, { error: "Invalid credentials" });
 
@@ -105,6 +109,15 @@ export const requireAuth =
 type PasswordResetOptions = {
   readonly db: Connection;
   readonly table: string;
+  /**
+   * Secret used to sign the reset JWT. The endpoint that consumes the token
+   * must verify with the same secret — typically a dedicated env var like
+   * `PASSWORD_RESET_SECRET` so revoking it invalidates all outstanding resets
+   * without affecting login sessions.
+   */
+  readonly secret: string;
+  /** Token TTL in seconds. Default: 3600 (1 hour). */
+  readonly expiresIn?: number;
   readonly transport: (email: string, resetToken: string) => Promise<void>;
 };
 
@@ -118,14 +131,16 @@ export const passwordReset =
     const email = body.email as string | undefined;
     if (!email) return halt(conn, 422, { error: "Missing 'email' field in request body." });
 
-    const query = from(opts.table).where(q => q("email").equals(email));
+    const query = from(opts.table).where((q) => q("email").equals(email));
     const user = await opts.db.one(query);
 
     if (!user) {
       return json(conn, 200, { message: "If the email exists, a reset link has been sent" });
     }
 
-    const resetToken = await token.sign({ email, purpose: "password_reset" }, crypto.randomUUID(), { expiresIn: 3600 });
+    const resetToken = await token.sign({ email, purpose: "password_reset" }, opts.secret, {
+      expiresIn: opts.expiresIn ?? 3600,
+    });
     await opts.transport(email, resetToken);
 
     return json(conn, 200, { message: "If the email exists, a reset link has been sent" });

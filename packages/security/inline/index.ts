@@ -6,10 +6,24 @@
 
 const SAFE_INLINE_PREFIXES = ["image/", "video/", "audio/"] as const;
 const SAFE_INLINE_EXACT: ReadonlySet<string> = new Set(["application/pdf", "text/plain"]);
+// Hard-deny MIME types that any browser will execute as script, regardless of
+// what the safe prefixes might match. Covers image/svg+xml (SVG runs JS),
+// XHTML / MathML (parsed as XML, can host inline scripts), and a handful of
+// XML-flavored types that have historically been render-as-HTML in some
+// clients.
+const DANGEROUS_INLINE_MIMES: ReadonlySet<string> = new Set([
+  "image/svg+xml",
+  "application/xhtml+xml",
+  "application/mathml+xml",
+  "application/xml",
+  "text/xml",
+  "text/html",
+  "application/xhtml",
+]);
 
 const isSafeInlineMime = (mime: string): boolean => {
   const m = mime.toLowerCase().split(";")[0]?.trim() ?? "";
-  if (m === "image/svg+xml") return false;
+  if (DANGEROUS_INLINE_MIMES.has(m)) return false;
   if (SAFE_INLINE_EXACT.has(m)) return true;
   return SAFE_INLINE_PREFIXES.some((p) => m.startsWith(p));
 };

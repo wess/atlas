@@ -64,6 +64,13 @@ export type VerifyTotpOptions = {
   readonly window?: number;
 };
 
+const constantTimeEqual = (a: string, b: string): boolean => {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+};
+
 export const verifyTotp = (secret: string, code: string, opts: VerifyTotpOptions = {}): boolean => {
   const cleaned = code.replace(/\s+/g, "");
   if (!/^\d{6}$/.test(cleaned)) return false;
@@ -71,10 +78,13 @@ export const verifyTotp = (secret: string, code: string, opts: VerifyTotpOptions
   const step = opts.step ?? 30;
   const window = opts.window ?? 1;
   const counter = Math.floor(now.getTime() / 1000 / step);
+  // Walk every step in the window without short-circuiting so timing leaks
+  // nothing about which step matched (or whether any did).
+  let valid = false;
   for (let i = -window; i <= window; i++) {
-    if (hotp(secret, BigInt(counter + i)) === cleaned) return true;
+    if (constantTimeEqual(hotp(secret, BigInt(counter + i)), cleaned)) valid = true;
   }
-  return false;
+  return valid;
 };
 
 export type OtpAuthOptions = {

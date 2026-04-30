@@ -7,8 +7,23 @@ export type Cache = {
   readonly close: () => Promise<void>;
 };
 
-export const createMemoryCache = (): Cache => {
+// Cap the in-memory cache so a long-running process can't OOM. Map iteration
+// order is insertion order, so the first key is the oldest insert — close
+// enough to LRU for a dev/test cache. Override via `maxEntries` if you need
+// something larger.
+const DEFAULT_MAX_ENTRIES = 10_000;
+
+export const createMemoryCache = (opts?: { maxEntries?: number }): Cache => {
+  const max = opts?.maxEntries ?? DEFAULT_MAX_ENTRIES;
   const store = new Map<string, { value: string; expiresAt?: number }>();
+
+  const evictIfNeeded = () => {
+    while (store.size > max) {
+      const oldest = store.keys().next().value;
+      if (oldest === undefined) return;
+      store.delete(oldest);
+    }
+  };
 
   return {
     get: async <T = unknown>(key: string): Promise<T | null> => {
@@ -20,10 +35,13 @@ export const createMemoryCache = (): Cache => {
       }
       return JSON.parse(entry.value) as T;
     },
-    set: async (key, value, opts?) => {
+    set: async (key, value, setOpts?) => {
       const entry: { value: string; expiresAt?: number } = { value: JSON.stringify(value) };
-      if (opts?.ttl != null) entry.expiresAt = Date.now() + opts.ttl * 1000;
+      if (setOpts?.ttl != null) entry.expiresAt = Date.now() + setOpts.ttl * 1000;
+      // Refresh insertion order so frequently-set keys move to the back.
+      store.delete(key);
       store.set(key, entry);
+      evictIfNeeded();
     },
     del: async (key) => {
       store.delete(key);

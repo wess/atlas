@@ -14,9 +14,16 @@ const hmacSign = async (data: string, secret: string): Promise<string> => {
   return base64url.encode(new Uint8Array(sig));
 };
 
+const constantTimeEqual = (a: string, b: string): boolean => {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+};
+
 const hmacVerify = async (data: string, signature: string, secret: string): Promise<boolean> => {
   const expected = await hmacSign(data, secret);
-  return expected === signature;
+  return constantTimeEqual(expected, signature);
 };
 
 export type TokenPayload = Record<string, unknown> & {

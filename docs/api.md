@@ -80,6 +80,55 @@ requireAuth({ secret }) → PipeFn           reads Bearer token, sets conn.assig
 passwordReset({ db, table, transport }) → PipeFn
 ```
 
+## @atlas/email
+```
+createEmailer({ apiKey?, from? }) → Emailer    auto-picks Resend if both set, else console
+createResendEmailer({ apiKey, from }) → Emailer
+createConsoleEmailer() → Emailer               dev fallback; logs and returns ok:true
+Emailer: { enabled, send(msg) → Promise<SendResult> }
+EmailMessage: { to, subject, html, text?, replyTo?, from? }
+SendResult: { ok: true, id?, logged? } | { ok: false, error }
+inviteEmail(opts) | passwordResetEmail(opts) → { subject, html, text }
+layout({ title, body, brand?, footer?, accent? }) → string
+escapeHtml(s) → string                          always wrap untrusted input
+```
+
+## @atlas/oauth
+```
+oauthRoutes(cfg, { basePath?, adminBasePath? }) → Route[]   all OAuth endpoints
+oauthAuthorizeRoutes(cfg, base) | oauthTokenRoutes | oauthRevokeRoutes
+oauthDeviceRoutes | oauthDiscoveryRoutes | oauthClientRoutes(cfg, adminBase)
+findClient(db, id) | verifyClientCredentials(db, id, secret)
+sweepExpired(db) | sweepExpiredAuthCodes | sweepExpiredRefreshTokens | sweepExpiredDeviceCodes
+helpers: parseScope, formatScope, includesScopes, isAllowedRedirect,
+         verifyPkceS256, randomId, shortId, sha256, newUserCode, normalizeUserCode
+constants: ACCESS_TOKEN_TTL_SECONDS, REFRESH_TOKEN_TTL_SECONDS,
+           AUTH_CODE_TTL_SECONDS, DEVICE_CODE_TTL_SECONDS, DEVICE_POLL_INTERVAL_SECONDS
+types: OAuthConfig, OAuthUser, ClientRow, AuthCodeRow, RefreshTokenRow,
+       DeviceCodeRow, OAuthAuditEvent, RequestContext
+```
+
+## @atlas/security
+```
+withSecurityHeaders(fetch, { dev?, csp?, disableCsp? }) → fetch     HSTS/CSP/COOP/CORP + req.peerIp shim
+developmentCsp | productionCsp                                       string CSP presets
+decideInline(mime, name, wantInline) → { contentType, disposition }  safe-MIME allowlist for inline
+createDbRateLimit({ db }) | createMemoryRateLimit() → RateLimit      .check(bucket, max, windowSec)
+clientIp(req, { trustedProxies? }) → string                          honors X-Forwarded-For only via trusted proxy
+userAgent(req) → string | undefined
+parseTrustedProxies(env) → string[]
+createAuditLogger({ db }) → { log(event), ... }                      fire-and-forget; never throws
+createSessionStore<U>({ db, secret, ttlSeconds }) → SessionStore     DB-backed JWT sessions
+  .issue(user, ctx) .isActive(jti) .touch(jti) .revoke(jti, userId) .revokeAll(userId, keep?) .sweepExpired()
+newJti() → string
+generateSecret() → string                       TOTP base32 secret
+totpAt(secret, epochSec) → string               6-digit code at time
+verifyTotp(secret, code, { window? }) → bool    window=1 accepts ±30s
+otpauthUrl({ secret, account, issuer }) → string
+generateBackupCodes(n?) → string[]              store hashed
+base32Encode(bytes) | base32Decode(str)
+```
+
 ## @atlas/storage
 ```
 createStore({ endpoint, bucket, region, accessKey, secretKey }) → Store
