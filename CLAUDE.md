@@ -75,9 +75,12 @@ Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. S
 
 - `example/` — Chirp, a working Twitter-like demo (auth, posts, follows, likes); `bun run dev`
 - `templates/` — 9 scaffolds: `minimal`, `api`, `admin`, `realtime`, `ai`, `fullstack`, `worker`, `socialnetwork`, `cms`
-- `.claude/commands/atlas.md` — `/atlas <description>` autonomous project builder
 
-## Reference
+## Reference (read in this order)
 
-Each package has `packages/<name>/AGENTS.md` with full API docs (exports, types, usage, deps).
-Condensed API: `docs/api.md`. Architecture deep-dive: `docs/overview.md`.
+1. `packages/<name>/AGENTS.md` — per-package API (exports, types, usage, deps). Read only the package(s) you need.
+2. `docs/api.md` — condensed cross-package API lookup.
+3. `docs/cookbook.md` — patterns/recipes that don't justify a package.
+4. `docs/overview.md` — architecture deep-dive. Skip unless explicitly needed.
+
+Do not load multiple docs speculatively. AGENTS.md per package is canonical.

@@ -36,46 +36,6 @@ Add atlas as a workspace and reference the packages you need:
 Then `bun install`. Add `atlas/` to your `.gitignore`.
 ```
 
-## Claude Command
-
-Atlas ships with a `/atlas` command for Claude Code that autonomously builds entire projects from a description.
-
-### Install
-
-Copy the command to your global Claude Code commands so it's available in any project:
-
-```bash
-mkdir -p ~/.claude/commands
-curl -o ~/.claude/commands/atlas.md https://raw.githubusercontent.com/wess/atlas/main/.claude/commands/atlas.md
-```
-
-Or download and copy manually:
-
-```bash
-curl -sL https://github.com/wess/atlas/archive/refs/heads/main.zip -o /tmp/atlas.zip
-unzip -q /tmp/atlas.zip -d /tmp/atlas-expand
-cp /tmp/atlas-expand/atlas-main/.claude/commands/atlas.md ~/.claude/commands/atlas.md
-rm -rf /tmp/atlas.zip /tmp/atlas-expand
-```
-
-### Usage
-
-From any project directory that has access to the atlas repo, run:
-
-```
-/atlas a task management API with teams, projects, and real-time updates
-```
-
-```
-/atlas a blog platform with auth, markdown posts, and image uploads
-```
-
-```
-/atlas a chatbot with RAG, document indexing, and a React frontend
-```
-
-The command runs fully autonomously — it plans the architecture, builds all files in parallel, verifies everything compiles, and delivers a summary of what was built and how to run it.
-
 ## Packages
 
 | Package | Description | External deps |
