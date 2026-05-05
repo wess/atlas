@@ -44,6 +44,7 @@ Then `bun install`. Add `atlas/` to your `.gitignore`.
 | `@atlas/db` | Query builder, schemas, changesets, drivers (Postgres/SQLite) | `zod` |
 | `@atlas/migrate` | Database migration manager | none |
 | `@atlas/server` | Bun.serve with Plug-inspired pipe system | none |
+| `@atlas/edge` | TLS-terminating reverse proxy with built-in Let's Encrypt | none |
 | `@atlas/auth` | Password hashing, JWT, session management, auth flows | none |
 | `@atlas/security` | CSP/headers, rate limit, audit log, TOTP, revocable DB-backed sessions | none |
 | `@atlas/oauth` | OAuth 2.1 server: PKCE, refresh rotation, device flow, RFC 8414 discovery | none |
@@ -162,6 +163,7 @@ Scaffold a new project with `atlas init --template <name>`:
 |----------|-------------|
 | `minimal` | Just server + config |
 | `api` | REST API with db, auth, migrations |
+| `edge` | App + TLS-terminating edge (replaces Caddy/nginx) |
 | `fullstack` | API + React frontend |
 | `admin` | API + admin panel |
 | `worker` | Background job processor |

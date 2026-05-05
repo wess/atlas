@@ -529,6 +529,7 @@ atlas init myapp --template <template>
 |----------|-------------|
 | `minimal` | Just server + config |
 | `api` | REST API with db, auth, migrations |
+| `edge` | App + TLS-terminating edge (replaces Caddy/nginx) |
 | `fullstack` | API + React frontend |
 | `admin` | API + admin panel |
 | `worker` | Background job processor |
@@ -545,6 +546,48 @@ atlas init mysite --template fullstack
 atlas init mybot --template ai
 atlas init mysocial --template socialnetwork
 ```
+
+### Deploy with TLS (no Caddy / nginx)
+
+`@atlas/edge` terminates TLS, automates Let's Encrypt, and reverse-proxies
+to your app. The `edge` template ships a complete pattern — a one-line
+edge.ts, a Dockerfile, and a compose.yaml that drops the typical caddy
+sidecar entirely.
+
+Add it to an existing app:
+
+```ts
+// edge.ts
+import { LETSENCRYPT_PROD, LETSENCRYPT_STAGING, defineEdge, proxy } from "@atlas/edge"
+
+const isProd = Boolean(process.env.ADMIN_EMAIL)
+
+defineEdge({
+  acme: isProd
+    ? {
+        email: process.env.ADMIN_EMAIL!,
+        storage: process.env.CERT_DIR ?? "/var/atlas/edge",
+        directoryUrl: process.env.ACME_STAGING ? LETSENCRYPT_STAGING : LETSENCRYPT_PROD,
+      }
+    : undefined,
+  sites: [{
+    host: process.env.DOMAIN ?? "localhost",
+    compress: ["gzip", "zstd"],
+    routes: [{ handler: proxy(`http://localhost:${process.env.APP_PORT ?? 3000}`) }],
+  }],
+}).listen()
+```
+
+In dev (`DOMAIN` unset), the edge auto-detects localhost and runs plain
+HTTP on `:8080` — no certs, no sudo. In production, it listens on `:80`
++ `:443`, issues real certs, and renews them automatically 30 days
+before expiry.
+
+**First prod boot — use staging once.** Let's Encrypt's prod endpoint has
+a 5-failures-per-hostname-per-hour rate limit. Run with `ACME_STAGING=1`
+the first time to verify the wiring (browser will show "untrusted
+issuer" — that's expected for staging certs), then clear the cert volume
+and bring the service back up without `ACME_STAGING`.
 
 ## Troubleshooting
 

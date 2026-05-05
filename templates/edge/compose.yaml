@@ -1,0 +1,30 @@
+services:
+  app:
+    build: .
+    command: ["bun", "run", "app.ts"]
+    environment:
+      APP_PORT: "3000"
+    expose:
+      - "3000"
+    restart: unless-stopped
+
+  edge:
+    build: .
+    command: ["bun", "run", "edge.ts"]
+    environment:
+      DOMAIN: ${DOMAIN}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      APP_URL: "http://app:3000"
+      CERT_DIR: "/var/atlas/edge"
+      ACME_STAGING: ${ACME_STAGING:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - certs:/var/atlas/edge
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  certs:

@@ -101,6 +101,20 @@
         "typescript": "^5",
       },
     },
+    "packages/edge": {
+      "name": "@atlas/edge",
+      "version": "0.0.1",
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
+    "packages/email": {
+      "name": "@atlas/email",
+      "version": "0.0.1",
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
     "packages/mcp": {
       "name": "@atlas/mcp",
       "version": "0.0.1",
@@ -116,6 +130,18 @@
       "version": "0.0.1",
       "dependencies": {
         "@atlas/db": "workspace:*",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
+    "packages/oauth": {
+      "name": "@atlas/oauth",
+      "version": "0.0.1",
+      "dependencies": {
+        "@atlas/auth": "workspace:*",
+        "@atlas/db": "workspace:*",
+        "@atlas/server": "workspace:*",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -185,9 +211,15 @@
 
     "@atlas/db": ["@atlas/db@workspace:packages/db"],
 
+    "@atlas/edge": ["@atlas/edge@workspace:packages/edge"],
+
+    "@atlas/email": ["@atlas/email@workspace:packages/email"],
+
     "@atlas/mcp": ["@atlas/mcp@workspace:packages/mcp"],
 
     "@atlas/migrate": ["@atlas/migrate@workspace:packages/migrate"],
+
+    "@atlas/oauth": ["@atlas/oauth@workspace:packages/oauth"],
 
     "@atlas/request": ["@atlas/request@workspace:packages/request"],
 

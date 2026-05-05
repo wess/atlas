@@ -16,6 +16,7 @@ Atlas is a collection of composable, functional Bun/TypeScript packages for buil
 @atlas/admin (depends on @atlas/db, @atlas/server)
 @atlas/security (depends on @atlas/db, @atlas/auth)
 @atlas/oauth (depends on @atlas/db, @atlas/server, @atlas/auth)
+@atlas/edge (standalone — no sibling deps)
 @atlas/email (standalone — no sibling deps)
 
 @atlas/cache (optional, can use @atlas/config)
@@ -86,6 +87,30 @@ serve({
 ```
 
 Pipes are composable via `pipeline()`, which short-circuits on `halt()`. This approach is borrowed from Elixir and is more testable and readable than middleware.
+
+### Edge
+
+`@atlas/edge` is a TLS-terminating reverse proxy with built-in Let's Encrypt automation — the layer that would otherwise be Caddy or nginx in front of a Bun app.
+
+- **ACME v2 client** — ECDSA P-256 account, JWS-signed requests, HTTP-01 challenge solver, hand-rolled CSR via a small DER encoder. No external deps.
+- **Reverse proxy** — forwards requests with `X-Real-IP`, `X-Forwarded-For` (appended), `X-Forwarded-Proto`, `X-Forwarded-Host`. Hop-by-hop headers stripped. Host rewritten unless `preserveHost: true`.
+- **Cert lifecycle** — certs persist to a configurable store (filesystem default, in-memory for tests). A renewal timer reissues 30 days before expiry and `server.reload({ tls })` swaps without dropping connections.
+- **Localhost dev** — when every site host matches `isLocalHost`, the edge runs plain HTTP on a non-privileged port. No certs, no sudo. The same `edge.ts` runs in dev and prod.
+
+```ts
+import { defineEdge, proxy } from "@atlas/edge"
+
+defineEdge({
+  acme: { email: "you@example.com", storage: "/var/atlas/edge" },
+  sites: [{
+    host: process.env.DOMAIN!,
+    compress: ["gzip", "zstd"],
+    routes: [{ handler: proxy("http://app:3000") }],
+  }],
+}).listen()
+```
+
+The `templates/edge` scaffold ships a complete deploy pattern: Procfile for local, Dockerfile + compose.yaml for production, with the cert volume and ACME staging-then-prod recipe pre-wired.
 
 ### Auth
 
@@ -305,12 +330,13 @@ No external dependencies. Works with any OpenAI-compatible or Anthropic API.
 
 ## Templates
 
-Atlas ships with 9 project templates, scaffolded via `atlas init --template <name>`:
+Atlas ships with 10 project templates, scaffolded via `atlas init --template <name>`:
 
 | Template | Description | Key Packages |
 |----------|-------------|-------------|
 | `minimal` | Just server + config | config, server |
 | `api` | REST API with db, auth, migrations | config, db, migrate, server, auth |
+| `edge` | App + TLS-terminating edge (replaces Caddy/nginx) | config, server, edge |
 | `fullstack` | API + React frontend | config, db, server, auth, ui |
 | `admin` | API + admin panel | config, db, server, auth, admin |
 | `worker` | Background job processor | config, db, cache, cli |
@@ -424,6 +450,7 @@ LLMs can read `packages/db/AGENTS.md` instead of traversing 20+ source files. Th
 | auth | none |
 | security | none |
 | oauth | none |
+| edge | none |
 | email | none |
 | storage | none |
 | cache | none |

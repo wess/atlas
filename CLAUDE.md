@@ -38,6 +38,7 @@ Add `atlas/` to `.gitignore`.
 | `@atlas/db` | Query builder, schemas, changesets, Postgres/SQLite drivers |
 | `@atlas/migrate` | Timestamped SQL migrations |
 | `@atlas/server` | Pipe-based HTTP server, router, response helpers |
+| `@atlas/edge` | TLS-terminating reverse proxy with built-in Let's Encrypt |
 | `@atlas/server/ws` | WebSocket channels, rooms |
 | `@atlas/server/sse` | Server-sent events |
 | `@atlas/auth` | Password hashing, JWT, sessions, auth flow pipes |
@@ -74,7 +75,7 @@ Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. S
 ## Examples & Templates
 
 - `example/` — Chirp, a working Twitter-like demo (auth, posts, follows, likes); `bun run dev`
-- `templates/` — 9 scaffolds: `minimal`, `api`, `admin`, `realtime`, `ai`, `fullstack`, `worker`, `socialnetwork`, `cms`
+- `templates/` — 10 scaffolds: `minimal`, `api`, `edge`, `admin`, `realtime`, `ai`, `fullstack`, `worker`, `socialnetwork`, `cms`
 
 ## Reference (read in this order)
 

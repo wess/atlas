@@ -32,6 +32,7 @@
       "@atlas/oauth": ["./packages/oauth/index.ts"],
       "@atlas/security": ["./packages/security/index.ts"],
       "@atlas/storage": ["./packages/storage/index.ts"],
+      "@atlas/edge": ["./packages/edge/index.ts"],
       "@atlas/ui": ["./packages/ui/index.ts"],
       "@atlas/ui/*": ["./packages/ui/*/index.tsx"],
       "@atlas/mcp": ["./packages/mcp/index.ts"],

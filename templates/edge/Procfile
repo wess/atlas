@@ -1,0 +1,2 @@
+app: bun run app.ts
+edge: bun run edge.ts

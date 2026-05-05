@@ -52,6 +52,36 @@ createAdapter(name, start) → ServerAdapter
 compose(adapters) → ComposedServer
 ```
 
+## @atlas/edge
+```
+defineEdge(config) → { ...config, listen() → Promise<RunningEdge> }
+runEdge(config) → Promise<RunningEdge>          { mode: "tls"|"plain", stop() }
+proxy(upstream, { preserveHost? }) → EdgeHandler   reverse proxy with X-Forwarded-*
+forward(req, options, ctx) → Promise<Response>     low-level proxy primitive
+files({ root, index?, stripPrefix? }) → EdgeHandler   static file serving via Bun.file
+compressResponse(res, accept, allow) → Response    apply gzip/zstd
+matchHost(host, pattern) → bool                    literal or "*.x.com"
+matchRoute(req, url, matcher?) → bool              path (regex|string|*) + method
+isLocalHost(host) → bool                           localhost / 127.0.0.1 / ::1 / *.localhost
+
+provisionCertificate({ directoryUrl, accountKey, contactEmail, hosts, challenge }) → { certPem, keyPem }
+generateKeyPair() → AcmeKeyPair                    ECDSA P-256 via Web Crypto
+importKeyPair(jwk) | jwkThumbprint(jwk)
+LETSENCRYPT_PROD | LETSENCRYPT_STAGING             directory URLs
+
+issueCert({ directoryUrl, contactEmail, hosts, store, challenge }) → CertRecord
+loadOrCreateAccount(store) → AcmeKeyPair
+fileStore(root) | memoryStore() → CertStore       .load .save .loadAccountJwk .saveAccountJwk
+certKey(hosts) → string                            stable map key for a host list
+createRenewalScheduler(onRenew) → { schedule, cancel, stop }
+renewAt(record) → number                           unix ms; 30 days before expiry, clamped
+
+EdgeConfig: { acme?, sites: Site[], insecure?, httpPort?, httpsPort? }
+Site: { host, routes: Route[], compress?: ("gzip"|"zstd")[] }
+Route: { match?: { path?, method? }, handler: (req, ctx) => Promise<Response> }
+ForwardContext: { remoteIp, tls, host }
+```
+
 ## @atlas/server/ws
 ```
 ws(config) → { handler, rooms, upgrade }
