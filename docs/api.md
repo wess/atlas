@@ -8,18 +8,30 @@ defineConfig(schema) → Readonly<T>    resolves all EnvRef values, freezes
 
 ## @atlas/db
 ```
-from(table|schema, alias?) → Chain   entry point for queries
-  .select(...cols) .distinct(...cols) .where(cb) .join(t, on) .leftJoin(t, on)
-  .orderBy(col, dir?, nulls?) .groupBy(...cols) .having(cb) .limit(n) .offset(n)
+from(schema, alias?) → Chainable<RowOf<schema>>   typed Ecto-style chain
+from(table: string, alias?) → Chainable<any>      dynamic / cross-table chain
+  .select(...keys)         narrows row to Pick<Row, K>
+  .where(cb) .join(t, on) .leftJoin(t, on) .innerJoin(t, on)
+  .orderBy(col, dir?, nulls?) .groupBy(...cols) .having(cb)
+  .limit(n) .offset(n) .distinct(...cols)
   .insert(data) .insertMany(data[]) .update(data) .del() .truncate(cascade?)
-  .returning(...cols) .onConflict(spec) .cte(name, sub) .toSql(dialect?)
+  .returning(...keys) .onConflict(spec) .cte(name, sub) .recursiveCte(name, sub)
+  .toSql(dialect?) → SqlResult<Selected>
 raw(sql, ...values) → Fragment
-defineSchema(table, columns) → Schema
-column.serial() .text() .integer() .bigint() .real() .boolean() .timestamp() .json() .uuid()
-  modifiers: .primaryKey() .unique() .nullable() .default(val) .ref(table, col)
+defineSchema(table, columns) → Schema<T>
+column.serial() → number   .text() → string   .integer() → number
+  .bigint() → bigint   .real() → number   .boolean() → boolean
+  .timestamp() → Date  .json<T>() → T       .uuid() → string
+  modifiers: .primaryKey() .unique() .nullable() (widens to T|null)
+             .default(val) .ref(table, col)
+RowOf<typeof schema>                             extract row TS type
 changeset(schema, { cast, required?, validate? }) → (data) => ChangesetResult
 connect({ driver, path|url, pool? }) → Connection
-  Connection: .execute(q) .one(q) .all(q) .transaction(fn) .close()
+  Connection: .execute<Row>(q) → Row[]
+              .one<Row>(q) → Row | null
+              .all<Row>(q) → Row[]
+              .transaction(fn) .close()
+              row type is inferred from the chain when from(schema) is used
 ```
 
 ## @atlas/migrate
@@ -28,6 +40,12 @@ migrate.create(dir, name)            creates timestamped up.sql/down.sql
 migrate.up(db, dir)                  runs pending migrations
 migrate.down(db, dir)                rolls back last migration
 migrate.status(db, dir)              lists migration status
+migrate.plan(db, schemas) → DiffPlan       compute up/down SQL (read-only)
+migrate.diff(db, schemas, { name?, dir? }) → DiffWriteResult
+                                     introspect live DB, write a new migration
+                                     folder with up/down SQL — { noop: true }
+                                     when in sync. Type/nullability mismatches
+                                     emit `-- ALTER` comments for review.
 ```
 
 ## @atlas/server
@@ -50,6 +68,24 @@ parseJson | parseForm | parseMultipart   built-in parser pipes
 onError(handler) → error pipe
 createAdapter(name, start) → ServerAdapter
 compose(adapters) → ComposedServer
+
+route(method, path, schemas, handler) → Route        validated, typed route
+getR | postR | putR | patchR | delR(path, schemas, handler) → Route
+  schemas: { params?, body?, query?, before?, assigns? }
+  - params/body/query: Validator<T> = (input) => T  |  { parse(input): T }
+    (Zod, plain functions, or any Standard-Schema-shape qualify)
+  - before: PipeFn[] (run ahead of validation; e.g., requireAuth)
+  - assigns: phantom — `{} as MyClaims` types c.assigns for the handler
+  body schema auto-parses JSON; rejects non-application/json content-types.
+  validation failures → unprocessable("Invalid <where>", VALIDATION_FAILED)
+
+httpError(status, message, { code?, details?, headers? }) → HttpError
+isHttpError(value) → bool                            type guard
+haltWith(conn, error) → Conn                         halt with HttpError
+notFound | unauthorized | forbidden | badRequest | conflict | gone |
+unprocessable | tooManyRequests | methodNotAllowed | internal |
+serviceUnavailable(message?, opts?) → HttpError
+  router catches `throw httpError(...)` and renders { error, code?, details? }
 ```
 
 ## @atlas/edge
@@ -192,8 +228,15 @@ command(name, { flags?, run })       define a command
 flag(short, { type, default? })      define a flag
 parseArgs(argv, flags) → ParsedArgs
 foreman(procs) | parseProcfile(str)  process manager
-initCommand | addCommand             built-in atlas commands
+initCommand | addCommand | docsCommand   built-in atlas commands
 questions | applyDefaults | generateProject   scaffolding
+
+CLI surface:
+  atlas init [-y] [-n name]            scaffold a new project
+  atlas add <pkg>...                   install @atlas/* packages
+  atlas dev                             foreman → Procfile
+  atlas mcp                             start MCP server
+  atlas docs [<pkg>|<doc>]             print AGENTS.md / docs to stdout
 ```
 
 ## @atlas/ui
@@ -222,6 +265,10 @@ createContext(opts) → AtlasMcpContext
 defineTool(name, description, schema, handler) → Tool
 collectTools(...tools) → Tool[]
 McpServer: .start() .stop()
+
+Always-on tools (independent of context):
+  docs.list                    list every package's AGENTS.md + docs/*.md
+  docs.read({ package?, doc? }) read packages/<pkg>/AGENTS.md or docs/<name>.md
 ```
 
 ## @atlas/ai

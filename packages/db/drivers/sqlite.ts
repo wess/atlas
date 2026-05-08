@@ -1,9 +1,9 @@
 import { Database } from "bun:sqlite";
-import type { Dialect, SqlResult } from "../types/index.ts";
-import type { Connection } from "./types.ts";
+import type { SqlResult } from "../types/index.ts";
+import type { Connection, QueryInput } from "./types.ts";
 
-const toSqlResult = (query: { toSql: (dialect?: Dialect) => SqlResult } | SqlResult): SqlResult =>
-  "toSql" in query && typeof query.toSql === "function" ? query.toSql("sqlite") : (query as SqlResult);
+const toSqlResult = <Row>(query: QueryInput<Row>): SqlResult<Row> =>
+  "toSql" in query && typeof query.toSql === "function" ? query.toSql("sqlite") : (query as SqlResult<Row>);
 
 const isSelect = (text: string): boolean => {
   const trimmed = text.trimStart().toUpperCase();
@@ -13,24 +13,24 @@ const isSelect = (text: string): boolean => {
 const makeConnection = (db: Database): Connection => ({
   dialect: "sqlite",
 
-  execute: async (query) => {
+  execute: async <Row>(query: QueryInput<Row>): Promise<Row[]> => {
     const { text, values } = toSqlResult(query);
     if (isSelect(text)) {
-      return db.prepare(text).all(...values);
+      return db.prepare(text).all(...(values as any[])) as Row[];
     }
-    db.prepare(text).run(...values);
+    db.prepare(text).run(...(values as any[]));
     return [];
   },
 
-  one: async (query) => {
+  one: async <Row>(query: QueryInput<Row>): Promise<Row | null> => {
     const { text, values } = toSqlResult(query);
-    const row = db.prepare(text).get(...values);
-    return row ?? null;
+    const row = db.prepare(text).get(...(values as any[]));
+    return (row ?? null) as Row | null;
   },
 
-  all: async (query) => {
+  all: async <Row>(query: QueryInput<Row>): Promise<Row[]> => {
     const { text, values } = toSqlResult(query);
-    return db.prepare(text).all(...values);
+    return db.prepare(text).all(...(values as any[])) as Row[];
   },
 
   transaction: async <T>(fn: (tx: Connection) => Promise<T>): Promise<T> => {

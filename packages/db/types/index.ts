@@ -113,33 +113,50 @@ export type Query = {
 
 export type Dialect = "postgres" | "sqlite";
 
-export type SqlResult = {
+// SqlResult carries a phantom row type so Connection methods can infer it.
+export type SqlResult<Row = unknown> = {
   readonly text: string;
   readonly values: readonly any[];
+  readonly __row?: Row;
 };
 
-export type Chainable = {
-  readonly select: (...columns: Column[]) => Chainable;
-  readonly where: (callback: WhereCallback) => Chainable;
-  readonly join: (table: string, on: string | Fragment, alias?: string) => Chainable;
-  readonly leftJoin: (table: string, on: string | Fragment, alias?: string) => Chainable;
-  readonly innerJoin: (table: string, on: string | Fragment, alias?: string) => Chainable;
-  readonly orderBy: (column: Column, direction?: OrderDirection, nulls?: "FIRST" | "LAST") => Chainable;
-  readonly groupBy: (...columns: Column[]) => Chainable;
-  readonly having: (callback: WhereCallback) => Chainable;
-  readonly limit: (n: number) => Chainable;
-  readonly offset: (n: number) => Chainable;
-  readonly returning: (...columns: Column[]) => Chainable;
-  readonly distinct: (...columns: Column[]) => Chainable;
-  readonly insert: (data: Record<string, any>) => Chainable;
-  readonly insertMany: (data: readonly Record<string, any>[]) => Chainable;
-  readonly insertFrom: (columns: readonly string[], source: Chainable) => Chainable;
-  readonly truncate: (cascade?: boolean) => Chainable;
-  readonly update: (data: Record<string, any>) => Chainable;
-  readonly del: () => Chainable;
-  readonly onConflict: (spec: ConflictSpec) => Chainable;
-  readonly cte: (name: string, sub: Chainable) => Chainable;
-  readonly recursiveCte: (name: string, sub: Chainable) => Chainable;
-  readonly toSql: (dialect?: Dialect) => SqlResult;
+// Chainable is parameterized by:
+//   Row      — the underlying table row shape
+//   Selected — what a query returning rows yields (narrows after .select(...))
+// Both default to `any` so untyped from("users") usage keeps working.
+export type Chainable<Row = any, Selected = Row> = {
+  readonly select: <K extends keyof Row & string>(
+    ...columns: K[]
+  ) => Chainable<Row, { [P in K]: Row[P] }>;
+  readonly where: (callback: WhereCallback) => Chainable<Row, Selected>;
+  readonly join: (table: string, on: string | Fragment, alias?: string) => Chainable<Row, Selected>;
+  readonly leftJoin: (table: string, on: string | Fragment, alias?: string) => Chainable<Row, Selected>;
+  readonly innerJoin: (table: string, on: string | Fragment, alias?: string) => Chainable<Row, Selected>;
+  readonly orderBy: (
+    column: Column,
+    direction?: OrderDirection,
+    nulls?: "FIRST" | "LAST",
+  ) => Chainable<Row, Selected>;
+  readonly groupBy: (...columns: Column[]) => Chainable<Row, Selected>;
+  readonly having: (callback: WhereCallback) => Chainable<Row, Selected>;
+  readonly limit: (n: number) => Chainable<Row, Selected>;
+  readonly offset: (n: number) => Chainable<Row, Selected>;
+  readonly returning: <K extends keyof Row & string>(
+    ...columns: K[]
+  ) => Chainable<Row, { [P in K]: Row[P] }>;
+  readonly distinct: (...columns: Column[]) => Chainable<Row, Selected>;
+  readonly insert: (data: Partial<Row> | Record<string, any>) => Chainable<Row, Selected>;
+  readonly insertMany: (data: readonly (Partial<Row> | Record<string, any>)[]) => Chainable<Row, Selected>;
+  readonly insertFrom: (
+    columns: readonly string[],
+    source: Chainable<any, any>,
+  ) => Chainable<Row, Selected>;
+  readonly truncate: (cascade?: boolean) => Chainable<Row, Selected>;
+  readonly update: (data: Partial<Row> | Record<string, any>) => Chainable<Row, Selected>;
+  readonly del: () => Chainable<Row, Selected>;
+  readonly onConflict: (spec: ConflictSpec) => Chainable<Row, Selected>;
+  readonly cte: (name: string, sub: Chainable<any, any>) => Chainable<Row, Selected>;
+  readonly recursiveCte: (name: string, sub: Chainable<any, any>) => Chainable<Row, Selected>;
+  readonly toSql: (dialect?: Dialect) => SqlResult<Selected>;
   readonly toQuery: () => Query;
 };

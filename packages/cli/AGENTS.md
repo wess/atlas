@@ -89,6 +89,22 @@ Start development servers from Procfile.
 atlas dev
 ```
 
+### atlas docs
+
+Print Atlas documentation directly to stdout — `atlas docs` for the index,
+`atlas docs <package>` for a package's `AGENTS.md`, or `atlas docs <doc>` for a
+top-level `docs/<name>.md` file.
+
+```sh
+atlas docs              # list all packages and top-level docs
+atlas docs db           # print packages/db/AGENTS.md
+atlas docs api          # print docs/api.md
+atlas docs cookbook     # print docs/cookbook.md
+```
+
+Useful for terminal lookups and for piping into AI tools (`atlas docs db | ...`).
+The same content is exposed as the `docs.list` / `docs.read` tools by `atlas mcp`.
+
 ## LLM/AI Programmatic Usage
 
 The questions and templates are designed for programmatic access:

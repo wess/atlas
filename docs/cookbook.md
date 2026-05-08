@@ -253,3 +253,159 @@ if (name) q = q.orderBy(raw("similarity(name, $1)", name), "DESC")
 
 Add new operators (`size:>1mb`, `created:after:2025-01-01`, etc.) by extending
 the `colon > 0` branch — the rest of the parser stays the same.
+
+---
+
+## Typed routes with auth + body validation
+
+`@atlas/server` ships a `route()` helper (and `getR / postR / putR / patchR /
+delR` shortcuts) that validates `params`, `body`, and `query` *before* your
+handler runs and types `c.assigns` from your `before` pipes. JSON body parsing
+is automatic when a `body` schema is set — you don't need to add `parseJson` to
+`before`. Validation failures throw `unprocessable("Invalid <where>", ...)` so
+they render as `422` JSON the same way every other `HttpError` does.
+
+```ts
+import { z } from "zod"
+import { from, type RowOf } from "@atlas/db"
+import { conflict, getR, json, notFound, postR } from "@atlas/server"
+import { requireAuth } from "@atlas/auth"
+import { posts } from "./schema"
+
+type AuthClaims = { auth: { id: number } }
+
+export const postRoutes = (db, secret: string) => {
+  const auth = requireAuth({ secret })
+
+  return [
+    // GET /posts/:id  →  one post by id, typed end-to-end.
+    getR<{ id: number }, never, Record<string, string>, AuthClaims>(
+      "/posts/:id",
+      {
+        params: z.object({ id: z.coerce.number() }),
+        before: [auth],
+        assigns: {} as AuthClaims,
+      },
+      async (c) => {
+        type Post = RowOf<typeof posts>
+        const post: Post | null = await db.one(
+          from(posts).where(q => q("id").equals(c.params.id))
+        )
+        if (!post) throw notFound("post")
+        return json(c, 200, post)
+      },
+    ),
+
+    // POST /posts  →  validated body; row is typed from the schema.
+    postR<Record<string, never>, { content: string }, Record<string, string>, AuthClaims>(
+      "/posts",
+      {
+        body: z.object({ content: z.string().min(1).max(280) }),
+        before: [auth],
+        assigns: {} as AuthClaims,
+      },
+      async (c) => {
+        const [created] = await db.execute(
+          from(posts)
+            .insert({ userId: c.assigns.auth.id, content: c.body.content })
+            .returning("id", "content"),
+        )
+        if (!created) throw conflict("could not create post")
+        return json(c, 201, created)
+      },
+    ),
+  ]
+}
+```
+
+The `assigns: {} as AuthClaims` line is a *type-only* phantom — it doesn't run
+at runtime; it just tells the handler that whatever ran in `before` populated
+`c.assigns` with that shape. Pair it with a guard pipe like `requireAuth` that
+actually does the assignment.
+
+---
+
+## Schema-first migrations with `migrate.diff`
+
+`defineSchema()` already encodes your tables. Instead of hand-writing
+`up.sql/down.sql`, point `migrate.diff` at the live database and let it emit
+the SQL.
+
+```ts
+// scripts/diff.ts — run after editing src/schema.ts
+import { connect } from "@atlas/db"
+import { migrate } from "@atlas/migrate"
+import { posts, users, follows, likes } from "../src/schema"
+
+const db = connect({ driver: "postgres", url: process.env.DATABASE_URL! })
+const result = await migrate.diff(db, [users, posts, follows, likes], {
+  name: process.argv[2] ?? "diff",
+  dir: "./migrations",
+})
+
+if (result.noop) console.log("schema in sync; nothing to write")
+else console.log(`wrote ${result.path} (${result.plan.ops.length} ops)`)
+
+await db.close()
+```
+
+```bash
+bun scripts/diff.ts add_likes
+# →  wrote ./migrations/20260508_add_likes (1 ops)
+
+bun scripts/diff.ts            # idempotent: no-op when in sync
+# →  schema in sync; nothing to write
+```
+
+**Watch the comments.** Type or nullability changes are emitted as `-- ALTER
+table.column …` *comments*, never raw `ALTER` statements. Destructive
+migrations need a human's eyes — the diff surfaces them but does not run them.
+
+`migrate.plan(db, schemas)` returns the same `{ ops, up, down }` plan without
+writing files; useful for CI checks ("fail if there are pending diffs"):
+
+```ts
+const plan = await migrate.plan(db, schemas)
+if (plan.ops.length > 0) {
+  console.error("schema drift detected:")
+  console.error(plan.up)
+  process.exit(1)
+}
+```
+
+---
+
+## Throw-style errors
+
+Routes don't need to thread error responses through `if/else if (...)`. Throw
+an `HttpError` and the router renders it as JSON with the right status, code,
+and any custom headers.
+
+```ts
+import { conflict, getR, json, notFound, tooManyRequests } from "@atlas/server"
+import { from } from "@atlas/db"
+
+getR("/users/:id", { params: z.object({ id: z.coerce.number() }) }, async (c) => {
+  const user = await db.one(from(users).where(q => q("id").equals(c.params.id)))
+  if (!user) throw notFound("user not found")
+  return json(c, 200, user)
+})
+
+// Custom headers ride along with the response.
+postR("/heavy", { body: z.object({ /* … */ }) }, async (c) => {
+  const allowed = await rateLimiter.check(`heavy:${c.assigns.auth.id}`, 10, 60)
+  if (!allowed.ok) {
+    throw tooManyRequests("slow down", {
+      code: "RATE_LIMITED",
+      headers: { "Retry-After": String(allowed.retryAfterSeconds) },
+    })
+  }
+  // …
+})
+```
+
+Available factories: `badRequest`, `unauthorized`, `forbidden`, `notFound`,
+`methodNotAllowed`, `conflict`, `gone`, `unprocessable`, `tooManyRequests`,
+`internal`, `serviceUnavailable`. All accept `(message?, { code?, details?,
+headers? })`. Use `haltWith(conn, error)` if you'd rather short-circuit the
+pipeline than `throw`.

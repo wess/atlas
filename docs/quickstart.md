@@ -85,48 +85,51 @@ export const config = defineConfig({
 
 ## Step 4: Create Migrations
 
-Create migrations folder and generate migration files:
+You can hand-write migrations under `migrations/<timestamp>_<name>/{up,down}.sql`,
+or — preferred — generate them from the `defineSchema()` you already wrote:
+
+```ts
+// scripts/diff.ts
+import { connect } from "@atlas/db"
+import { migrate } from "@atlas/migrate"
+import { users, uploads } from "../src/schema"
+
+const db = connect({ driver: "sqlite", path: "./app.db" })
+const result = await migrate.diff(db, [users, uploads], { name: "init" })
+if (result.noop) console.log("schema in sync")
+else console.log(`wrote ${result.path}`)
+await db.close()
+```
 
 ```bash
-mkdir migrations
+bun scripts/diff.ts   # writes migrations/<ts>_init/up.sql + down.sql
 ```
 
-Create `migrations/20260402_create_users/up.sql`:
+`migrate.diff` introspects the live database and emits SQL for any new tables,
+added/removed columns, and (as `-- ALTER` comments) type/nullability mismatches.
+Re-running it after a schema edit produces an incremental migration.
+
+For reference, here's what an init migration ends up looking like:
 
 ```sql
+-- migrations/<ts>_init/up.sql (generated)
 CREATE TABLE users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  email TEXT UNIQUE NOT NULL,
+  id INTEGER PRIMARY KEY,
+  email TEXT NOT NULL,
   name TEXT NOT NULL,
   passwordHash TEXT NOT NULL,
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  createdAt TIMESTAMP NOT NULL
 );
-```
 
-Create `migrations/20260402_create_users/down.sql`:
-
-```sql
-DROP TABLE users;
-```
-
-Create `migrations/20260403_create_uploads/up.sql`:
-
-```sql
 CREATE TABLE uploads (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  userId INTEGER NOT NULL REFERENCES users(id),
+  id INTEGER PRIMARY KEY,
+  userId INTEGER NOT NULL,
   filename TEXT NOT NULL,
   key TEXT NOT NULL,
   size INTEGER NOT NULL,
   contentType TEXT NOT NULL,
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  createdAt TIMESTAMP NOT NULL
 );
-```
-
-Create `migrations/20260403_create_uploads/down.sql`:
-
-```sql
-DROP TABLE uploads;
 ```
 
 ## Step 5: Build the API
@@ -136,32 +139,22 @@ Create `src/server.ts`:
 ```ts
 import { config } from "./config"
 import { users, uploads } from "./schema"
-import { connect } from "@atlas/db"
+import { connect, from, type RowOf } from "@atlas/db"
 import { migrate } from "@atlas/migrate"
 import {
   serve,
-  router,
-  pipe,
   pipeline,
-  parseJson,
   parseMultipart,
   json,
-  halt,
-  assign,
-  get,
+  badRequest,
+  getR,
+  postR,
   post,
+  parseJson,
 } from "@atlas/server"
-import {
-  hash,
-  verify,
-  token,
-  signup,
-  login,
-  requireAuth,
-} from "@atlas/auth"
+import { token, signup, login, requireAuth } from "@atlas/auth"
 import { createStore, upload as uploadFile, presign } from "@atlas/storage"
 import { admin, model } from "@atlas/admin"
-import { from } from "@atlas/db"
 
 // Connect to database
 const db = connect({ driver: "sqlite", path: "./app.db" })
@@ -177,56 +170,63 @@ const store = createStore({
   secretKey: config.s3.secretKey,
 })
 
-// Auth handlers
+// Pipes that populate conn.assigns.auth (claims from the JWT).
 const authGuard = requireAuth({ secret: config.secret })
+type AuthClaims = { auth: { id: number } }
 
-const handleGetMe = pipe((c) => {
-  const userId = (c.assigns.auth as any).id
-  return json(c, 200, { id: userId })
-})
+// Typed routes — c.assigns.auth.id is `number`, no casts.
+const meRoute = getR<Record<string, never>, never, Record<string, string>, AuthClaims>(
+  "/api/me",
+  { before: [authGuard], assigns: {} as AuthClaims },
+  (c) => json(c, 200, { id: c.assigns.auth.id }),
+)
 
-const handleUpload = pipe(async (c) => {
-  const userId = (c.assigns.auth as any).id
-  const body = c.body as FormData
+const filesRoute = getR<Record<string, never>, never, Record<string, string>, AuthClaims>(
+  "/api/files",
+  { before: [authGuard], assigns: {} as AuthClaims },
+  async (c) => {
+    type UploadRow = RowOf<typeof uploads>
+    const rows: Pick<UploadRow, "id" | "filename" | "key" | "size" | "createdAt">[] = await db.all(
+      from(uploads)
+        .where((q) => q("userId").equals(c.assigns.auth.id))
+        .select("id", "filename", "key", "size", "createdAt"),
+    )
+    return json(c, 200, rows)
+  },
+)
 
-  const file = body.get("file") as File
-  if (!file) return halt(c, 400, { error: "missing file" })
+// Multipart upload still uses parseMultipart in `before` — typed body validators
+// expect JSON. `throw badRequest(...)` becomes a 400 with { error, code? }.
+const uploadRoute = post(
+  "/api/upload",
+  pipeline(authGuard, parseMultipart)(async (c) => {
+    const userId = (c.assigns.auth as { id: number }).id
+    const body = c.body as FormData
+    const file = body.get("file") as File | null
+    if (!file) throw badRequest("missing file", { code: "MISSING_FILE" })
 
-  const key = `uploads/${userId}/${file.name}`
-  await uploadFile(store, { key, body: file, contentType: file.type })
+    const key = `uploads/${userId}/${file.name}`
+    await uploadFile(store, { key, body: file, contentType: file.type })
 
-  const presignedUrl = presign(store, key, { expires: 3600 })
+    const [created] = await db.execute(
+      from(uploads)
+        .insert({
+          userId,
+          filename: file.name,
+          key,
+          size: file.size,
+          contentType: file.type,
+        })
+        .returning("id"),
+    )
 
-  const result = await db.execute(
-    from(uploads)
-      .insert({
-        userId,
-        filename: file.name,
-        key,
-        size: file.size,
-        contentType: file.type,
-      })
-      .toSql("sqlite")
-  )
-
-  return json(c, 201, {
-    id: result[0],
-    filename: file.name,
-    url: presignedUrl,
-  })
-})
-
-const handleListFiles = pipe(async (c) => {
-  const userId = (c.assigns.auth as any).id
-  const results = await db.all(
-    from(uploads)
-      .where((q) => q("userId").equals(userId))
-      .select("id", "filename", "key", "size", "createdAt")
-      .toSql("sqlite")
-  )
-
-  return json(c, 200, results)
-})
+    return json(c, 201, {
+      id: created?.id,
+      filename: file.name,
+      url: presign(store, key, { expires: 3600 }),
+    })
+  }),
+)
 
 // Admin panel
 const adminPanel = admin({
@@ -282,11 +282,9 @@ serve({
     )),
 
     // Protected API
-    get("/api/me", pipeline(authGuard)(handleGetMe)),
-
-    post("/api/upload", pipeline(authGuard, parseMultipart)(handleUpload)),
-
-    get("/api/files", pipeline(authGuard)(handleListFiles)),
+    meRoute,
+    uploadRoute,
+    filesRoute,
 
     // Admin
     ...adminPanel.mount([]),

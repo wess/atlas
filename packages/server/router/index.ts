@@ -1,5 +1,6 @@
 import type { Conn } from "../conn/index.ts";
 import { createConn } from "../conn/index.ts";
+import { isHttpError } from "../errors/http.ts";
 import type { PipeFn } from "../pipe/index.ts";
 import type { WsConfig } from "../ws/index.ts";
 import { ws as createWs } from "../ws/index.ts";
@@ -80,6 +81,16 @@ export const router = (...routes: Route[]) => {
         const result = await route.handler(conn);
         return connToResponse(result);
       } catch (err) {
+        if (isHttpError(err)) {
+          const headers = new Headers({ "content-type": "application/json" });
+          if (err.headers) {
+            for (const [k, v] of Object.entries(err.headers)) headers.set(k, v);
+          }
+          const body: Record<string, unknown> = { error: err.message };
+          if (err.code) body.code = err.code;
+          if (err.details !== undefined) body.details = err.details;
+          return new Response(JSON.stringify(body), { status: err.status, headers });
+        }
         console.error(`[atlas] Route error: ${req.method} ${url.pathname}`, err);
         // Never echo the request path / method back in a 500 — it lets a
         // probe correlate inputs with internal failures. Stack traces stay

@@ -10,7 +10,7 @@ export { isFragment, raw } from "./fragment/index.ts";
 export { from } from "./from/index.ts";
 export { createWhereBuilder } from "./predicates/index.ts";
 export { createQuery } from "./query/index.ts";
-export type { Schema } from "./schema/index.ts";
+export type { ColumnDef, ColumnTs, ColumnType, RowOf, Schema, SchemaColumns } from "./schema/index.ts";
 // schema
 export { column, defineSchema } from "./schema/index.ts";
 // types

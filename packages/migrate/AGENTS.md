@@ -14,8 +14,29 @@ Database migration manager using `@atlas/db` for Postgres and SQLite.
 - `createMigration(dir: string, name: string) => MigrationFile` - scaffold new migration folder with up.sql/down.sql
 - `scanMigrations(dir: string) => MigrationFile[]` - scan directory for migration folders, sorted by name
 
+### Diff (schema → migration)
+- `plan(db, schemas) => Promise<DiffPlan>` — compute up/down SQL by introspecting the
+  live DB and comparing it to a list of `defineSchema()` results. Read-only.
+- `writeDiff(db, schemas, { dir?, name? }) => Promise<DiffWriteResult>` — same plan,
+  but writes a new timestamped migration folder with `up.sql`/`down.sql` if the diff
+  is non-empty. Returns `{ noop: true, path: null }` when the schema is in sync.
+
+```ts
+import { migrate } from "@atlas/migrate"
+import { users, posts } from "./schema"
+
+const result = await migrate.diff(db, [users, posts], { name: "add_users" })
+if (result.noop) console.log("schema in sync; nothing to write")
+else console.log(`wrote ${result.path}`)
+```
+
+Postgres uses `information_schema`; SQLite uses `pragma table_info`. Type/nullability
+mismatches are emitted as `-- ALTER table.col …` comments so destructive migrations
+land in front of the user instead of running silently. `serial`/`integer` and PK
+nullability quirks are normalized — they won't show up as spurious diffs.
+
 ### Convenience
-- `migrate` - namespace object with `{ up, down, status, create, ensureTable }`
+- `migrate` - namespace object with `{ up, down, status, create, ensureTable, diff, plan }`
 
 ## Types
 

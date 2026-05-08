@@ -1,0 +1,69 @@
+# Atlas
+
+> Composable, functional Bun/TypeScript building blocks for APIs, full-stack apps, and CLIs. No classes, no mutation, zero external runtime deps on the backend (except `zod` for `@atlas/db` changesets). Each package snaps together via shallow imports — pick what you need.
+
+Atlas is structured as a Bun workspace under `packages/<name>`. Every package ships an `AGENTS.md` (≤ 200 lines) that documents the canonical public API, types, and a working snippet. **Read the per-package AGENTS.md before reading source.**
+
+If you are an AI session new to this codebase, start with [SOUL.md](SOUL.md) — it bootstraps your identity (Bun, TypeScript, React, Mantine, Atlas expert), reading order, hard conventions, and explicit "do not" list in one file.
+
+## Reading order
+
+1. [SOUL.md](SOUL.md) — identity + conventions + idiomatic patterns (read first if fresh).
+2. `docs/api.md` — condensed cross-package API lookup (one screen).
+3. `packages/<name>/AGENTS.md` — per-package canonical reference. Only load the packages you need.
+4. `docs/cookbook.md` — patterns/recipes that don't justify a package.
+5. `docs/overview.md` — architecture deep-dive (skip unless explicitly needed).
+
+## Per-package canonical references
+
+- [packages/config/AGENTS.md](packages/config/AGENTS.md): typed env vars via `defineConfig`, `env`
+- [packages/db/AGENTS.md](packages/db/AGENTS.md): Ecto-style query builder, `defineSchema`, `RowOf`, changesets, Postgres + SQLite drivers
+- [packages/migrate/AGENTS.md](packages/migrate/AGENTS.md): timestamped SQL migrations + schema-diff (`migrate.diff`)
+- [packages/server/AGENTS.md](packages/server/AGENTS.md): `Bun.serve` + Plug-style pipes, typed `route()` with validation, `HttpError`
+- [packages/edge/AGENTS.md](packages/edge/AGENTS.md): TLS-terminating reverse proxy with built-in Let's Encrypt
+- [packages/auth/AGENTS.md](packages/auth/AGENTS.md): hash/verify, JWT, session store, `signup`/`login`/`requireAuth` pipes
+- [packages/security/AGENTS.md](packages/security/AGENTS.md): CSP/headers, rate limit, audit log, TOTP, revocable DB-backed sessions
+- [packages/oauth/AGENTS.md](packages/oauth/AGENTS.md): OAuth 2.1 server (PKCE, refresh rotation, device flow, RFC 8414 discovery)
+- [packages/email/AGENTS.md](packages/email/AGENTS.md): provider-agnostic email transport + invite/reset templates
+- [packages/storage/AGENTS.md](packages/storage/AGENTS.md): S3-compatible storage with presigned URLs (zero deps; SigV4 from scratch)
+- [packages/cache/AGENTS.md](packages/cache/AGENTS.md): Redis-backed caching via `Bun.redis`, cache-aside helper
+- [packages/request/AGENTS.md](packages/request/AGENTS.md): HTTP client (retries, interceptors, provider configs)
+- [packages/cli/AGENTS.md](packages/cli/AGENTS.md): CLI framework, Foreman, scaffolds, `atlas docs <pkg>`
+- [packages/ui/AGENTS.md](packages/ui/AGENTS.md): React + Mantine blocks (provider/forms/table/auth/storage/nav/cache/ai)
+- [packages/admin/AGENTS.md](packages/admin/AGENTS.md): auto-generated CRUD admin from `@atlas/db` schemas
+- [packages/mcp/AGENTS.md](packages/mcp/AGENTS.md): MCP server exposing `@atlas/*` services as tools (incl. `docs.read`/`docs.list` for Atlas itself)
+- [packages/ai/AGENTS.md](packages/ai/AGENTS.md): AI providers, chat, embeddings, RAG, agents, streaming
+
+## Conventions
+
+- All filenames lowercase. **No** dashes, underscores, or spaces. Hierarchy via subdirectories: `src/<feature>/index.ts`, never `src/<feature>-name.ts`.
+- Functional style only — no `class`. Immutable data; transforms return new objects.
+- `pipeline(...)(handler)` composes pipes; `halt(c, status, body?)` short-circuits.
+- Bun-only runtime: `Bun.serve`, `Bun.sql`, `Bun.redis`, `Bun.password`, `bun:sqlite`, `Bun.file`. No Node alternatives.
+- Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. Subpath exports: `@atlas/server/ws`, `@atlas/server/sse`, `@atlas/ui/*`.
+- Tests live in `packages/<name>/test/`. Run with `bun test`. Lint/format with `bun run check` / `bun run tidy` (Biome only — no Prettier or ESLint).
+
+## How to ground generation
+
+When asked to write code against Atlas:
+
+1. Identify which packages are involved (`@atlas/db`, `@atlas/server`, etc.).
+2. Open *only* those packages' `AGENTS.md` files.
+3. Use schema-derived types: `defineSchema` + `RowOf` for typed rows, `getR/postR/route` for typed routes, `HttpError` factories (`notFound`, `unauthorized`, …) for status responses.
+4. Default to `pipeline()`-composed handlers, not middleware patterns.
+5. Don't import `node:*` when a `Bun.*` API exists.
+
+## Examples
+
+- `example/` — Chirp, a Twitter-like demo (auth, posts, follows, likes). `bun run dev`.
+- `templates/` — 10 scaffolds: `minimal`, `api`, `edge`, `admin`, `realtime`, `ai`, `fullstack`, `worker`, `socialnetwork`, `cms`.
+
+## Do not
+
+- Don't add classes.
+- Don't mutate input data; return new objects.
+- Don't reach for external packages when a `Bun.*` or Web API exists.
+- Don't use `_`, `-`, or space in filenames.
+- Don't wire `parseJson` manually when using typed `route()` with a `body` validator — it auto-parses.
+- Don't trust client-supplied `X-Forwarded-For`; use `clientIp(req, { trustedProxies })` from `@atlas/security`.
+- Don't read raw schema columns to type a row; use `RowOf<typeof schema>`.

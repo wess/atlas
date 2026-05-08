@@ -1,8 +1,9 @@
 #!/usr/bin/env bun
-import { cli, command } from "./command/index.ts";
-import { initCommand } from "./init/index.ts";
 import { addCommand } from "./add/index.ts";
+import { cli, command } from "./command/index.ts";
+import { docsCommand } from "./docs/index.ts";
 import { foreman } from "./foreman/index.ts";
+import { initCommand } from "./init/index.ts";
 
 const devCommand = command("dev", {
   description: "Start development servers from Procfile",
@@ -24,4 +25,4 @@ const mcpCommand = command("mcp", {
   },
 });
 
-cli("atlas", [initCommand, addCommand, devCommand, mcpCommand]);
+cli("atlas", [initCommand, addCommand, devCommand, mcpCommand, docsCommand]);

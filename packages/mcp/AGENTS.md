@@ -36,7 +36,12 @@ Tools auto-register based on which fields are present.
 | `storage.list` | storage | List files with optional prefix |
 | `storage.presign` | storage | Generate presigned URL |
 | `health.check` | (always) | Check service connectivity |
+| `docs.list` | (always) | List Atlas docs sources (every package's AGENTS.md, plus docs/*) |
+| `docs.read` | (always) | Read `packages/<name>/AGENTS.md` or `docs/<name>.md` |
 | `logs.tail` | logBuffer | Get recent log lines |
+
+The `docs.*` tools are always present so an AI agent connected to an Atlas-built
+app can self-introspect the framework — no web fetch required.
 
 ## Usage
 

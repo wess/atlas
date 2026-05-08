@@ -24,9 +24,12 @@ Terminal: `.toSql(dialect?) => SqlResult`, `.toQuery() => Query`
 
 ### Schema
 - `defineSchema(table: string, columns: T) => Schema<T>` - define a table schema
-- `column.serial()`, `.text()`, `.integer()`, `.bigint()`, `.real()`, `.boolean()`,
-  `.timestamp()`, `.json()`, `.uuid()` - column type builders
-- Column modifiers: `.primaryKey()`, `.unique()`, `.nullable()`, `.default(val)`, `.ref(table, col)`
+- `column.serial()` → `number`, `.text()` → `string`, `.integer()` → `number`,
+  `.bigint()` → `bigint`, `.real()` → `number`, `.boolean()` → `boolean`,
+  `.timestamp()` → `Date`, `.json<T>()` → `T`, `.uuid()` → `string`
+- Column modifiers: `.primaryKey()`, `.unique()`, `.nullable()` (widens to `T | null`),
+  `.default(val)`, `.ref(table, col)`
+- `RowOf<typeof schema>` extracts the row TypeScript type; nullable columns become `T | null`.
 
 ### Changeset
 - `changeset(schema, opts: { cast, required?, validate? }) => (data) => ChangesetResult`
@@ -52,27 +55,32 @@ type ChangesetResult<T> = { valid: boolean, changes: Partial<T>,
 ## Usage
 
 ```ts
-import { connect, defineSchema, column, from, changeset } from "@atlas/db"
+import { connect, defineSchema, column, from, changeset, type RowOf } from "@atlas/db"
 import { z } from "zod"
 
-// 1. define schema
+// 1. define schema — column types thread through to the row type.
 const users = defineSchema("users", {
-  id: column.serial().primaryKey(),
-  name: column.text(),
-  email: column.text().unique(),
+  id: column.serial().primaryKey(),         // number
+  name: column.text(),                       // string
+  email: column.text().unique(),             // string
+  bio: column.text().nullable(),             // string | null
 })
+
+type User = RowOf<typeof users>
+// { id: number; name: string; email: string; bio: string | null }
 
 // 2. connect
 const db = connect({ driver: "sqlite", path: ":memory:" })
 
-// 3. build & run queries
-const insert = from(users).insert({ name: "Ada", email: "ada@example.com" })
-  .returning("id").toSql("sqlite")
-await db.execute(insert)
+// 3. build & run queries — return types are inferred end-to-end.
+await db.execute(from(users).insert({ name: "Ada", email: "ada@example.com" }))
 
-const rows = await db.all(
-  from(users).select("id", "name").where(q => q("name").like("%Ada%")).toSql("sqlite")
-)
+const rows: User[] = await db.all(from(users))                 // User[]
+const trimmed = await db.all(from(users).select("id", "name")) // { id: number; name: string }[]
+const one = await db.one(from(users).where(q => q("id").equals(1))) // User | null
+
+// `from(string)` still works for dynamic / cross-table queries; rows stay `any`.
+const adminRows = await db.all<{ id: number }>(from("users").select("id"))
 
 // 4. validate input
 const validate = changeset(users, {
