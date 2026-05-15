@@ -31,9 +31,9 @@ export type { PipeFn } from "./pipe/index.ts";
 export { pipe, pipeline } from "./pipe/index.ts";
 // response
 export { json, redirect, stream, text } from "./response/index.ts";
-// router
-export { del, get, head, options, patch, post, put, router, serve } from "./router/index.ts";
-export type { Route } from "./router/index.ts";
 // typed routes
 export type { RouteHandler, RouteSchemas, TypedConn, Validator } from "./route/index.ts";
 export { delR, getR, patchR, postR, putR, route } from "./route/index.ts";
+export type { Route } from "./router/index.ts";
+// router
+export { del, get, head, options, patch, post, put, router, serve } from "./router/index.ts";

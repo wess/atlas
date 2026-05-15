@@ -1,8 +1,8 @@
-import { test, expect } from "bun:test";
-import { defineTool, collectTools } from "../tools/index.ts";
-import { createContext } from "../context/index.ts";
-import { connect } from "@atlas/db";
+import { expect, test } from "bun:test";
 import { createMemoryCache } from "@atlas/cache";
+import { connect } from "@atlas/db";
+import { createContext } from "../context/index.ts";
+import { collectTools, defineTool } from "../tools/index.ts";
 
 test("defineTool creates a tool", () => {
   const tool = defineTool({

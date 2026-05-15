@@ -1,0 +1,14 @@
+{
+  "name": "@atlas/share",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": { "import": "./index.ts" }
+  },
+  "dependencies": {
+    "@atlas/email": "workspace:*"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

@@ -34,10 +34,7 @@ const baseState: ColumnState = {
   references: null,
 };
 
-const buildColumn = <TS, N extends boolean>(
-  type: ColumnType,
-  state: ColumnState,
-): ColumnDef<TS, N> => ({
+const buildColumn = <TS, N extends boolean>(type: ColumnType, state: ColumnState): ColumnDef<TS, N> => ({
   type,
   primary: state.primary,
   isUnique: state.isUnique,
@@ -48,18 +45,13 @@ const buildColumn = <TS, N extends boolean>(
   nullable: () => buildColumn<TS, true>(type, { ...state, isNullable: true }),
   default: (value: TS) => buildColumn<TS, N>(type, { ...state, defaultValue: value }),
   unique: () => buildColumn<TS, N>(type, { ...state, isUnique: true }),
-  ref: (table: string, col: string) =>
-    buildColumn<TS, N>(type, { ...state, references: { table, column: col } }),
+  ref: (table: string, col: string) => buildColumn<TS, N>(type, { ...state, references: { table, column: col } }),
 });
 
 const createColumn = <TS>(type: ColumnType): ColumnDef<TS, false> => buildColumn<TS, false>(type, baseState);
 
 // Extract the TypeScript type a single ColumnDef produces in a row.
-export type ColumnTs<C> = C extends ColumnDef<infer TS, infer N>
-  ? N extends true
-    ? TS | null
-    : TS
-  : never;
+export type ColumnTs<C> = C extends ColumnDef<infer TS, infer N> ? (N extends true ? TS | null : TS) : never;
 
 export const column = {
   serial: () => createColumn<number>("serial"),

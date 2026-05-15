@@ -52,10 +52,13 @@ export const questions: Question[] = [
     type: "multiselect",
     options: [
       { value: "auth", label: "Authentication (@atlas/auth)" },
+      { value: "social", label: "Social login (@atlas/auth/social — Google, GitHub, Apple, MS, FB, X, TikTok)" },
       { value: "storage", label: "File storage (@atlas/storage)" },
       { value: "cache", label: "Redis cache (@atlas/cache)" },
       { value: "admin", label: "Admin panel (@atlas/admin)" },
       { value: "migrate", label: "Migrations (@atlas/migrate)" },
+      { value: "email", label: "Email transport (@atlas/email)" },
+      { value: "share", label: "Share-this-link helpers (@atlas/share)" },
     ],
     default: ["auth", "migrate"],
   },

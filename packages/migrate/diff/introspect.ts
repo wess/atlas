@@ -2,12 +2,7 @@ import type { ColumnType, Connection } from "@atlas/db";
 import type { LiveColumn, LiveTable } from "./types.ts";
 
 // Internal table list — never diffed.
-const INTERNAL_TABLES = new Set([
-  "schema_migrations",
-  "sqlite_sequence",
-  "sqlite_master",
-  "sqlite_temp_master",
-]);
+const INTERNAL_TABLES = new Set(["schema_migrations", "sqlite_sequence", "sqlite_master", "sqlite_temp_master"]);
 
 const isInternal = (name: string): boolean =>
   INTERNAL_TABLES.has(name) || name.startsWith("sqlite_") || name.startsWith("pg_");

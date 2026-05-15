@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test";
 import { column, connect, defineSchema } from "@atlas/db";
-import { get, pipe } from "@atlas/server";
-import { json } from "@atlas/server";
+import { get, json, pipe } from "@atlas/server";
 import { admin, model } from "../config/index.ts";
 
 const users = defineSchema("users", {

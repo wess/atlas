@@ -58,14 +58,15 @@ tools on `@atlas/mcp` if you have an MCP connection.
 
 ## Atlas in one paragraph
 
-Composable, functional Bun/TypeScript packages. ~17 backend packages
+Composable, functional Bun/TypeScript packages. ~18 backend packages
 (`@atlas/config`, `@atlas/db`, `@atlas/server`, `@atlas/edge`,
-`@atlas/auth`, `@atlas/security`, `@atlas/oauth`, `@atlas/email`,
-`@atlas/storage`, `@atlas/cache`, `@atlas/request`, `@atlas/migrate`,
-`@atlas/cli`, `@atlas/mcp`, `@atlas/ai`) and 2 frontend (`@atlas/ui`,
-`@atlas/admin`). Backend has zero external runtime deps except `zod` for
-`@atlas/db` changesets. Frontend uses React + Mantine + TanStack +
-lucide-react. Shallow dependency graph — max 1 level of sibling deps.
+`@atlas/auth` + `@atlas/auth/social`, `@atlas/security`, `@atlas/oauth`,
+`@atlas/email`, `@atlas/share`, `@atlas/storage`, `@atlas/cache`,
+`@atlas/request`, `@atlas/migrate`, `@atlas/cli`, `@atlas/mcp`,
+`@atlas/ai`) and 2 frontend (`@atlas/ui`, `@atlas/admin`). Backend has
+zero external runtime deps except `zod` for `@atlas/db` changesets.
+Frontend uses React + Mantine + TanStack + lucide-react. Shallow
+dependency graph — max 1 level of sibling deps.
 
 ## Conventions (non-negotiable)
 
@@ -81,7 +82,8 @@ lucide-react. Shallow dependency graph — max 1 level of sibling deps.
   Prettier, never ESLint.
 - **Tests**: live in `packages/<name>/test/`. Run with `bun test`.
 - **Subpath exports**: `@atlas/server/ws`, `@atlas/server/sse`,
-  `@atlas/ui/<block>`. Use them; don't deep-import internals.
+  `@atlas/auth/social`, `@atlas/ui/<block>`. Use them; don't deep-import
+  internals.
 
 ## Idiomatic Atlas — the patterns to default to
 
@@ -186,7 +188,9 @@ short-circuits. Cross-cut state (auth claims, parsed body) goes on
 | Job runner / Procfile | `foreman` from `@atlas/cli` |
 | Email | `@atlas/email` (Resend; falls back to console in dev) |
 | Object storage | `@atlas/storage` (S3-compatible, SigV4 from scratch) |
-| OAuth server | `@atlas/oauth` (PKCE-required, refresh rotation) |
+| OAuth server (issue tokens) | `@atlas/oauth` (PKCE-required, refresh rotation) |
+| Social login (consume providers) | `@atlas/auth/social` — `google`, `github`, `apple`, `microsoft`, `facebook`, `twitter`, `tiktok` factories; `socialAuth({ secret, providers, cookie? })` → `start` / `callback` pipes |
+| Share a link | `@atlas/share` — `shareUrl(channel, content)` / `share(content)` for twitter, facebook, linkedin, reddit, whatsapp, telegram, sms, email; `shareEmail({ emailer, to, content, … })` for server-side send |
 | AI / LLM | `@atlas/ai` (`createProvider` for OpenAI/Anthropic/Ollama) |
 | MCP server | `@atlas/mcp` (always-on `docs.*` tools too) |
 | Admin panel | `@atlas/admin` (auto-CRUD from schemas) |

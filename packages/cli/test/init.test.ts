@@ -1,14 +1,14 @@
-import { test, expect } from "bun:test";
-import { applyDefaults, questions, getQuestionSpec } from "../init/questions.ts";
+import { expect, test } from "bun:test";
+import { existsSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { applyDefaults, getQuestionSpec, questions } from "../init/questions.ts";
 import {
-  generateProject,
-  generatePackageJson,
   generateEnv,
+  generatePackageJson,
+  generateProject,
   listTemplates,
   scaffoldFromTemplate,
 } from "../init/templates.ts";
-import { existsSync, rmSync } from "node:fs";
-import { join } from "node:path";
 
 test("questions are well-formed", () => {
   expect(questions.length).toBeGreaterThan(0);
@@ -101,6 +101,44 @@ test("generateEnv includes storage config when selected", () => {
   const env = generateEnv(answers);
   expect(env).toContain("S3_ENDPOINT");
   expect(env).toContain("S3_BUCKET");
+});
+
+test("generatePackageJson includes social login deps", () => {
+  const answers = applyDefaults({ template: "custom", features: ["social"] });
+  const pkg = JSON.parse(generatePackageJson(answers));
+  // social uses @atlas/auth/social — the subpath comes for free with @atlas/auth.
+  expect(pkg.dependencies["@atlas/auth"]).toBeDefined();
+});
+
+test("generatePackageJson includes share package when selected", () => {
+  const answers = applyDefaults({ template: "custom", features: ["share"] });
+  const pkg = JSON.parse(generatePackageJson(answers));
+  expect(pkg.dependencies["@atlas/share"]).toBeDefined();
+  // share pulls @atlas/email through transport, so the env helper should add the keys too.
+  expect(pkg.dependencies["@atlas/email"]).toBeDefined();
+});
+
+test("generateEnv includes OAuth provider stubs when social is selected", () => {
+  const answers = applyDefaults({ template: "custom", features: ["social"] });
+  const env = generateEnv(answers);
+  expect(env).toContain("OAUTH_STATE_SECRET");
+  expect(env).toContain("GOOGLE_CLIENT_ID=");
+  expect(env).toContain("GITHUB_CLIENT_ID=");
+  expect(env).toContain("APPLE_TEAM_ID=");
+  expect(env).toContain("MICROSOFT_TENANT=common");
+  expect(env).toContain("FACEBOOK_CLIENT_ID=");
+  expect(env).toContain("TWITTER_CLIENT_ID=");
+  expect(env).toContain("TIKTOK_CLIENT_KEY=");
+  expect(env).toContain("PUBLIC_ORIGIN=");
+});
+
+test("generateEnv includes Resend keys when email or share is selected", () => {
+  const envShare = generateEnv(applyDefaults({ template: "custom", features: ["share"] }));
+  expect(envShare).toContain("RESEND_API_KEY=");
+  expect(envShare).toContain("RESEND_FROM=");
+
+  const envEmail = generateEnv(applyDefaults({ template: "custom", features: ["email"] }));
+  expect(envEmail).toContain("RESEND_API_KEY=");
 });
 
 test("generateProject returns all required files", () => {

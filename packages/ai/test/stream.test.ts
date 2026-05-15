@@ -1,6 +1,6 @@
-import { test, expect } from "bun:test";
-import { collectStream, streamToSse } from "../stream/index.ts";
+import { expect, test } from "bun:test";
 import type { StreamChunk } from "../provider/index.ts";
+import { collectStream, streamToSse } from "../stream/index.ts";
 
 test("collectStream assembles text chunks", async () => {
   async function* chunks(): AsyncGenerator<StreamChunk> {

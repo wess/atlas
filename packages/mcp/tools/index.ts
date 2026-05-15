@@ -1,5 +1,4 @@
 import type { AtlasMcpContext } from "../context/index.ts";
-import type { Tool } from "./types.ts";
 import { cacheTools } from "./cache.ts";
 import { configTools } from "./config.ts";
 import { dbTools } from "./db.ts";
@@ -9,6 +8,7 @@ import { logTools } from "./logs.ts";
 import { migrateTools } from "./migrate.ts";
 import { routeTools } from "./routes.ts";
 import { storageTools } from "./storage.ts";
+import type { Tool } from "./types.ts";
 
 export type { Tool, ToolInput } from "./types.ts";
 export { defineTool } from "./types.ts";

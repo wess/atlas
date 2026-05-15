@@ -1,7 +1,7 @@
-import { test, expect } from "bun:test";
-import { index, query } from "../rag/index.ts";
+import { expect, test } from "bun:test";
 import { createVectorStore } from "../embeddings/index.ts";
 import type { AiProvider } from "../provider/index.ts";
+import { index, query } from "../rag/index.ts";
 
 const mockAi: AiProvider = {
   name: "mock",

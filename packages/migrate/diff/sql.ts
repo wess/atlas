@@ -86,8 +86,7 @@ const opToSql = (op: DiffOp, dialect: Dialect): string => {
       // Type/nullability changes — emit as a comment so the user reviews.
       const reasons: string[] = [];
       if (op.from.type !== op.to.type) reasons.push(`type ${op.from.type} → ${op.to.type}`);
-      if (op.from.nullable !== op.to.nullable)
-        reasons.push(`nullable ${op.from.nullable} → ${op.to.nullable}`);
+      if (op.from.nullable !== op.to.nullable) reasons.push(`nullable ${op.from.nullable} → ${op.to.nullable}`);
       return `-- ALTER ${op.table}.${op.from.name} (${reasons.join(", ")}) — review and adjust manually`;
     }
   }
@@ -97,4 +96,7 @@ export const renderSql = (ops: readonly DiffOp[], dialect: Dialect): string =>
   ops.map((op) => opToSql(op, dialect)).join("\n\n");
 
 export const renderInverseSql = (ops: readonly DiffOp[], dialect: Dialect): string =>
-  [...ops].reverse().map((op) => opToSql(inverseOp(op), dialect)).join("\n\n");
+  [...ops]
+    .reverse()
+    .map((op) => opToSql(inverseOp(op), dialect))
+    .join("\n\n");

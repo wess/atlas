@@ -1,5 +1,5 @@
-import { test, expect } from "bun:test";
-import { ChatWindow, MessageBubble, PromptInput, AiSearch, GenerateButton } from "../ai/index.tsx";
+import { expect, test } from "bun:test";
+import { AiSearch, ChatWindow, GenerateButton, MessageBubble, PromptInput } from "../ai/index.tsx";
 
 test("ChatWindow is a function", () => {
   expect(typeof ChatWindow).toBe("function");

@@ -88,12 +88,7 @@ const buildValidationPipe = <P, B, Q, A>(schemas: RouteSchemas<P, B, Q, A>): Pip
 // Build a Route from a method + path + validation schemas + a typed handler.
 // Body, params, query are validated *after* `before` pipes run — so guards like
 // requireAuth can populate conn.assigns.auth before validation sees the request.
-export const route = <
-  P = Record<string, string>,
-  B = unknown,
-  Q = Record<string, string>,
-  A = Record<string, unknown>,
->(
+export const route = <P = Record<string, string>, B = unknown, Q = Record<string, string>, A = Record<string, unknown>>(
   method: string,
   path: string,
   schemas: RouteSchemas<P, B, Q, A>,

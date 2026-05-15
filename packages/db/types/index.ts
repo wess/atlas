@@ -125,32 +125,21 @@ export type SqlResult<Row = unknown> = {
 //   Selected — what a query returning rows yields (narrows after .select(...))
 // Both default to `any` so untyped from("users") usage keeps working.
 export type Chainable<Row = any, Selected = Row> = {
-  readonly select: <K extends keyof Row & string>(
-    ...columns: K[]
-  ) => Chainable<Row, { [P in K]: Row[P] }>;
+  readonly select: <K extends keyof Row & string>(...columns: K[]) => Chainable<Row, { [P in K]: Row[P] }>;
   readonly where: (callback: WhereCallback) => Chainable<Row, Selected>;
   readonly join: (table: string, on: string | Fragment, alias?: string) => Chainable<Row, Selected>;
   readonly leftJoin: (table: string, on: string | Fragment, alias?: string) => Chainable<Row, Selected>;
   readonly innerJoin: (table: string, on: string | Fragment, alias?: string) => Chainable<Row, Selected>;
-  readonly orderBy: (
-    column: Column,
-    direction?: OrderDirection,
-    nulls?: "FIRST" | "LAST",
-  ) => Chainable<Row, Selected>;
+  readonly orderBy: (column: Column, direction?: OrderDirection, nulls?: "FIRST" | "LAST") => Chainable<Row, Selected>;
   readonly groupBy: (...columns: Column[]) => Chainable<Row, Selected>;
   readonly having: (callback: WhereCallback) => Chainable<Row, Selected>;
   readonly limit: (n: number) => Chainable<Row, Selected>;
   readonly offset: (n: number) => Chainable<Row, Selected>;
-  readonly returning: <K extends keyof Row & string>(
-    ...columns: K[]
-  ) => Chainable<Row, { [P in K]: Row[P] }>;
+  readonly returning: <K extends keyof Row & string>(...columns: K[]) => Chainable<Row, { [P in K]: Row[P] }>;
   readonly distinct: (...columns: Column[]) => Chainable<Row, Selected>;
   readonly insert: (data: Partial<Row> | Record<string, any>) => Chainable<Row, Selected>;
   readonly insertMany: (data: readonly (Partial<Row> | Record<string, any>)[]) => Chainable<Row, Selected>;
-  readonly insertFrom: (
-    columns: readonly string[],
-    source: Chainable<any, any>,
-  ) => Chainable<Row, Selected>;
+  readonly insertFrom: (columns: readonly string[], source: Chainable<any, any>) => Chainable<Row, Selected>;
   readonly truncate: (cascade?: boolean) => Chainable<Row, Selected>;
   readonly update: (data: Partial<Row> | Record<string, any>) => Chainable<Row, Selected>;
   readonly del: () => Chainable<Row, Selected>;

@@ -1,6 +1,6 @@
-import type { RowOf, Schema, SchemaColumns } from "../schema/index.ts";
 import { createChain } from "../chain/index.ts";
 import { createQuery } from "../query/index.ts";
+import type { RowOf, Schema, SchemaColumns } from "../schema/index.ts";
 import type { Chainable } from "../types/index.ts";
 
 // Two overloads:

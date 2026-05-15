@@ -21,10 +21,11 @@ If you are an AI session new to this codebase, start with [SOUL.md](SOUL.md) —
 - [packages/migrate/AGENTS.md](packages/migrate/AGENTS.md): timestamped SQL migrations + schema-diff (`migrate.diff`)
 - [packages/server/AGENTS.md](packages/server/AGENTS.md): `Bun.serve` + Plug-style pipes, typed `route()` with validation, `HttpError`
 - [packages/edge/AGENTS.md](packages/edge/AGENTS.md): TLS-terminating reverse proxy with built-in Let's Encrypt
-- [packages/auth/AGENTS.md](packages/auth/AGENTS.md): hash/verify, JWT, session store, `signup`/`login`/`requireAuth` pipes
+- [packages/auth/AGENTS.md](packages/auth/AGENTS.md): hash/verify, JWT, session store, `signup`/`login`/`requireAuth` pipes, and `@atlas/auth/social` (Google, GitHub, Apple, Microsoft, Facebook, X, TikTok)
 - [packages/security/AGENTS.md](packages/security/AGENTS.md): CSP/headers, rate limit, audit log, TOTP, revocable DB-backed sessions
 - [packages/oauth/AGENTS.md](packages/oauth/AGENTS.md): OAuth 2.1 server (PKCE, refresh rotation, device flow, RFC 8414 discovery)
 - [packages/email/AGENTS.md](packages/email/AGENTS.md): provider-agnostic email transport + invite/reset templates
+- [packages/share/AGENTS.md](packages/share/AGENTS.md): share-URL builders (Twitter/X, Facebook, LinkedIn, Reddit, WhatsApp, Telegram, SMS, mailto) + server-side share-by-email
 - [packages/storage/AGENTS.md](packages/storage/AGENTS.md): S3-compatible storage with presigned URLs (zero deps; SigV4 from scratch)
 - [packages/cache/AGENTS.md](packages/cache/AGENTS.md): Redis-backed caching via `Bun.redis`, cache-aside helper
 - [packages/request/AGENTS.md](packages/request/AGENTS.md): HTTP client (retries, interceptors, provider configs)
@@ -40,7 +41,7 @@ If you are an AI session new to this codebase, start with [SOUL.md](SOUL.md) —
 - Functional style only — no `class`. Immutable data; transforms return new objects.
 - `pipeline(...)(handler)` composes pipes; `halt(c, status, body?)` short-circuits.
 - Bun-only runtime: `Bun.serve`, `Bun.sql`, `Bun.redis`, `Bun.password`, `bun:sqlite`, `Bun.file`. No Node alternatives.
-- Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. Subpath exports: `@atlas/server/ws`, `@atlas/server/sse`, `@atlas/ui/*`.
+- Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. Subpath exports: `@atlas/server/ws`, `@atlas/server/sse`, `@atlas/auth/social`, `@atlas/ui/*`.
 - Tests live in `packages/<name>/test/`. Run with `bun test`. Lint/format with `bun run check` / `bun run tidy` (Biome only — no Prettier or ESLint).
 
 ## How to ground generation

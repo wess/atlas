@@ -1,6 +1,6 @@
+import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { dirname, join } from "node:path";
 import type { Answers } from "./questions.ts";
-import { existsSync, readdirSync, statSync, mkdirSync } from "node:fs";
-import { join, dirname } from "node:path";
 
 // Template scaffolding
 
@@ -78,11 +78,13 @@ export const generatePackageJson = (answers: Answers): string => {
   const db = answers.database as string;
 
   if (db !== "none") deps["@atlas/db"] = "latest";
-  if (features.includes("auth")) deps["@atlas/auth"] = "latest";
+  if (features.includes("auth") || features.includes("social")) deps["@atlas/auth"] = "latest";
   if (features.includes("storage")) deps["@atlas/storage"] = "latest";
   if (features.includes("cache")) deps["@atlas/cache"] = "latest";
   if (features.includes("admin")) deps["@atlas/admin"] = "latest";
   if (features.includes("migrate")) deps["@atlas/migrate"] = "latest";
+  if (features.includes("email") || features.includes("share")) deps["@atlas/email"] = "latest";
+  if (features.includes("share")) deps["@atlas/share"] = "latest";
   if (answers.frontend) deps["@atlas/ui"] = "latest";
 
   return JSON.stringify(
@@ -136,6 +138,33 @@ export const generateEnv = (answers: Answers): string => {
   }
   if (features.includes("auth")) {
     lines.push(`AUTH_SECRET=change-me-in-production`);
+  }
+  if (features.includes("social")) {
+    lines.push(`OAUTH_STATE_SECRET=change-me-in-production`);
+    lines.push(`# Fill in only the providers you want enabled — each requires a developer-console app.`);
+    lines.push(`GOOGLE_CLIENT_ID=`);
+    lines.push(`GOOGLE_CLIENT_SECRET=`);
+    lines.push(`GITHUB_CLIENT_ID=`);
+    lines.push(`GITHUB_CLIENT_SECRET=`);
+    lines.push(`APPLE_CLIENT_ID=`);
+    lines.push(`APPLE_TEAM_ID=`);
+    lines.push(`APPLE_KEY_ID=`);
+    lines.push(`# Paste the .p8 contents with newlines escaped as \\n, or load from a file in code.`);
+    lines.push(`APPLE_PRIVATE_KEY=`);
+    lines.push(`MICROSOFT_CLIENT_ID=`);
+    lines.push(`MICROSOFT_CLIENT_SECRET=`);
+    lines.push(`MICROSOFT_TENANT=common`);
+    lines.push(`FACEBOOK_CLIENT_ID=`);
+    lines.push(`FACEBOOK_CLIENT_SECRET=`);
+    lines.push(`TWITTER_CLIENT_ID=`);
+    lines.push(`TWITTER_CLIENT_SECRET=`);
+    lines.push(`TIKTOK_CLIENT_KEY=`);
+    lines.push(`TIKTOK_CLIENT_SECRET=`);
+    lines.push(`PUBLIC_ORIGIN=http://localhost:${answers.port ?? 3000}`);
+  }
+  if (features.includes("email") || features.includes("share")) {
+    lines.push(`RESEND_API_KEY=`);
+    lines.push(`RESEND_FROM=no-reply@example.com`);
   }
 
   return `${lines.join("\n")}\n`;

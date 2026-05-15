@@ -42,9 +42,11 @@ Add `atlas/` to `.gitignore`.
 | `@atlas/server/ws` | WebSocket channels, rooms |
 | `@atlas/server/sse` | Server-sent events |
 | `@atlas/auth` | Password hashing, JWT, sessions, auth flow pipes |
+| `@atlas/auth/social` | Pluggable OAuth-client social login (Google, GitHub, Apple, Microsoft, Facebook, X, TikTok) |
 | `@atlas/security` | CSP/headers, rate limit, audit log, TOTP, DB-backed revocable sessions |
 | `@atlas/oauth` | OAuth 2.1 server (PKCE, refresh rotation, device flow, discovery) |
 | `@atlas/email` | Provider-agnostic email transport + invite/reset templates |
+| `@atlas/share` | Share-URL builders (Twitter/X, FB, LinkedIn, Reddit, WhatsApp, Telegram, SMS, mailto) + server-side share-by-email |
 | `@atlas/storage` | S3-compatible storage, presigned URLs |
 | `@atlas/cache` | Redis caching with TTL, cache-aside |
 | `@atlas/request` | HTTP client, retries, interceptors |
@@ -54,7 +56,7 @@ Add `atlas/` to `.gitignore`.
 | `@atlas/mcp` | MCP server for AI debugging |
 | `@atlas/ai` | AI providers, chat, embeddings, RAG, agents, streaming |
 
-Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. Subpath exports: `@atlas/server/ws`, `@atlas/server/sse`, `@atlas/ui/*`.
+Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. Subpath exports: `@atlas/server/ws`, `@atlas/server/sse`, `@atlas/auth/social`, `@atlas/ui/*`.
 
 ## Conventions
 
@@ -69,7 +71,7 @@ Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. S
 
 - `bun test` — run suite (tests live in `packages/*/test/`)
 - `bun run check` — biome lint + format check
-- `bun run tidy` — biome auto-fix (format + lint)
+- `bun run tidy` — biome auto-fix (format + lint + organize imports via `biome check --write`)
 - biome only; no prettier, no eslint
 
 ## Examples & Templates

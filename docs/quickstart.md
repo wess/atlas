@@ -495,6 +495,84 @@ import { ChatPanel } from "@atlas/ui/ai"
 <ChatPanel endpoint="/api/chat" />
 ```
 
+### Add Social Login
+
+Drop "Sign in with Google / GitHub / etc." onto the existing password flow.
+PKCE + state ride in a signed HttpOnly cookie, so the flow stays stateless —
+no extra schema, no session table.
+
+```ts
+import { socialAuth, google, github, tiktok } from "@atlas/auth/social"
+import { token } from "@atlas/auth"
+import { get, post, redirect, putHeader, parseForm, pipeline } from "@atlas/server"
+
+const origin = `http://localhost:${config.port}`
+
+const social = socialAuth({
+  secret: process.env.OAUTH_STATE_SECRET!,
+  cookie: { secure: process.env.NODE_ENV === "production" },
+  providers: {
+    google: google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      redirectUri: `${origin}/auth/google/callback`,
+    }),
+    github: github({
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      redirectUri: `${origin}/auth/github/callback`,
+    }),
+    tiktok: tiktok({
+      clientKey: process.env.TIKTOK_CLIENT_KEY!,
+      clientSecret: process.env.TIKTOK_CLIENT_SECRET!,
+      redirectUri: `${origin}/auth/tiktok/callback`,
+    }),
+    // Add apple/microsoft/facebook/twitter the same way.
+  },
+})
+
+const onSocialSuccess = async (c, { profile }) => {
+  // Upsert by (provider, providerId); see docs/cookbook.md for the full pattern.
+  const user = await upsertUserFromProfile(profile)
+  const jwt = await token.sign({ id: user.id }, config.secret, { expiresIn: 86400 })
+  return redirect(putHeader(c, "set-cookie", `session=${jwt}; HttpOnly; Path=/`), "/")
+}
+
+const socialRoutes = [
+  get("/auth/google",           social.start("google")),
+  get("/auth/google/callback",  social.callback("google", { onSuccess: onSocialSuccess })),
+  get("/auth/github",           social.start("github")),
+  get("/auth/github/callback",  social.callback("github", { onSuccess: onSocialSuccess })),
+  get("/auth/tiktok",           social.start("tiktok")),
+  get("/auth/tiktok/callback",  social.callback("tiktok", { onSuccess: onSocialSuccess })),
+  // Apple delivers form_post → use POST + parseForm:
+  // post("/auth/apple/callback", pipeline(parseForm)(social.callback("apple", { onSuccess: onSocialSuccess }))),
+]
+```
+
+Slot `...socialRoutes` into your `serve({ routes: [...] })`. The full provider
+matrix and Apple-specific notes live in `docs/cookbook.md`.
+
+### Add Share Buttons
+
+```ts
+import { share, shareUrl, shareEmail } from "@atlas/share"
+import { createEmailer } from "@atlas/email"
+
+const content = { url: "https://example.com/post/123", title: "Look at this" }
+
+// One channel:
+shareUrl("twitter", { ...content, hashtags: ["atlas"] })
+
+// All eight channels at once — render however your UI prefers:
+share(content)
+// → { twitter, facebook, linkedin, reddit, whatsapp, telegram, sms, email }
+
+// Server-side share-by-email (reuses your @atlas/email transport):
+const emailer = createEmailer({ apiKey: process.env.RESEND_API_KEY, from: process.env.RESEND_FROM })
+await shareEmail({ emailer, to: "friend@example.com", sharerName: "Wess", content })
+```
+
 ### Add External API Calls
 
 ```ts

@@ -1,5 +1,5 @@
-import type { Tool } from "../tools/index.ts";
 import type { AtlasMcpContext } from "../context/index.ts";
+import type { Tool } from "../tools/index.ts";
 
 type JsonRpcRequest = {
   jsonrpc: "2.0";

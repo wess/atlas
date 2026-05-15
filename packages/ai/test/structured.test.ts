@@ -1,6 +1,6 @@
-import { test, expect } from "bun:test";
-import { tool, generateJson } from "../structured/index.ts";
+import { expect, test } from "bun:test";
 import type { AiProvider } from "../provider/index.ts";
+import { generateJson, tool } from "../structured/index.ts";
 
 test("tool creates a tool definition", () => {
   const t = tool("search", "Search the web", {

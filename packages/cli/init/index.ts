@@ -1,8 +1,8 @@
+import { existsSync, mkdirSync } from "node:fs";
 import { command, flag } from "../command/index.ts";
-import { askQuestions, applyDefaults } from "./questions.ts";
 import type { Answers } from "./questions.ts";
+import { applyDefaults, askQuestions } from "./questions.ts";
 import { generateProject, scaffoldFromTemplate } from "./templates.ts";
-import { mkdirSync, existsSync } from "node:fs";
 
 export const initCommand = command("init", {
   description: "Create a new Atlas project",

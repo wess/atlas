@@ -44,10 +44,8 @@ const asNumberWithDefault = (d: number) => (v: unknown) => (v === undefined || v
 
 test("route() validates params and narrows types", async () => {
   const r = router(
-    getR(
-      "/users/:id",
-      { params: asObject({ id: asNumber }) },
-      (c) => json(c, 200, { idType: typeof c.params.id, id: c.params.id }),
+    getR("/users/:id", { params: asObject({ id: asNumber }) }, (c) =>
+      json(c, 200, { idType: typeof c.params.id, id: c.params.id }),
     ),
   );
 
@@ -64,11 +62,7 @@ test("route() validates params and narrows types", async () => {
 
 test("route() parses + validates JSON body", async () => {
   const r = router(
-    postR(
-      "/users",
-      { body: asObject({ email: asEmail, name: asNonEmptyString }) },
-      (c) => json(c, 201, c.body),
-    ),
+    postR("/users", { body: asObject({ email: asEmail, name: asNonEmptyString }) }, (c) => json(c, 201, c.body)),
   );
 
   const ok = await r(
@@ -92,13 +86,7 @@ test("route() parses + validates JSON body", async () => {
 });
 
 test("route() rejects non-JSON body when body schema is set", async () => {
-  const r = router(
-    postR(
-      "/x",
-      { body: asObject({ a: asString }) },
-      (c) => json(c, 200, c.body),
-    ),
-  );
+  const r = router(postR("/x", { body: asObject({ a: asString }) }, (c) => json(c, 200, c.body)));
   const res = await r(
     new Request("http://localhost/x", {
       method: "POST",

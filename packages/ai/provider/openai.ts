@@ -1,3 +1,4 @@
+import { parseSSE } from "../stream/index.ts";
 import type {
   AiProvider,
   ChatOptions,
@@ -9,7 +10,6 @@ import type {
   ToolCall,
   ToolDef,
 } from "./index.ts";
-import { parseSSE } from "../stream/index.ts";
 
 type OpenAiConfig = {
   key: string;

@@ -1,5 +1,5 @@
+import { assistantMessage, toolMessage, userMessage } from "../chat/index.ts";
 import type { AiProvider, Message, ToolDef } from "../provider/index.ts";
-import { userMessage, assistantMessage, toolMessage } from "../chat/index.ts";
 
 export type AgentTool = {
   readonly definition: ToolDef;

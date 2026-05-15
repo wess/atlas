@@ -1,6 +1,6 @@
-import { createOpenAi } from "./openai.ts";
 import { createAnthropic } from "./anthropic.ts";
 import { createOllama } from "./ollama.ts";
+import { createOpenAi } from "./openai.ts";
 
 export type Message = {
   readonly role: "system" | "user" | "assistant" | "tool";

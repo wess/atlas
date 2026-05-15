@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { command } from "../command/index.ts";
 
 // Walk up from this file to find Atlas's packages/ directory.

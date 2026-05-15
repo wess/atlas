@@ -1,5 +1,5 @@
-import type { Connection } from "@atlas/db";
 import type { Cache } from "@atlas/cache";
+import type { Connection } from "@atlas/db";
 import type { Route } from "@atlas/server";
 
 export type AtlasMcpContext = {

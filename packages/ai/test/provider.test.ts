@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test";
+import { expect, test } from "bun:test";
 import { createProvider } from "../provider/index.ts";
 
 test("createProvider throws on unknown provider", () => {

@@ -409,3 +409,168 @@ Available factories: `badRequest`, `unauthorized`, `forbidden`, `notFound`,
 `internal`, `serviceUnavailable`. All accept `(message?, { code?, details?,
 headers? })`. Use `haltWith(conn, error)` if you'd rather short-circuit the
 pipeline than `throw`.
+
+---
+
+## Social login (Google, GitHub, Apple, Microsoft, Facebook, X, TikTok)
+
+`@atlas/auth/social` is the OAuth-*client* side: the user signs into Google/
+GitHub/etc. and your app receives a normalized profile. State + PKCE verifier
+ride in an HttpOnly, signed-JWT cookie (`_atlas_oauth_state`, 10-minute TTL)
+so the flow stays stateless — no server-side session table required.
+
+Your app still owns the user table. The callback hands you a `SocialProfile`
++ raw `TokenSet`; do whatever upsert/link logic you want, then mint your own
+session JWT.
+
+```ts
+import { socialAuth, google, github, apple, microsoft, facebook, twitter, tiktok } from "@atlas/auth/social"
+import { token, requireAuth } from "@atlas/auth"
+import { from } from "@atlas/db"
+import { get, post, redirect, putHeader, json } from "@atlas/server"
+
+const origin = process.env.PUBLIC_ORIGIN!
+
+const social = socialAuth({
+  secret: process.env.OAUTH_STATE_SECRET!,
+  cookie: { secure: process.env.NODE_ENV === "production" }, // off in HTTP dev
+  providers: {
+    google:    google({ clientId, clientSecret, redirectUri: `${origin}/auth/google/callback` }),
+    github:    github({ clientId, clientSecret, redirectUri: `${origin}/auth/github/callback` }),
+    apple:     apple({ clientId, teamId, keyId, privateKey, redirectUri: `${origin}/auth/apple/callback` }),
+    microsoft: microsoft({ clientId, clientSecret, redirectUri: `${origin}/auth/microsoft/callback` }),
+    facebook:  facebook({ clientId, clientSecret, redirectUri: `${origin}/auth/facebook/callback` }),
+    twitter:   twitter({ clientId, redirectUri: `${origin}/auth/twitter/callback` }),
+    tiktok:    tiktok({ clientKey, clientSecret, redirectUri: `${origin}/auth/tiktok/callback` }),
+  },
+})
+
+const upsertFromProfile = async (p: typeof social.providers.google extends never ? never : any) => {
+  // Look up by (provider, providerId); fall back to email; create if neither matches.
+  const existing = await db.one(
+    from("users").where(q => q("provider").equals(p.provider)).where(q => q("providerId").equals(p.id))
+  )
+  if (existing) return existing
+  const [created] = await db.execute(
+    from("users").insert({
+      provider: p.provider,
+      providerId: p.id,
+      email: p.email ?? null,
+      name: p.name ?? null,
+      picture: p.picture ?? null,
+    }).returning("id", "email", "name")
+  )
+  return created
+}
+
+export const socialAuthRoutes = [
+  // Start: one route per provider. Optional returnTo encodes the post-login destination.
+  get("/auth/google",    social.start("google",    { returnTo: "/welcome" })),
+  get("/auth/github",    social.start("github",    { returnTo: "/welcome" })),
+  get("/auth/microsoft", social.start("microsoft", { returnTo: "/welcome" })),
+  get("/auth/facebook",  social.start("facebook",  { returnTo: "/welcome" })),
+  get("/auth/twitter",   social.start("twitter",   { returnTo: "/welcome" })),
+  get("/auth/tiktok",    social.start("tiktok",    { returnTo: "/welcome" })),
+  get("/auth/apple",     social.start("apple",     { returnTo: "/welcome" })),
+
+  // Callback: app issues its own session JWT after upserting the user.
+  get("/auth/google/callback", social.callback("google", {
+    onSuccess: async (c, { profile, returnTo }) => {
+      const user = await upsertFromProfile(profile)
+      const jwt = await token.sign({ id: user.id }, process.env.JWT_SECRET!, { expiresIn: 86400 })
+      const c2 = putHeader(c, "set-cookie", `session=${jwt}; HttpOnly; Path=/; SameSite=Lax`)
+      return redirect(c2, returnTo ?? "/")
+    },
+    onError: async (c, err) => json(c, 401, { error: err.message }),
+  })),
+  // …same shape for github / microsoft / facebook / twitter / tiktok …
+
+  // Apple uses response_mode=form_post by default, so its callback arrives as POST
+  // with form-encoded code/state in the body. Compose parseForm in front of it:
+  post("/auth/apple/callback", pipeline(parseForm)(
+    social.callback("apple", { onSuccess: /* same as above */, onError: /* … */ }),
+  )),
+]
+```
+
+### Notes that bite people
+
+- **Apple**: the `privateKey` is the PEM of the `.p8` you downloaded from
+  Apple. `mintClientSecret` runs on every exchange — TTL is 15 minutes; no
+  caching is needed for normal traffic. The callback is a `POST` because the
+  default `response_mode` is `form_post`.
+- **GitHub**: if `user:email` scope is granted but the primary email is
+  private, the provider falls back to `GET /user/emails` automatically.
+- **Facebook**: scopes are comma-joined (not space-joined). The package handles
+  that for you, but if you pass `extraParams` keep it in mind.
+- **Twitter/X**: public PKCE-only clients leave `clientSecret` undefined.
+  Confidential clients pass it; the package switches to HTTP Basic auth on
+  the token endpoint automatically. Twitter does not return an email; treat
+  the profile email as always `null`.
+- **TikTok**: the dashboard calls it `client_key`, not `client_id`. The stable
+  user id is `open_id`. Email is never returned.
+- **Cookie in HTTPS-only browsers**: `Secure` is on by default. If you're
+  running over plain HTTP on something other than `localhost`, pass
+  `cookie: { secure: false }` or your browser will silently drop the cookie
+  and every callback will fail with "Missing OAuth state cookie".
+
+---
+
+## Sharing a link (Twitter/X, Facebook, LinkedIn, Reddit, WhatsApp, Telegram, SMS, email)
+
+`@atlas/share` builds the URL the user's browser opens to share to each
+channel. URL builders are **pure**: no DOM, no fetch — call them on the
+server while rendering, or in a React component, doesn't matter.
+
+```ts
+import { share, shareUrl, listChannels, shareEmail } from "@atlas/share"
+
+const content = {
+  url: "https://example.com/post/123",
+  title: "Look at this",
+  text: "A short blurb",
+  hashtags: ["atlas", "bun"], // twitter
+  via: "atlas",                // twitter
+}
+
+shareUrl("twitter", content)
+// → https://twitter.com/intent/tweet?url=…&text=…&hashtags=atlas%2Cbun&via=atlas
+
+share(content)
+// → { twitter, facebook, linkedin, reddit, whatsapp, telegram, sms, email }
+
+// Render a row of "share to X" buttons from the registry:
+listChannels()
+// → [{ channel: "twitter", label: "X (Twitter)" }, … ]
+```
+
+### Server-side share-by-email
+
+Pair with `@atlas/email`. Falls back to the console transport in dev like
+every other Atlas email path, so it's safe to wire before configuring a
+sending domain.
+
+```ts
+import { createEmailer } from "@atlas/email"
+import { shareEmail } from "@atlas/share"
+
+const emailer = createEmailer({
+  apiKey: process.env.RESEND_API_KEY,
+  from: process.env.RESEND_FROM,
+})
+
+await shareEmail({
+  emailer,
+  to: "friend@example.com",
+  replyTo: "wess@example.com",   // so replies go to the sharer, not no-reply
+  sharerName: "Wess",
+  product: "Atlas",
+  message: "thought you'd like this",
+  content: { url: "https://example.com/post/123", title: "Look at this" },
+})
+```
+
+Use `renderShareEmailMessage(opts)` if you want to preview the
+`{ subject, html, text }` without sending. Untrusted strings are HTML-escaped
+automatically; the body is wrapped in `@atlas/email`'s 560px Outlook-safe
+card via `layout()`.

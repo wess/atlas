@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test";
+import { expect, test } from "bun:test";
 import { createContext } from "../context/index.ts";
 
 test("createContext with defaults", () => {

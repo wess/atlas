@@ -1,7 +1,7 @@
-import { test, expect } from "bun:test";
+import { expect, test } from "bun:test";
+import { createContext } from "../context/index.ts";
 import { createMcpServer } from "../server/index.ts";
 import { defineTool } from "../tools/index.ts";
-import { createContext } from "../context/index.ts";
 
 test("createMcpServer creates a server", () => {
   const server = createMcpServer([], createContext());

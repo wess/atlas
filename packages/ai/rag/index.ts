@@ -1,6 +1,6 @@
-import type { AiProvider } from "../provider/index.ts";
-import { embed } from "../embeddings/index.ts";
 import type { VectorStore } from "../embeddings/index.ts";
+import { embed } from "../embeddings/index.ts";
+import type { AiProvider } from "../provider/index.ts";
 
 export type RagOptions = {
   readonly ai: AiProvider;

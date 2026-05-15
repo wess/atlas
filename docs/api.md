@@ -146,6 +146,45 @@ requireAuth({ secret }) → PipeFn           reads Bearer token, sets conn.assig
 passwordReset({ db, table, transport }) → PipeFn
 ```
 
+## @atlas/auth/social
+```
+socialAuth({ secret, providers, cookie? }) → SocialAuth
+  SocialAuth: { providers,
+                authorize(name, { scopes?, returnTo?, extraParams? }?) → { url, cookie },
+                complete(name, conn) → { provider, tokens, profile, returnTo? },
+                start(name, opts?) → PipeFn,                     302s + sets state cookie
+                callback(name, { onSuccess, onError? }) → PipeFn  validates state, exchanges code, clears cookie }
+Provider factories — each returns a `SocialProvider`:
+  google({ clientId, clientSecret, redirectUri, hostedDomain?, prompt? })
+  github({ clientId, clientSecret, redirectUri, allowSignup? })
+  apple({ clientId, teamId, keyId, privateKey, redirectUri, responseMode? })
+    mints ES256 client_secret JWT per exchange; default response_mode=form_post
+  microsoft({ clientId, clientSecret, redirectUri, tenant?, prompt? })   tenant defaults to "common"
+  facebook({ clientId, clientSecret, redirectUri, apiVersion?, profileFields? })
+  twitter({ clientId, clientSecret?, redirectUri, userFields? })          Basic auth for confidential clients
+  tiktok({ clientKey, clientSecret, redirectUri, userFields? })           uses `client_key`, comma-joined scopes, id is open_id
+SocialProfile: { provider, id, email?, emailVerified?, name?, picture?, username?, raw }
+TokenSet: { accessToken, tokenType?, expiresIn?, refreshToken?, idToken?, scope?, raw }
+State + PKCE verifier live in a signed, HttpOnly, SameSite=lax cookie
+  (`_atlas_oauth_state`, 10 min TTL). Override via cookie: { name?, path?, secure?, sameSite? }.
+```
+
+## @atlas/share
+```
+shareUrl(channel, content) → string           throws on unknown channel or missing url
+share(content) → Record<ShareChannel, string> all eight URLs at once
+listChannels() → { channel, label }[]         ordered list with display labels
+channels                                       readonly ShareChannel[]
+ShareChannel = "twitter" | "facebook" | "linkedin" | "reddit" | "whatsapp" | "telegram" | "sms" | "email"
+ShareContent: { url, title?, text?, hashtags?, via?, phone?, to?, cc?, bcc? }
+  url required; unknown fields ignored per channel.
+Provider re-exports (each is a `ShareProvider { channel, label, build }`):
+  twitter, facebook, linkedin, reddit, whatsapp, telegram, sms, email
+shareEmail({ emailer, to, from?, replyTo?, sharerName?, product?, message?, content, brand?, accent? })
+  → Promise<SendResult>                        dispatches a branded HTML email through @atlas/email
+renderShareEmailMessage(opts) → { subject, html, text }   pure preview/render
+```
+
 ## @atlas/email
 ```
 createEmailer({ apiKey?, from? }) → Emailer    auto-picks Resend if both set, else console

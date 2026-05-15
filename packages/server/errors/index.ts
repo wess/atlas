@@ -22,8 +22,7 @@ export const haltWith = (conn: Conn, error: HttpError): Conn => {
   return halt(next, error.status, body);
 };
 
-export { isHttpError };
-export type { HttpError };
+export type { HttpErrorOptions } from "./http.ts";
 export {
   badRequest,
   conflict,
@@ -38,4 +37,5 @@ export {
   unauthorized,
   unprocessable,
 } from "./http.ts";
-export type { HttpErrorOptions } from "./http.ts";
+export type { HttpError };
+export { isHttpError };

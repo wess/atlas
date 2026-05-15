@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
 import { createContext } from "./context/index.ts";
-import { collectTools } from "./tools/index.ts";
 import { createMcpServer } from "./server/index.ts";
+import { collectTools } from "./tools/index.ts";
 
 const loadProjectContext = async () => {
   const ctx: Record<string, unknown> = {};

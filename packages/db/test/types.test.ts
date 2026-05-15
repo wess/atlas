@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { connectSqlite } from "../drivers/sqlite.ts";
 import { from } from "../from/index.ts";
-import { type RowOf, column, defineSchema } from "../schema/index.ts";
+import { column, defineSchema, type RowOf } from "../schema/index.ts";
 
 // Helpers for compile-time assertions. These never execute.
 type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false;
@@ -44,9 +44,7 @@ test(".returning narrows like .select; insert returns typed rows", async () => {
   const db = connectSqlite(":memory:");
   await db.execute({ text: "CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT, name TEXT)", values: [] });
 
-  const inserted = await db.execute(
-    from(users).insert({ email: "x@y.z", name: "Bob" }).returning("id", "email"),
-  );
+  const inserted = await db.execute(from(users).insert({ email: "x@y.z", name: "Bob" }).returning("id", "email"));
   type InsertedRow = (typeof inserted)[number];
   assertEquals<Equals<InsertedRow, { id: number; email: string }>>();
   expect(inserted[0]?.id).toBe(1);

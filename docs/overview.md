@@ -13,11 +13,13 @@ Atlas is a collection of composable, functional Bun/TypeScript packages for buil
 
 @atlas/migrate (depends on @atlas/db)
 @atlas/auth (depends on @atlas/db, @atlas/server)
+  └── @atlas/auth/social (subpath — OAuth-client side: Google/GitHub/Apple/MS/FB/X/TikTok)
 @atlas/admin (depends on @atlas/db, @atlas/server)
 @atlas/security (depends on @atlas/db, @atlas/auth)
 @atlas/oauth (depends on @atlas/db, @atlas/server, @atlas/auth)
 @atlas/edge (standalone — no sibling deps)
 @atlas/email (standalone — no sibling deps)
+@atlas/share (depends on @atlas/email — share URL builders + server-side share-by-email)
 
 @atlas/cache (optional, can use @atlas/config)
 @atlas/request (standalone — no sibling deps)
@@ -118,6 +120,7 @@ The `templates/edge` scaffold ships a complete deploy pattern: Procfile for loca
 
 - **Primitives** — `hash()`, `verify()`, `token.sign()`, `token.verify()` built on Bun's crypto
 - **Flows** — Prebuilt pipes like `signup()`, `login()`, `requireAuth()`, `passwordReset()` that work with `@atlas/server` and `@atlas/db`
+- **Social login** (`@atlas/auth/social` subpath) — pluggable OAuth-*client* for Google, GitHub, Apple, Microsoft, Facebook, X (Twitter), and TikTok. PKCE-S256 mandatory, state + verifier held in a signed HttpOnly cookie so the flow stays stateless. Your app owns the user table — `onSuccess` receives a normalized `SocialProfile` and you decide upsert/link.
 
 ```ts
 const signupPipe = signup({
@@ -126,6 +129,21 @@ const signupPipe = signup({
   fields: ["email", "password"],
   onSuccess: (c, user) => json(c, 201, user),
 })
+
+// Social — same Conn/PipeFn shape:
+const social = socialAuth({
+  secret,
+  providers: {
+    google: google({ clientId, clientSecret, redirectUri }),
+    github: github({ clientId, clientSecret, redirectUri }),
+    tiktok: tiktok({ clientKey, clientSecret, redirectUri }),
+    // …apple, microsoft, facebook, twitter
+  },
+})
+get("/auth/google", social.start("google"))
+get("/auth/google/callback", social.callback("google", {
+  onSuccess: async (c, { profile }) => json(c, 200, { profile }),
+}))
 ```
 
 ### Security
@@ -169,6 +187,29 @@ await emailer.send({ to: "user@example.com", ...inviteEmail({ inviterName, produ
 ```
 
 `createEmailer` returns the real Resend transport when both env vars are set and a console transport otherwise — dev environments stay unblocked without configuring a sending domain. `send` never throws; failures come back as `{ ok: false, error }`. The included `layout()` is a 560px Outlook-friendly card; always pass user-supplied strings through `escapeHtml`.
+
+### Share
+
+`@atlas/share` is the smallest practical layer for "share this link" UX. Pure URL builders for the eight channels users actually use, plus a server-side `shareEmail` that dispatches through any `@atlas/email` transport.
+
+```ts
+import { share, shareUrl, shareEmail } from "@atlas/share"
+
+shareUrl("twitter", { url, title, hashtags: ["atlas"] })
+// → https://twitter.com/intent/tweet?url=…&text=…&hashtags=atlas
+
+share({ url, title, text })
+// → { twitter, facebook, linkedin, reddit, whatsapp, telegram, sms, email }
+
+await shareEmail({
+  emailer,
+  to: "friend@example.com",
+  sharerName: "Wess",
+  content: { url, title },
+})
+```
+
+The URL builders have zero dependencies; `shareEmail` reuses the same `layout()` shell as `inviteEmail`/`passwordResetEmail` and escapes untrusted strings the same way.
 
 ### Storage
 
@@ -452,6 +493,7 @@ LLMs can read `packages/db/AGENTS.md` instead of traversing 20+ source files. Th
 | oauth | none |
 | edge | none |
 | email | none |
+| share | none |
 | storage | none |
 | cache | none |
 | request | none |

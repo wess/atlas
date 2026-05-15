@@ -1,4 +1,4 @@
-import { test, expect } from "bun:test";
+import { expect, test } from "bun:test";
 import { cosineSimilarity, createVectorStore, embed } from "../embeddings/index.ts";
 import type { AiProvider } from "../provider/index.ts";
 

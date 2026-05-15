@@ -1,7 +1,7 @@
-import { test, expect } from "bun:test";
+import { expect, test } from "bun:test";
 import { runAgent } from "../agents/index.ts";
-import { tool } from "../structured/index.ts";
 import type { AiProvider } from "../provider/index.ts";
+import { tool } from "../structured/index.ts";
 
 test("runAgent completes without tools", async () => {
   const mockAi: AiProvider = {
