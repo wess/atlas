@@ -1,6 +1,6 @@
 {
   "name": "atlas",
-  "private": true,
+  "version": "0.0.1",
   "license": "MIT",
   "workspaces": [
     "packages/*",
@@ -16,11 +16,30 @@
     "check:fix": "bunx biome check --write packages/",
     "tidy": "bun run check:fix"
   },
+  "dependencies": {
+    "zod": "^3.23.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "lucide-react": "^0.468.0",
+    "@mantine/core": "^7.0.0",
+    "@mantine/hooks": "^7.0.0",
+    "@mantine/form": "^7.0.0",
+    "@tanstack/react-table": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "react-dom": { "optional": true },
+    "lucide-react": { "optional": true },
+    "@mantine/core": { "optional": true },
+    "@mantine/hooks": { "optional": true },
+    "@mantine/form": { "optional": true },
+    "@tanstack/react-table": { "optional": true }
+  },
   "devDependencies": {
     "@biomejs/biome": "2.4.10",
     "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
   }
 }
