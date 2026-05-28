@@ -1,4 +1,4 @@
-import type { Connection } from "@atlas/db";
+import type { Connection } from "../../db/index.ts";
 
 export type RateLimitResult = {
   readonly ok: boolean;

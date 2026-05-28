@@ -1,4 +1,4 @@
-import type { ColumnType } from "@atlas/db";
+import type { ColumnType } from "../../db/index.ts";
 
 // Normalized column shape used by both introspection and schema-to-shape conversion.
 export type LiveColumn = {

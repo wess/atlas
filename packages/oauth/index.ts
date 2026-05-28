@@ -1,4 +1,4 @@
-import type { Route } from "@atlas/server";
+import type { Route } from "../server/index.ts";
 import { oauthAuthorizeRoutes } from "./authorize";
 import { oauthClientRoutes } from "./clients";
 import { oauthDeviceRoutes } from "./device";

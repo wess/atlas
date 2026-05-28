@@ -1,4 +1,4 @@
-import type { ColumnType, Connection } from "@atlas/db";
+import type { ColumnType, Connection } from "../../db/index.ts";
 import type { LiveColumn, LiveTable } from "./types.ts";
 
 // Internal table list — never diffed.

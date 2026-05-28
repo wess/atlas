@@ -1,7 +1,7 @@
 import { beforeEach, expect, test } from "bun:test";
 import { createHash, randomBytes } from "node:crypto";
-import { type Connection, connect } from "@atlas/db";
-import { assign, type PipeFn, router } from "@atlas/server";
+import { type Connection, connect } from "../../db/index.ts";
+import { assign, type PipeFn, router } from "../../server/index.ts";
 import { oauthRoutes } from "..";
 import type { OAuthConfig } from "../types";
 

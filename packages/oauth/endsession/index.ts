@@ -1,7 +1,7 @@
-import { token as jwt } from "@atlas/auth";
-import { from } from "@atlas/db";
-import type { Route } from "@atlas/server";
-import { get, halt, json, redirect } from "@atlas/server";
+import { token as jwt } from "../../auth/index.ts";
+import { from } from "../../db/index.ts";
+import type { Route } from "../../server/index.ts";
+import { get, halt, json, redirect } from "../../server/index.ts";
 import { issuerFromRequest, isAllowedRedirect } from "../helpers";
 import { signLogoutToken } from "../oidc";
 import type { ClientRow, OAuthConfig } from "../types.ts";

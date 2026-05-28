@@ -1,6 +1,6 @@
-import type { Connection, Schema } from "@atlas/db";
-import type { PipeFn, Route } from "@atlas/server";
-import { get, pipe } from "@atlas/server";
+import type { Connection, Schema } from "../../db/index.ts";
+import type { PipeFn, Route } from "../../server/index.ts";
+import { get, pipe } from "../../server/index.ts";
 import { generateQueryRoutes } from "../query/index.ts";
 import { generateRoutes } from "../routes/index.ts";
 import { adminHtml } from "../ui/shell.ts";

@@ -1,7 +1,7 @@
-import type { Connection } from "@atlas/db";
-import { from } from "@atlas/db";
-import type { Route } from "@atlas/server";
-import { del, get, json, parseJson, patch, pipeline, post } from "@atlas/server";
+import type { Connection } from "../../db/index.ts";
+import { from } from "../../db/index.ts";
+import type { Route } from "../../server/index.ts";
+import { del, get, json, parseJson, patch, pipeline, post } from "../../server/index.ts";
 import { randomId, sha256, sha256Equal, shortId } from "../helpers";
 import { authIdOf, type ClientRow, ctxOf, logAudit, type OAuthConfig, resolveTables } from "../types.ts";
 

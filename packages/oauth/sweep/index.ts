@@ -1,4 +1,4 @@
-import { from } from "@atlas/db";
+import { from } from "../../db/index.ts";
 import { type OAuthConfig, resolveTables } from "../types.ts";
 
 /**

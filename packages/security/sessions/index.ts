@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { token } from "@atlas/auth";
-import type { Connection } from "@atlas/db";
-import { from } from "@atlas/db";
+import { token } from "../../auth/index.ts";
+import type { Connection } from "../../db/index.ts";
+import { from } from "../../db/index.ts";
 
 export type SessionContext = {
   readonly ip?: string | null;

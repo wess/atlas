@@ -1,5 +1,5 @@
-import type { Route } from "@atlas/server";
-import { get, json } from "@atlas/server";
+import type { Route } from "../../server/index.ts";
+import { get, json } from "../../server/index.ts";
 import { issuerFromRequest } from "../helpers";
 import type { OAuthConfig } from "../types.ts";
 

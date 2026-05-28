@@ -1,6 +1,6 @@
-import type { Connection } from "@atlas/db";
-import type { Jwk } from "@atlas/auth";
-import type { PipeFn } from "@atlas/server";
+import type { Connection } from "../db/index.ts";
+import type { Jwk } from "../auth/index.ts";
+import type { PipeFn } from "../server/index.ts";
 
 /**
  * The user record loaded by `loadUser` when a grant succeeds. The library

@@ -1,6 +1,6 @@
-import type { Cache } from "@atlas/cache";
-import type { Connection } from "@atlas/db";
-import type { Route } from "@atlas/server";
+import type { Cache } from "../../cache/index.ts";
+import type { Connection } from "../../db/index.ts";
+import type { Route } from "../../server/index.ts";
 
 export type AtlasMcpContext = {
   readonly db?: Connection;

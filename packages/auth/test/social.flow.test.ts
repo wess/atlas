@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createConn, json } from "@atlas/server";
+import { createConn, json } from "../../server/index.ts";
 import { socialAuth } from "../social/index.ts";
 import type { SocialProvider } from "../social/providers/index.ts";
 

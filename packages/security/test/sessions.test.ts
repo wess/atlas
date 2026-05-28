@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { token } from "@atlas/auth";
-import { connect } from "@atlas/db";
+import { token } from "../../auth/index.ts";
+import { connect } from "../../db/index.ts";
 import { createSessionStore } from "../sessions";
 
 const newDb = async () => {

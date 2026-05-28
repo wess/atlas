@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { column, connect, defineSchema } from "@atlas/db";
+import { column, connect, defineSchema } from "../../db/index.ts";
 import { plan as diffPlan, writeDiff } from "../diff/index.ts";
 
 let workDir: string;

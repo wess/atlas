@@ -1,5 +1,5 @@
-import type { Connection } from "@atlas/db";
-import type { Conn } from "@atlas/server";
+import type { Connection } from "../db/index.ts";
+import type { Conn } from "../server/index.ts";
 
 /**
  * Claims a successful authorization yields. `sub` is required (string user

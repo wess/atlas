@@ -1,7 +1,7 @@
-import { requireAuth } from "@atlas/auth";
-import { from } from "@atlas/db";
-import type { PipeFn, Route } from "@atlas/server";
-import { json, parseJson, pipe, pipeline, post } from "@atlas/server";
+import { requireAuth } from "../../auth/index.ts";
+import { from } from "../../db/index.ts";
+import type { PipeFn, Route } from "../../server/index.ts";
+import { json, parseJson, pipe, pipeline, post } from "../../server/index.ts";
 import type { AdminConfig } from "../config/index.ts";
 
 export type QueryFilter = {

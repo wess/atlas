@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createConn } from "@atlas/server";
+import { createConn } from "../../server/index.ts";
 import { requireAuth } from "../flows/index.ts";
 import * as token from "../token/index.ts";
 

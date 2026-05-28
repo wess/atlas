@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { connect } from "@atlas/db";
+import { connect } from "../../db/index.ts";
 import { createAuditLogger } from "../audit";
 
 const newDb = async () => {

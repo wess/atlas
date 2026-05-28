@@ -1,6 +1,6 @@
-import { from } from "@atlas/db";
-import type { Conn, Route } from "@atlas/server";
-import { get, json, parseForm, parseJson, pipeline, post } from "@atlas/server";
+import { from } from "../../db/index.ts";
+import type { Conn, Route } from "../../server/index.ts";
+import { get, json, parseForm, parseJson, pipeline, post } from "../../server/index.ts";
 import { findClient } from "../clients";
 import {
   DEVICE_CODE_TTL_SECONDS,

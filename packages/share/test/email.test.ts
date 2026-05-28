@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { Emailer, EmailMessage } from "@atlas/email";
+import type { Emailer, EmailMessage } from "../../email/index.ts";
 import { renderShareEmailMessage, shareEmail } from "../email/index.ts";
 
 const captureEmailer = (): { emailer: Emailer; sent: EmailMessage[] } => {

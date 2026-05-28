@@ -1,5 +1,5 @@
-import { from } from "@atlas/db";
-import type { Connection } from "@atlas/db";
+import { from } from "../db/index.ts";
+import type { Connection } from "../db/index.ts";
 
 /**
  * The transient row that survives the redirect dance between

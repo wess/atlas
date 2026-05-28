@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { connect } from "@atlas/db";
+import { connect } from "../../db/index.ts";
 import { down, ensureTable, status, up } from "../migrations/index.ts";
 
 const testDir = "/tmp/atlas_migrate_ops_test";

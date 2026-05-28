@@ -1,4 +1,4 @@
-import type { ColumnType, Dialect } from "@atlas/db";
+import type { ColumnType, Dialect } from "../../db/index.ts";
 import type { DiffOp, LiveColumn, LiveTable } from "./types.ts";
 
 const PG_TYPES: Record<ColumnType, string> = {

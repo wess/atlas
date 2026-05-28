@@ -1,6 +1,6 @@
-import { from } from "@atlas/db";
-import type { Route } from "@atlas/server";
-import { get, json, parseJson, pipeline, post } from "@atlas/server";
+import { from } from "../../db/index.ts";
+import type { Route } from "../../server/index.ts";
+import { get, json, parseJson, pipeline, post } from "../../server/index.ts";
 import { findClient } from "../clients";
 import {
   AUTH_CODE_TTL_SECONDS,

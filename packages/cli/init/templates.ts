@@ -175,29 +175,29 @@ export const generateServerTs = (answers: Answers): string => {
   const setup: string[] = [];
   const routes: string[] = [];
 
-  imports.push(`import { config } from "@atlas/config"`);
-  imports.push(`import { serve } from "@atlas/server"`);
+  imports.push(`import { config } from "../../config/index.ts"`);
+  imports.push(`import { serve } from "../../server/index.ts"`);
 
   const db = answers.database as string;
   const features = answers.features as string[];
 
   if (db !== "none") {
-    imports.push(`import { db } from "@atlas/db"`);
+    imports.push(`import { db } from "../../db/index.ts"`);
     setup.push(`const database = db(config)`);
   }
 
   if (features.includes("auth")) {
-    imports.push(`import { auth } from "@atlas/auth"`);
+    imports.push(`import { auth } from "../../auth/index.ts"`);
     setup.push(`const authentication = auth(config)`);
   }
 
   if (features.includes("cache")) {
-    imports.push(`import { cache } from "@atlas/cache"`);
+    imports.push(`import { cache } from "../../cache/index.ts"`);
     setup.push(`const redis = cache(config)`);
   }
 
   if (features.includes("admin")) {
-    imports.push(`import { admin } from "@atlas/admin"`);
+    imports.push(`import { admin } from "../../admin/index.ts"`);
     setup.push(`const panel = admin(config)`);
   }
 

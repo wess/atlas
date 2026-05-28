@@ -1,7 +1,7 @@
-import type { Connection } from "@atlas/db";
-import { from } from "@atlas/db";
-import type { Conn, PipeFn } from "@atlas/server";
-import { assign, halt, json } from "@atlas/server";
+import type { Connection } from "../../db/index.ts";
+import { from } from "../../db/index.ts";
+import type { Conn, PipeFn } from "../../server/index.ts";
+import { assign, halt, json } from "../../server/index.ts";
 import { hash, verify as verifyPassword } from "../password/index.ts";
 import * as token from "../token/index.ts";
 

@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync } from "node:fs";
-import type { Connection, Schema } from "@atlas/db";
+import type { Connection, Schema } from "../../db/index.ts";
 import { introspect } from "./introspect.ts";
 import { tablesFromSchemas } from "./schema.ts";
 import { renderInverseSql, renderSql } from "./sql.ts";

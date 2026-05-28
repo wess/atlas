@@ -1,4 +1,4 @@
-import { type Emailer, escapeHtml, layout, type SendResult, safeHref } from "@atlas/email";
+import { type Emailer, escapeHtml, layout, type SendResult, safeHref } from "../../email/index.ts";
 import type { ShareContent } from "../providers/index.ts";
 
 export type ShareEmailOptions = {

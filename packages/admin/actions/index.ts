@@ -1,7 +1,7 @@
-import type { Connection } from "@atlas/db";
-import { from } from "@atlas/db";
-import type { Conn } from "@atlas/server";
-import { json } from "@atlas/server";
+import type { Connection } from "../../db/index.ts";
+import { from } from "../../db/index.ts";
+import type { Conn } from "../../server/index.ts";
+import { json } from "../../server/index.ts";
 import type { ModelConfig } from "../config/index.ts";
 
 export const handleBulkAction = async (

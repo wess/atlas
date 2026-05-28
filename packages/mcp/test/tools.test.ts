@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { createMemoryCache } from "@atlas/cache";
-import { connect } from "@atlas/db";
+import { createMemoryCache } from "../../cache/index.ts";
+import { connect } from "../../db/index.ts";
 import { createContext } from "../context/index.ts";
 import { collectTools, defineTool } from "../tools/index.ts";
 

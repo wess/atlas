@@ -1,7 +1,7 @@
 import { beforeEach, expect, test } from "bun:test";
-import type { Connection } from "@atlas/db";
-import { column, connect, defineSchema } from "@atlas/db";
-import { router } from "@atlas/server";
+import type { Connection } from "../../db/index.ts";
+import { column, connect, defineSchema } from "../../db/index.ts";
+import { router } from "../../server/index.ts";
 import { admin, model } from "../config/index.ts";
 
 const users = defineSchema("users", {

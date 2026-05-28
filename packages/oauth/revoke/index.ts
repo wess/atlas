@@ -1,6 +1,6 @@
-import { from } from "@atlas/db";
-import type { Conn, Route } from "@atlas/server";
-import { json, parseForm, parseJson, pipeline, post } from "@atlas/server";
+import { from } from "../../db/index.ts";
+import type { Conn, Route } from "../../server/index.ts";
+import { json, parseForm, parseJson, pipeline, post } from "../../server/index.ts";
 import { sha256 } from "../helpers";
 import { type OAuthConfig, resolveTables } from "../types.ts";
 

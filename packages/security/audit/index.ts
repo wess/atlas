@@ -1,5 +1,5 @@
-import type { Connection } from "@atlas/db";
-import { from } from "@atlas/db";
+import type { Connection } from "../../db/index.ts";
+import { from } from "../../db/index.ts";
 
 export type AuditEvent = {
   readonly userId?: number | string | null;

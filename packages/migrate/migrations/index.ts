@@ -1,4 +1,4 @@
-import type { Connection } from "@atlas/db";
+import type { Connection } from "../../db/index.ts";
 import { readSql, scanMigrations } from "../files/index.ts";
 
 export type MigrationStatus = {

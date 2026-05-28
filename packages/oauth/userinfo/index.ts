@@ -1,6 +1,6 @@
-import { token as jwt } from "@atlas/auth";
-import type { Route } from "@atlas/server";
-import { get, halt, json } from "@atlas/server";
+import { token as jwt } from "../../auth/index.ts";
+import type { Route } from "../../server/index.ts";
+import { get, halt, json } from "../../server/index.ts";
 import { hasOpenIdScope } from "../helpers";
 import type { OAuthConfig } from "../types.ts";
 

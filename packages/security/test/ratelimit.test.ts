@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { connect } from "@atlas/db";
+import { connect } from "../../db/index.ts";
 import { clientIp, createDbRateLimit, createMemoryRateLimit, parseTrustedProxies, userAgent } from "../ratelimit";
 
 const reqWith = (headers: Record<string, string>, peerIp?: string): Request => {

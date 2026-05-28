@@ -1,5 +1,5 @@
-import type { Conn, PipeFn } from "@atlas/server";
-import { halt, putHeader, redirect } from "@atlas/server";
+import type { Conn, PipeFn } from "../../server/index.ts";
+import { halt, putHeader, redirect } from "../../server/index.ts";
 import type { SocialProfile, SocialProvider, TokenSet } from "./providers/index.ts";
 import {
   type CookieOptions,

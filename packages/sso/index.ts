@@ -4,10 +4,10 @@
 // app uses). The package handles discovery, PKCE, state, code exchange,
 // id_token verification, and back-channel logout.
 
-import { token as jwt } from "@atlas/auth";
-import type { Connection } from "@atlas/db";
-import type { Route } from "@atlas/server";
-import { get, halt, json, parseForm, parseJson, pipeline, post, redirect } from "@atlas/server";
+import { token as jwt } from "../auth/index.ts";
+import type { Connection } from "../db/index.ts";
+import type { Route } from "../server/index.ts";
+import { get, halt, json, parseForm, parseJson, pipeline, post, redirect } from "../server/index.ts";
 import { clearDiscoveryCache, discover } from "./discovery.ts";
 import { newPkcePair, randomNonce, randomState } from "./pkce.ts";
 import { consumeState, writeState } from "./state.ts";

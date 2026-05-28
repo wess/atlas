@@ -1,8 +1,8 @@
-import { token as jwt } from "@atlas/auth";
-import type { Connection } from "@atlas/db";
-import { from } from "@atlas/db";
-import type { Conn, Route } from "@atlas/server";
-import { json, parseForm, parseJson, pipeline, post } from "@atlas/server";
+import { token as jwt } from "../../auth/index.ts";
+import type { Connection } from "../../db/index.ts";
+import { from } from "../../db/index.ts";
+import type { Conn, Route } from "../../server/index.ts";
+import { json, parseForm, parseJson, pipeline, post } from "../../server/index.ts";
 import { findClient, verifyClientCredentials } from "../clients";
 import {
   ACCESS_TOKEN_TTL_SECONDS,

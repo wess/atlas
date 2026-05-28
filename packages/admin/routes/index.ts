@@ -1,7 +1,7 @@
-import { requireAuth } from "@atlas/auth";
-import { from, raw } from "@atlas/db";
-import type { PipeFn, Route } from "@atlas/server";
-import { del, get, json, parseJson, pipe, pipeline, post, put } from "@atlas/server";
+import { requireAuth } from "../../auth/index.ts";
+import { from, raw } from "../../db/index.ts";
+import type { PipeFn, Route } from "../../server/index.ts";
+import { del, get, json, parseJson, pipe, pipeline, post, put } from "../../server/index.ts";
 import { handleBulkAction } from "../actions/index.ts";
 import type { AdminConfig } from "../config/index.ts";
 
