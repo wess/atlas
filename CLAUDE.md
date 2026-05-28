@@ -4,45 +4,32 @@ Composable, functional Bun/TypeScript building blocks. No classes, no mutation, 
 
 ## Usage
 
-Atlas is not on npm. Consume it as a Bun workspace, pulled from
-[github.com/wess/atlas](https://github.com/wess/atlas).
-
-**Submodule (apps under git):**
+Atlas is not on npm. Install it as a single bun package from
+[github.com/wess/atlas](https://github.com/wess/atlas):
 
 ```bash
-git submodule add https://github.com/wess/atlas.git libs/atlas
-git submodule update --init --recursive
+bun add github:wess/atlas
 ```
 
-`package.json`:
+Map `@atlas/<pkg>` imports to source via `tsconfig.json` `paths` (bun reads
+tsconfig paths at runtime; full list in README.md):
 
 ```json
 {
-  "workspaces": ["libs/atlas/packages/*"],
-  "dependencies": {
-    "@atlas/config": "workspace:*",
-    "@atlas/db": "workspace:*",
-    "@atlas/server": "workspace:*"
+  "compilerOptions": {
+    "paths": {
+      "@atlas/config": ["./node_modules/atlas/packages/config/index.ts"],
+      "@atlas/db":     ["./node_modules/atlas/packages/db/index.ts"],
+      "@atlas/server": ["./node_modules/atlas/packages/server/index.ts"]
+    }
   }
 }
 ```
 
-Bump with `cd libs/atlas && git pull origin main`.
-
-**Zip snapshot (one-offs):**
-
-```bash
-curl -sL https://github.com/wess/atlas/archive/refs/heads/main.zip -o /tmp/atlas.zip
-unzip -q /tmp/atlas.zip -d /tmp/atlas-expand
-mv /tmp/atlas-expand/atlas-main ./atlas
-rm -rf /tmp/atlas.zip /tmp/atlas-expand
-```
-
-```json
-{ "workspaces": ["atlas/packages/*"] }
-```
-
-Add `atlas/` to `.gitignore` for the zip approach (submodules are tracked by git).
+Atlas's internal cross-package imports use relative paths (`../db/index.ts`),
+so resolution inside `node_modules/atlas/` works without the consumer's
+tsconfig paths reaching in. Bump with `bun update atlas` — the resolved
+commit is pinned in `bun.lock`.
 
 ## Bun Only
 

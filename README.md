@@ -10,63 +10,57 @@ No framework lock-in. No classes. Just functions and immutable data flowing thro
 
 ## Install
 
-Atlas is not on npm. Pull it directly from this repo and reference its packages as Bun workspaces.
-
-### Option A — git submodule (recommended for apps under version control)
-
-Tracks a pinned atlas commit alongside your app. Bumps are explicit.
+Atlas is not on npm. Install it as a single bun package directly from this repo.
 
 ```bash
-git submodule add https://github.com/wess/atlas.git libs/atlas
-git submodule update --init --recursive
+bun add github:wess/atlas
 ```
 
-In your `package.json`:
+That lands the whole repo under `node_modules/atlas/`. Map each `@atlas/<pkg>`
+import to its file via `tsconfig.json` `paths` (bun reads tsconfig paths at
+runtime):
 
 ```json
 {
-  "workspaces": ["libs/atlas/packages/*"],
-  "dependencies": {
-    "@atlas/config": "workspace:*",
-    "@atlas/db": "workspace:*",
-    "@atlas/server": "workspace:*",
-    "@atlas/auth": "workspace:*"
+  "compilerOptions": {
+    "paths": {
+      "@atlas/auth":        ["./node_modules/atlas/packages/auth/index.ts"],
+      "@atlas/auth/social": ["./node_modules/atlas/packages/auth/social/index.ts"],
+      "@atlas/cache":       ["./node_modules/atlas/packages/cache/index.ts"],
+      "@atlas/cli":         ["./node_modules/atlas/packages/cli/index.ts"],
+      "@atlas/config":      ["./node_modules/atlas/packages/config/index.ts"],
+      "@atlas/db":          ["./node_modules/atlas/packages/db/index.ts"],
+      "@atlas/edge":        ["./node_modules/atlas/packages/edge/index.ts"],
+      "@atlas/email":       ["./node_modules/atlas/packages/email/index.ts"],
+      "@atlas/mcp":         ["./node_modules/atlas/packages/mcp/index.ts"],
+      "@atlas/migrate":     ["./node_modules/atlas/packages/migrate/index.ts"],
+      "@atlas/oauth":       ["./node_modules/atlas/packages/oauth/index.ts"],
+      "@atlas/request":     ["./node_modules/atlas/packages/request/index.ts"],
+      "@atlas/security":    ["./node_modules/atlas/packages/security/index.ts"],
+      "@atlas/server":      ["./node_modules/atlas/packages/server/index.ts"],
+      "@atlas/server/ws":   ["./node_modules/atlas/packages/server/ws/index.ts"],
+      "@atlas/server/sse":  ["./node_modules/atlas/packages/server/sse/index.ts"],
+      "@atlas/share":       ["./node_modules/atlas/packages/share/index.ts"],
+      "@atlas/sso":         ["./node_modules/atlas/packages/sso/index.ts"],
+      "@atlas/storage":     ["./node_modules/atlas/packages/storage/index.ts"],
+      "@atlas/ai":          ["./node_modules/atlas/packages/ai/index.ts"],
+      "@atlas/admin":       ["./node_modules/atlas/packages/admin/index.ts"],
+      "@atlas/ui":          ["./node_modules/atlas/packages/ui/index.ts"],
+      "@atlas/ui/*":        ["./node_modules/atlas/packages/ui/*/index.tsx"]
+    }
   }
 }
 ```
 
-To upgrade later:
+Then import normally:
 
-```bash
-cd libs/atlas && git pull origin main && cd ../..
-git add libs/atlas && git commit -m "bump atlas"
+```ts
+import { defineConfig, env } from "@atlas/config"
+import { connect } from "@atlas/db"
+import { serve, router, get, json } from "@atlas/server"
 ```
 
-### Option B — zip download (recommended for one-off scripts / scaffolding)
-
-Drops a snapshot of `main` into `./atlas` with no git history.
-
-```bash
-curl -sL https://github.com/wess/atlas/archive/refs/heads/main.zip -o /tmp/atlas.zip
-unzip -q /tmp/atlas.zip -d /tmp/atlas-expand
-mv /tmp/atlas-expand/atlas-main ./atlas
-rm -rf /tmp/atlas.zip /tmp/atlas-expand
-```
-
-```json
-{
-  "workspaces": ["atlas/packages/*"],
-  "dependencies": {
-    "@atlas/config": "workspace:*",
-    "@atlas/db": "workspace:*",
-    "@atlas/server": "workspace:*",
-    "@atlas/auth": "workspace:*"
-  }
-}
-```
-
-Then `bun install`. Add `atlas/` to your `.gitignore` (the zip path) — git
-submodules in option A are tracked by git itself, so no ignore is needed.
+Bump atlas with `bun update atlas`. The resolved commit is pinned in `bun.lock`.
 
 ## Packages
 
