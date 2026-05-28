@@ -1,4 +1,5 @@
 import type { Connection } from "@atlas/db";
+import type { Jwk } from "@atlas/auth";
 import type { PipeFn } from "@atlas/server";
 
 /**
@@ -26,6 +27,47 @@ export type AuditLog = (ev: OAuthAuditEvent) => void;
  */
 export type RequestContext = (req: Request) => { readonly ip?: string | null; readonly userAgent?: string | null };
 
+/**
+ * OIDC opt-in. When set, the server advertises itself as an OpenID Provider:
+ * issues `id_token`s alongside access tokens (when the grant includes the
+ * `openid` scope), exposes `/oauth/userinfo` + `/oauth/jwks`, and adds
+ * an `end_session_endpoint` with back-channel logout fan-out.
+ */
+export type OidcConfig = {
+  /**
+   * The RS256 signing key used for id_tokens and logout_tokens. Callers
+   * persist the keypair (Castle stores it in settings) and pass the private
+   * half here. The public half goes in `jwks()`.
+   */
+  readonly signingKey: { readonly kid: string; readonly privateJwk: Jwk };
+  /**
+   * Returns the JWKS published at `/oauth/jwks`. Callers can rotate by
+   * appending new public keys to the set; relying parties pick by `kid`.
+   */
+  readonly jwks: () => Promise<{ readonly keys: readonly Jwk[] }>;
+  /**
+   * Build the claims that go into both the id_token AND the userinfo
+   * response. Must include `sub` (string user identifier — typically the
+   * stringified user ID). Other common claims: `email`, `email_verified`,
+   * `name`, `preferred_username`, `picture`.
+   */
+  readonly buildIdTokenClaims: (user: OAuthUser) => Record<string, unknown>;
+  /** Default 600s (10 minutes). */
+  readonly idTokenTtlSeconds?: number;
+  /**
+   * Optional fan-out callback invoked from `end_session_endpoint`. The
+   * package mints the signed logout_token and hands the caller the list of
+   * registered clients with `backchannel_logout_uri` populated; the caller
+   * is responsible for POSTing the token. Decoupled because how to discover
+   * clients (per-user vs per-tenant) varies by deployment.
+   */
+  readonly onEndSession?: (params: {
+    readonly userId: number | string;
+    readonly logoutToken: string;
+    readonly issuer: string;
+  }) => Promise<void> | void;
+};
+
 /** Top-level config every route factory consumes. */
 export type OAuthConfig = {
   readonly db: Connection;
@@ -33,6 +75,11 @@ export type OAuthConfig = {
   readonly secret: string;
   /** Scopes the server is willing to grant. */
   readonly scopes: readonly string[];
+  /**
+   * Enable OIDC on top of OAuth 2.1. Existing OAuth-only consumers leave
+   * this unset and see no behavior change.
+   */
+  readonly openid?: OidcConfig;
   /**
    * Look up a user given the ID stored on an authorization or device code.
    * Return null if the account no longer exists — the grant fails with
@@ -124,6 +171,10 @@ export type ClientRow = {
   readonly is_official: boolean;
   readonly created_at: string;
   readonly revoked_at: string | null;
+  /** OIDC: where to POST signed logout_tokens. NULL means no fan-out. */
+  readonly backchannel_logout_uri: string | null;
+  /** OIDC: JSON array of allowed `post_logout_redirect_uri` values. */
+  readonly post_logout_redirect_uris: string | null;
 };
 
 export type AuthCodeRow = {
@@ -135,6 +186,10 @@ export type AuthCodeRow = {
   readonly scope: string;
   readonly expires_at: string;
   readonly used_at: string | null;
+  /** OIDC nonce echo-back from the original /authorize call. */
+  readonly nonce: string | null;
+  /** OIDC auth_time (epoch seconds) — when the user actually consented. */
+  readonly auth_time: number | null;
 };
 
 export type RefreshTokenRow = {

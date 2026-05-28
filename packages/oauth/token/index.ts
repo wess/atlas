@@ -8,12 +8,15 @@ import {
   ACCESS_TOKEN_TTL_SECONDS,
   DEVICE_POLL_INTERVAL_SECONDS,
   formatScope,
+  hasOpenIdScope,
+  issuerFromRequest,
   parseScope,
   REFRESH_TOKEN_TTL_SECONDS,
   randomId,
   sha256,
   verifyPkceS256,
 } from "../helpers";
+import { signIdToken } from "../oidc";
 import {
   type AuthCodeRow,
   type ClientRow,
@@ -38,6 +41,7 @@ type TokenResponse = {
   readonly token_type: "Bearer";
   readonly expires_in: number;
   readonly scope: string;
+  readonly id_token?: string;
 };
 
 const issueTokens = async (
@@ -47,6 +51,7 @@ const issueTokens = async (
   user: OAuthUser,
   clientId: string,
   scope: string,
+  ctx: { readonly request: Request; readonly nonce?: string; readonly authTime?: number },
   parentTokenHash?: string,
 ): Promise<TokenResponse> => {
   const accessToken = await jwt.sign(
@@ -71,13 +76,23 @@ const issueTokens = async (
       expires_at: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000).toISOString(),
     }),
   );
-  return {
+  const base: TokenResponse = {
     access_token: accessToken,
     refresh_token: refreshToken,
     token_type: "Bearer",
     expires_in: ACCESS_TOKEN_TTL_SECONDS,
     scope,
   };
+  if (cfg.openid && hasOpenIdScope(scope)) {
+    const id_token = await signIdToken(cfg.openid, user, {
+      issuer: issuerFromRequest(ctx.request),
+      audience: clientId,
+      nonce: ctx.nonce,
+      authTime: ctx.authTime,
+    });
+    return { ...base, id_token };
+  }
+  return base;
 };
 
 /**
@@ -115,9 +130,22 @@ export const oauthTokenRoutes = (cfg: OAuthConfig, basePath = "/oauth"): readonl
         .where((q) => q("code").equals(code))
         .where((q) => q("used_at").isNull())
         .update({ used_at: new Date().toISOString() })
-        .returning("code", "client_id", "user_id", "redirect_uri", "code_challenge", "scope", "expires_at"),
+        .returning(
+          "code",
+          "client_id",
+          "user_id",
+          "redirect_uri",
+          "code_challenge",
+          "scope",
+          "expires_at",
+          "nonce",
+          "auth_time",
+        ),
     )) as Array<
-      Pick<AuthCodeRow, "code" | "client_id" | "user_id" | "redirect_uri" | "code_challenge" | "scope" | "expires_at">
+      Pick<AuthCodeRow, "code" | "client_id" | "user_id" | "redirect_uri" | "code_challenge" | "scope" | "expires_at"> & {
+        readonly nonce: string | null;
+        readonly auth_time: number | null;
+      }
     >;
 
     const claimedCode = claimed[0];
@@ -138,7 +166,11 @@ export const oauthTokenRoutes = (cfg: OAuthConfig, basePath = "/oauth"): readonl
     const user = await cfg.loadUser(cfg.db, claimedCode.user_id);
     if (!user) return oauthError(c, 400, "invalid_grant", "User no longer exists");
 
-    const tokens = await issueTokens(cfg.db, tables, cfg, user, clientId, claimedCode.scope);
+    const tokens = await issueTokens(cfg.db, tables, cfg, user, clientId, claimedCode.scope, {
+      request: c.request,
+      nonce: claimedCode.nonce ?? undefined,
+      authTime: claimedCode.auth_time ?? undefined,
+    });
     logAudit(cfg, {
       userId: user.id,
       event: "oauth.token_issued",
@@ -220,7 +252,7 @@ export const oauthTokenRoutes = (cfg: OAuthConfig, basePath = "/oauth"): readonl
     const user = await cfg.loadUser(cfg.db, row.user_id);
     if (!user) return oauthError(c, 400, "invalid_grant", "User no longer exists");
 
-    const tokens = await issueTokens(cfg.db, tables, cfg, user, clientId, scope, tokenHash);
+    const tokens = await issueTokens(cfg.db, tables, cfg, user, clientId, scope, { request: c.request }, tokenHash);
     logAudit(cfg, {
       userId: user.id,
       event: "oauth.token_refreshed",
@@ -292,7 +324,7 @@ export const oauthTokenRoutes = (cfg: OAuthConfig, basePath = "/oauth"): readonl
     const user = await cfg.loadUser(cfg.db, row.user_id);
     if (!user) return oauthError(c, 400, "invalid_grant", "User no longer exists");
 
-    const tokens = await issueTokens(cfg.db, tables, cfg, user, clientId, row.scope);
+    const tokens = await issueTokens(cfg.db, tables, cfg, user, clientId, row.scope, { request: c.request });
     logAudit(cfg, {
       userId: user.id,
       event: "oauth.token_issued",

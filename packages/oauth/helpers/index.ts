@@ -86,3 +86,12 @@ export const REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 export const AUTH_CODE_TTL_SECONDS = 60; // 1 minute
 export const DEVICE_CODE_TTL_SECONDS = 60 * 10; // 10 minutes
 export const DEVICE_POLL_INTERVAL_SECONDS = 5;
+export const ID_TOKEN_TTL_SECONDS = 60 * 10; // 10 minutes — short, RPs use sessions
+
+export const issuerFromRequest = (req: Request): string => {
+  const url = new URL(req.url);
+  return `${url.protocol}//${url.host}`;
+};
+
+export const hasOpenIdScope = (scope: string): boolean =>
+  parseScope(scope).includes("openid");

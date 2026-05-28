@@ -182,6 +182,18 @@
         "typescript": "^5",
       },
     },
+    "packages/sso": {
+      "name": "@atlas/sso",
+      "version": "0.0.1",
+      "dependencies": {
+        "@atlas/auth": "workspace:*",
+        "@atlas/db": "workspace:*",
+        "@atlas/server": "workspace:*",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
     "packages/storage": {
       "name": "@atlas/storage",
       "version": "0.0.1",
@@ -238,6 +250,8 @@
     "@atlas/server": ["@atlas/server@workspace:packages/server"],
 
     "@atlas/share": ["@atlas/share@workspace:packages/share"],
+
+    "@atlas/sso": ["@atlas/sso@workspace:packages/sso"],
 
     "@atlas/storage": ["@atlas/storage@workspace:packages/storage"],
 

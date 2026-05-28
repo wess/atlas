@@ -20,6 +20,8 @@ type AuthorizeParams = {
   state?: string;
   code_challenge?: string;
   code_challenge_method?: string;
+  /** OIDC: opaque value the RP wants echoed back inside id_token. */
+  nonce?: string;
 };
 
 type ValidationResult =
@@ -30,6 +32,7 @@ type ValidationResult =
       scopes: string[];
       state?: string;
       code_challenge: string;
+      nonce?: string;
     }
   | { ok: false; status: number; error: string; description?: string };
 
@@ -99,6 +102,7 @@ const validateAuthorize = async (
     scopes: finalScopes,
     state: params.state,
     code_challenge: params.code_challenge,
+    nonce: params.nonce,
   };
 };
 
@@ -142,6 +146,7 @@ export const oauthAuthorizeRoutes = (cfg: OAuthConfig, basePath = "/oauth"): rea
           state: url.searchParams.get("state") ?? undefined,
           code_challenge: url.searchParams.get("code_challenge") ?? undefined,
           code_challenge_method: url.searchParams.get("code_challenge_method") ?? "S256",
+          nonce: url.searchParams.get("nonce") ?? undefined,
         };
         const v = await validateAuthorize(cfg, tables.clients, params);
         if (!v.ok) return json(c, v.status, { error: v.error, error_description: v.description });
@@ -171,6 +176,7 @@ export const oauthAuthorizeRoutes = (cfg: OAuthConfig, basePath = "/oauth"): rea
         const code = randomId(32);
         const expiresAt = new Date(Date.now() + AUTH_CODE_TTL_SECONDS * 1000).toISOString();
 
+        const authTime = Math.floor(Date.now() / 1000);
         await cfg.db.execute(
           from(tables.authorizationCodes).insert({
             code,
@@ -181,6 +187,8 @@ export const oauthAuthorizeRoutes = (cfg: OAuthConfig, basePath = "/oauth"): rea
             code_challenge_method: "S256",
             scope: formatScope(v.scopes),
             expires_at: expiresAt,
+            nonce: v.nonce ?? null,
+            auth_time: authTime,
           }),
         );
 

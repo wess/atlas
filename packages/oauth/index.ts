@@ -3,22 +3,32 @@ import { oauthAuthorizeRoutes } from "./authorize";
 import { oauthClientRoutes } from "./clients";
 import { oauthDeviceRoutes } from "./device";
 import { oauthDiscoveryRoutes } from "./discovery";
+import { oauthEndSessionRoutes } from "./endsession";
+import { oauthJwksRoutes } from "./jwks";
 import { oauthRevokeRoutes } from "./revoke";
 import { oauthTokenRoutes } from "./token";
+import { oauthUserinfoRoutes } from "./userinfo";
 import type { OAuthConfig } from "./types";
 
 export { oauthAuthorizeRoutes } from "./authorize";
 export { findClient, oauthClientRoutes, verifyClientCredentials } from "./clients";
 export { oauthDeviceRoutes } from "./device";
 export { oauthDiscoveryRoutes } from "./discovery";
+export { oauthEndSessionRoutes } from "./endsession";
+export { oauthJwksRoutes } from "./jwks";
+export { signIdToken, signLogoutToken } from "./oidc";
+export { oauthUserinfoRoutes } from "./userinfo";
 export {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_CODE_TTL_SECONDS,
   DEVICE_CODE_TTL_SECONDS,
   DEVICE_POLL_INTERVAL_SECONDS,
   formatScope,
+  hasOpenIdScope,
+  ID_TOKEN_TTL_SECONDS,
   includesScopes,
   isAllowedRedirect,
+  issuerFromRequest,
   newUserCode,
   normalizeUserCode,
   parseScope,
@@ -43,6 +53,7 @@ export type {
   OAuthAuditEvent,
   OAuthConfig,
   OAuthUser,
+  OidcConfig,
   RefreshTokenRow,
   RequestContext,
 } from "./types";
@@ -74,5 +85,9 @@ export const oauthRoutes = (
     ...oauthDeviceRoutes(cfg, basePath),
     ...oauthDiscoveryRoutes(cfg, basePath),
     ...oauthClientRoutes(cfg, adminBasePath),
+    // OIDC additions — each factory is a no-op when cfg.openid is unset.
+    ...oauthUserinfoRoutes(cfg, basePath),
+    ...oauthJwksRoutes(cfg, basePath),
+    ...oauthEndSessionRoutes(cfg, basePath),
   ];
 };
