@@ -4,7 +4,32 @@ Composable, functional Bun/TypeScript building blocks. No classes, no mutation, 
 
 ## Usage
 
-Atlas is a private repo, not on npm. Download and use as a workspace:
+Atlas is not on npm. Consume it as a Bun workspace, pulled from
+[github.com/wess/atlas](https://github.com/wess/atlas).
+
+**Submodule (apps under git):**
+
+```bash
+git submodule add https://github.com/wess/atlas.git libs/atlas
+git submodule update --init --recursive
+```
+
+`package.json`:
+
+```json
+{
+  "workspaces": ["libs/atlas/packages/*"],
+  "dependencies": {
+    "@atlas/config": "workspace:*",
+    "@atlas/db": "workspace:*",
+    "@atlas/server": "workspace:*"
+  }
+}
+```
+
+Bump with `cd libs/atlas && git pull origin main`.
+
+**Zip snapshot (one-offs):**
 
 ```bash
 curl -sL https://github.com/wess/atlas/archive/refs/heads/main.zip -o /tmp/atlas.zip
@@ -14,17 +39,10 @@ rm -rf /tmp/atlas.zip /tmp/atlas-expand
 ```
 
 ```json
-{
-  "workspaces": ["atlas/packages/*"],
-  "dependencies": {
-    "@atlas/config": "workspace:*",
-    "@atlas/db": "workspace:*",
-    "@atlas/server": "workspace:*"
-  }
-}
+{ "workspaces": ["atlas/packages/*"] }
 ```
 
-Add `atlas/` to `.gitignore`.
+Add `atlas/` to `.gitignore` for the zip approach (submodules are tracked by git).
 
 ## Bun Only
 
@@ -45,6 +63,7 @@ Add `atlas/` to `.gitignore`.
 | `@atlas/auth/social` | Pluggable OAuth-client social login (Google, GitHub, Apple, Microsoft, Facebook, X, TikTok) |
 | `@atlas/security` | CSP/headers, rate limit, audit log, TOTP, DB-backed revocable sessions |
 | `@atlas/oauth` | OAuth 2.1 server (PKCE, refresh rotation, device flow, discovery) |
+| `@atlas/sso` | OIDC relying-party (Sign in with $IdP): discovery, PKCE, state, code exchange, id_token verify |
 | `@atlas/email` | Provider-agnostic email transport + invite/reset templates |
 | `@atlas/share` | Share-URL builders (Twitter/X, FB, LinkedIn, Reddit, WhatsApp, Telegram, SMS, mailto) + server-side share-by-email |
 | `@atlas/storage` | S3-compatible storage, presigned URLs |
@@ -81,9 +100,13 @@ Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. S
 
 ## Reference (read in this order)
 
-1. `packages/<name>/AGENTS.md` — per-package API (exports, types, usage, deps). Read only the package(s) you need.
-2. `docs/api.md` — condensed cross-package API lookup.
-3. `docs/cookbook.md` — patterns/recipes that don't justify a package.
-4. `docs/overview.md` — architecture deep-dive. Skip unless explicitly needed.
+1. `SOUL.md` — AI session bootstrap (identity, hard "do nots", reading order). Read first if fresh.
+2. `llms.txt` — index of every doc and per-package `AGENTS.md`.
+3. `packages/<name>/AGENTS.md` — per-package API (exports, types, usage, deps). Read only the package(s) you need.
+4. `docs/api.md` — condensed cross-package API lookup.
+5. `docs/cookbook.md` — patterns/recipes that don't justify a package.
+6. `docs/overview.md` — architecture deep-dive. Skip unless explicitly needed.
 
 Do not load multiple docs speculatively. AGENTS.md per package is canonical.
+`atlas docs <name>` prints any of these to stdout; `atlas mcp` exposes them
+as `docs.list` / `docs.read` tools.

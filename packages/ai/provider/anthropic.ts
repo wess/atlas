@@ -60,7 +60,7 @@ const extractSystem = (messages: Message[]): string | undefined => {
 
 export const createAnthropic = (config: AnthropicConfig): AiProvider => {
   const baseUrl = "https://api.anthropic.com";
-  const defaultModel = config.defaultModel ?? "claude-sonnet-4-20250514";
+  const defaultModel = config.defaultModel ?? "claude-sonnet-4-6";
 
   const headers = {
     "x-api-key": config.key,

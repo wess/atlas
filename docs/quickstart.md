@@ -472,18 +472,17 @@ Update migrations path as needed. Everything else stays the same.
 ### Add AI
 
 ```ts
-import { createProvider, chat, chatStream } from "@atlas/ai"
+import { createProvider } from "@atlas/ai"
 
-const openai = createProvider("openai", { apiKey: process.env.OPENAI_API_KEY })
+const openai = createProvider({ provider: "openai", key: process.env.OPENAI_API_KEY! })
 
-const reply = await chat(openai, {
-  model: "gpt-4o",
+const reply = await openai.chat({
   messages: [{ role: "user", content: "Summarize this document" }],
 })
 
 // Streaming
-for await (const chunk of chatStream(openai, { model: "gpt-4o", messages })) {
-  process.stdout.write(chunk.content)
+for await (const chunk of openai.chatStream({ messages: [{ role: "user", content: "Stream me" }] })) {
+  if (chunk.type === "text") process.stdout.write(chunk.content ?? "")
 }
 ```
 

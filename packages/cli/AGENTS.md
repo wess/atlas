@@ -92,14 +92,17 @@ atlas dev
 ### atlas docs
 
 Print Atlas documentation directly to stdout — `atlas docs` for the index,
-`atlas docs <package>` for a package's `AGENTS.md`, or `atlas docs <doc>` for a
-top-level `docs/<name>.md` file.
+`atlas docs <package>` for a package's `AGENTS.md`, `atlas docs <doc>` for a
+top-level `docs/<name>.md` file, or `atlas docs <file>` for a root AI/LLM file
+(`llms.txt`, `SOUL.md`, `CLAUDE.md`, `README.md`).
 
 ```sh
-atlas docs              # list all packages and top-level docs
+atlas docs              # list packages, top-level docs, and root AI/LLM files
 atlas docs db           # print packages/db/AGENTS.md
 atlas docs api          # print docs/api.md
 atlas docs cookbook     # print docs/cookbook.md
+atlas docs llms.txt     # print root llms.txt
+atlas docs SOUL.md      # print root SOUL.md (AI session bootstrap)
 ```
 
 Useful for terminal lookups and for piping into AI tools (`atlas docs db | ...`).

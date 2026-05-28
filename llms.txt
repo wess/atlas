@@ -24,6 +24,7 @@ If you are an AI session new to this codebase, start with [SOUL.md](SOUL.md) —
 - [packages/auth/AGENTS.md](packages/auth/AGENTS.md): hash/verify, JWT, session store, `signup`/`login`/`requireAuth` pipes, and `@atlas/auth/social` (Google, GitHub, Apple, Microsoft, Facebook, X, TikTok)
 - [packages/security/AGENTS.md](packages/security/AGENTS.md): CSP/headers, rate limit, audit log, TOTP, revocable DB-backed sessions
 - [packages/oauth/AGENTS.md](packages/oauth/AGENTS.md): OAuth 2.1 server (PKCE, refresh rotation, device flow, RFC 8414 discovery)
+- [packages/sso/AGENTS.md](packages/sso/AGENTS.md): OIDC relying-party — `mountSso(cfg)` mounts `/login` + `/callback`, handles discovery, PKCE, state, code exchange, id_token verify, back-channel logout
 - [packages/email/AGENTS.md](packages/email/AGENTS.md): provider-agnostic email transport + invite/reset templates
 - [packages/share/AGENTS.md](packages/share/AGENTS.md): share-URL builders (Twitter/X, Facebook, LinkedIn, Reddit, WhatsApp, Telegram, SMS, mailto) + server-side share-by-email
 - [packages/storage/AGENTS.md](packages/storage/AGENTS.md): S3-compatible storage with presigned URLs (zero deps; SigV4 from scratch)

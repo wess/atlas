@@ -36,7 +36,9 @@ const setupSchema = async (db: Connection) => {
       code_challenge_method TEXT NOT NULL,
       scope TEXT NOT NULL,
       expires_at TEXT NOT NULL,
-      used_at TEXT
+      used_at TEXT,
+      nonce TEXT,
+      auth_time INTEGER
     )`,
     values: [],
   });

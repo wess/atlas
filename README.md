@@ -10,7 +10,41 @@ No framework lock-in. No classes. Just functions and immutable data flowing thro
 
 ## Install
 
-Atlas is not on npm. Download the latest source and reference packages as workspaces:
+Atlas is not on npm. Pull it directly from this repo and reference its packages as Bun workspaces.
+
+### Option A — git submodule (recommended for apps under version control)
+
+Tracks a pinned atlas commit alongside your app. Bumps are explicit.
+
+```bash
+git submodule add https://github.com/wess/atlas.git libs/atlas
+git submodule update --init --recursive
+```
+
+In your `package.json`:
+
+```json
+{
+  "workspaces": ["libs/atlas/packages/*"],
+  "dependencies": {
+    "@atlas/config": "workspace:*",
+    "@atlas/db": "workspace:*",
+    "@atlas/server": "workspace:*",
+    "@atlas/auth": "workspace:*"
+  }
+}
+```
+
+To upgrade later:
+
+```bash
+cd libs/atlas && git pull origin main && cd ../..
+git add libs/atlas && git commit -m "bump atlas"
+```
+
+### Option B — zip download (recommended for one-off scripts / scaffolding)
+
+Drops a snapshot of `main` into `./atlas` with no git history.
 
 ```bash
 curl -sL https://github.com/wess/atlas/archive/refs/heads/main.zip -o /tmp/atlas.zip
@@ -18,8 +52,6 @@ unzip -q /tmp/atlas.zip -d /tmp/atlas-expand
 mv /tmp/atlas-expand/atlas-main ./atlas
 rm -rf /tmp/atlas.zip /tmp/atlas-expand
 ```
-
-Add atlas as a workspace and reference the packages you need:
 
 ```json
 {
@@ -33,8 +65,8 @@ Add atlas as a workspace and reference the packages you need:
 }
 ```
 
-Then `bun install`. Add `atlas/` to your `.gitignore`.
-```
+Then `bun install`. Add `atlas/` to your `.gitignore` (the zip path) — git
+submodules in option A are tracked by git itself, so no ignore is needed.
 
 ## Packages
 
@@ -48,6 +80,7 @@ Then `bun install`. Add `atlas/` to your `.gitignore`.
 | `@atlas/auth` | Password hashing, JWT, session management, auth flows | none |
 | `@atlas/security` | CSP/headers, rate limit, audit log, TOTP, revocable DB-backed sessions | none |
 | `@atlas/oauth` | OAuth 2.1 server: PKCE, refresh rotation, device flow, RFC 8414 discovery | none |
+| `@atlas/sso` | OIDC relying-party (Sign in with $IdP): discovery, PKCE, state, code exchange, id_token verify | none |
 | `@atlas/email` | Provider-agnostic transport (Resend) + invite/reset templates | none |
 | `@atlas/storage` | S3-compatible object storage with presigned URLs | none |
 | `@atlas/cache` | Redis-backed caching with TTL and cache-aside patterns | none |
@@ -179,6 +212,18 @@ bun install
 bun test
 bun run lint
 ```
+
+## For AI/LLM sessions
+
+Atlas is structured so an AI session can ground itself with a small, predictable set of files:
+
+- [`SOUL.md`](SOUL.md) — identity, hard "do nots", reading order. Read first.
+- [`llms.txt`](llms.txt) — index of every doc and per-package `AGENTS.md`.
+- `packages/<name>/AGENTS.md` — canonical per-package API (≤ 200 lines each).
+- `docs/api.md`, `docs/cookbook.md`, `docs/overview.md`, `docs/quickstart.md`.
+
+Reach them three ways: read the files directly, run `atlas docs <name>`, or
+connect to `atlas mcp` and call the `docs.list` / `docs.read` tools.
 
 ## Philosophy
 

@@ -133,7 +133,9 @@ CREATE TABLE oauth_authorization_codes (
   code_challenge_method TEXT NOT NULL,
   scope                 TEXT NOT NULL,
   expires_at            TIMESTAMPTZ NOT NULL,
-  used_at               TIMESTAMPTZ NULL
+  used_at               TIMESTAMPTZ NULL,
+  nonce                 TEXT NULL,
+  auth_time             INTEGER NULL
 );
 
 -- refresh tokens (30d TTL, rotated on every use)

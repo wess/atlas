@@ -32,6 +32,7 @@
       "@atlas/email": ["./packages/email/index.ts"],
       "@atlas/share": ["./packages/share/index.ts"],
       "@atlas/oauth": ["./packages/oauth/index.ts"],
+      "@atlas/sso": ["./packages/sso/index.ts"],
       "@atlas/security": ["./packages/security/index.ts"],
       "@atlas/storage": ["./packages/storage/index.ts"],
       "@atlas/edge": ["./packages/edge/index.ts"],

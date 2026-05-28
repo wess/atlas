@@ -29,11 +29,21 @@ const readDocFile = (name: string): string => {
   return readFileSync(path, "utf-8");
 };
 
+const ROOT_DOCS = ["llms.txt", "SOUL.md", "CLAUDE.md", "README.md"] as const;
+
+const listRootDocs = (): string[] => ROOT_DOCS.filter((name) => existsSync(`${REPO_ROOT}${name}`));
+
+const readRootDoc = (name: string): string => {
+  const path = `${REPO_ROOT}${name}`;
+  if (!existsSync(path)) throw new Error(`No root doc named "${name}"`);
+  return readFileSync(path, "utf-8");
+};
+
 export const docsTools: Tool[] = [
   defineTool({
     name: "docs.list",
     description:
-      "List Atlas documentation sources: every package with an AGENTS.md, plus top-level docs/* files (api, cookbook, overview, quickstart). Returns identifiers usable with docs.read.",
+      "List Atlas documentation sources: every package with an AGENTS.md, top-level docs/* files (api, cookbook, overview, quickstart), and root AI/LLM entry points (llms.txt, SOUL.md, CLAUDE.md, README.md). Returns identifiers usable with docs.read.",
     inputSchema: { type: "object", properties: {} },
     handler: async () => {
       const packages = listPackages();
@@ -42,29 +52,36 @@ export const docsTools: Tool[] = [
             .filter((f) => f.endsWith(".md"))
             .sort()
         : [];
-      return { packages, docs };
+      const root = listRootDocs();
+      return { packages, docs, root };
     },
   }),
   defineTool({
     name: "docs.read",
     description:
-      "Read an Atlas documentation source. Pass `package` to load packages/<name>/AGENTS.md, or `doc` to load docs/<name>.md (e.g. 'api', 'cookbook', 'overview', 'quickstart'). Use docs.list to discover available identifiers.",
+      "Read an Atlas documentation source. Pass `package` to load packages/<name>/AGENTS.md, `doc` to load docs/<name>.md (e.g. 'api', 'cookbook', 'overview', 'quickstart'), or `root` to load a top-level AI/LLM file (llms.txt, SOUL.md, CLAUDE.md, README.md). Use docs.list to discover available identifiers.",
     inputSchema: {
       type: "object",
       properties: {
         package: { type: "string", description: "Package name under packages/, e.g. 'db' or 'server'" },
         doc: { type: "string", description: "Doc file under docs/, with or without .md (e.g. 'api')" },
+        root: {
+          type: "string",
+          description: "Root doc filename (llms.txt, SOUL.md, CLAUDE.md, README.md)",
+        },
       },
     },
     handler: async (params) => {
       const pkg = params.package as string | undefined;
       const doc = params.doc as string | undefined;
+      const root = params.root as string | undefined;
       if (pkg) return { source: `packages/${pkg}/AGENTS.md`, content: readPackageAgents(pkg) };
       if (doc) {
         const name = doc.endsWith(".md") ? doc : `${doc}.md`;
         return { source: `docs/${name}`, content: readDocFile(name) };
       }
-      throw new Error("docs.read requires either `package` or `doc`");
+      if (root) return { source: root, content: readRootDoc(root) };
+      throw new Error("docs.read requires either `package`, `doc`, or `root`");
     },
   }),
 ];

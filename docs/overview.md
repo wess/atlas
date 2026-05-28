@@ -344,30 +344,30 @@ Launch via CLI: `atlas mcp`. AI agents can then query your database, inspect rou
 
 ### AI
 
-`@atlas/ai` provides a unified interface for AI/LLM operations with zero external dependencies — it calls provider REST APIs directly.
+`@atlas/ai` provides a unified interface for AI/LLM operations with zero external dependencies — it calls provider REST APIs directly via `fetch`.
 
-- **Providers** — `createProvider()` for OpenAI, Anthropic, or custom endpoints
-- **Chat** — `chat()` for completions, `chatStream()` for streaming (async iterable)
-- **Embeddings** — `embed()` for vector generation
-- **RAG** — `rag()` pipeline: embed query, retrieve documents, generate answer
-- **Agents** — `agent()` for tool-using autonomous agents with configurable loops
+- **Providers** — `createProvider({ provider, key })` returns an `AiProvider` for `"openai"`, `"anthropic"`, or `"ollama"`
+- **Chat** — `provider.chat(opts)` for completions, `provider.chatStream(opts)` for streaming `StreamChunk`s
+- **Conversations** — `createConversation`/`send` for immutable message-history tracking
+- **Embeddings** — `embed(provider, inputs)` plus an in-memory `createVectorStore()`
+- **RAG** — `index(rag, id, text)` + `query(rag, question)` over a `{ ai, store, topK? }` bag
+- **Agents** — `runAgent({ ai, system?, tools, maxIterations? }, prompt)` for tool-using loops
+- **Server pipe** — `withAi(provider)` attaches the provider to `conn.assigns.ai`
 
 ```ts
-import { createProvider, chat, chatStream, embed, rag, agent } from "@atlas/ai"
+import { createProvider, send, createConversation, runAgent, tool } from "@atlas/ai"
 
-const openai = createProvider("openai", { apiKey: process.env.OPENAI_API_KEY })
+const openai = createProvider({ provider: "openai", key: process.env.OPENAI_API_KEY! })
 
-const reply = await chat(openai, {
-  model: "gpt-4o",
-  messages: [{ role: "user", content: "Hello" }],
-})
+const conv = createConversation("You are a helpful assistant")
+const { response } = await send(openai, conv, "Hello")
 
-for await (const chunk of chatStream(openai, { model: "gpt-4o", messages })) {
-  process.stdout.write(chunk.content)
+for await (const chunk of openai.chatStream({ messages: [{ role: "user", content: "Hi" }] })) {
+  if (chunk.type === "text") process.stdout.write(chunk.content ?? "")
 }
 ```
 
-No external dependencies. Works with any OpenAI-compatible or Anthropic API.
+Works with OpenAI, Anthropic, Ollama, or any OpenAI-compatible endpoint (`baseUrl` override).
 
 ## Templates
 

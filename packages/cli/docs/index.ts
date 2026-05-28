@@ -24,14 +24,23 @@ const listDocs = (): string[] => {
     .sort();
 };
 
+const ROOT_DOCS = ["llms.txt", "SOUL.md", "CLAUDE.md", "README.md"] as const;
+
+const listRootDocs = (): string[] => ROOT_DOCS.filter((name) => existsSync(`${ATLAS_ROOT}${name}`));
+
 const printIndex = (): void => {
   const packages = listPackages();
   const docs = listDocs();
+  const root = listRootDocs();
   process.stdout.write("Atlas documentation\n\n");
   process.stdout.write("Packages (atlas docs <name>):\n");
   for (const p of packages) process.stdout.write(`  ${p}\n`);
   process.stdout.write("\nTop-level docs (atlas docs <name>):\n");
   for (const d of docs) process.stdout.write(`  ${d.replace(/\.md$/, "")}\n`);
+  if (root.length > 0) {
+    process.stdout.write("\nRoot AI/LLM files (atlas docs <name>):\n");
+    for (const r of root) process.stdout.write(`  ${r}\n`);
+  }
 };
 
 const printPackage = (pkg: string): boolean => {
@@ -51,8 +60,17 @@ const printDoc = (name: string): boolean => {
   return true;
 };
 
+const printRootDoc = (name: string): boolean => {
+  const path = `${ATLAS_ROOT}${name}`;
+  if (!existsSync(path)) return false;
+  process.stdout.write(readFileSync(path, "utf-8"));
+  if (!process.stdout.write("\n")) return true;
+  return true;
+};
+
 export const docsCommand = command("docs", {
-  description: "Print Atlas documentation. `atlas docs <package>` for AGENTS.md, `atlas docs <doc>` for docs/*",
+  description:
+    "Print Atlas documentation. `atlas docs <package>` for AGENTS.md, `atlas docs <doc>` for docs/*, `atlas docs llms.txt|SOUL.md|CLAUDE.md|README.md` for root files",
   run: async ({ args }) => {
     if (args.length === 0) {
       printIndex();
@@ -61,6 +79,7 @@ export const docsCommand = command("docs", {
     const target = args[0]!;
     if (printPackage(target)) return;
     if (printDoc(target)) return;
+    if (printRootDoc(target)) return;
     process.stderr.write(`Unknown package or doc: "${target}"\n\n`);
     printIndex();
     process.exit(1);

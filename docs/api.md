@@ -213,6 +213,22 @@ types: OAuthConfig, OAuthUser, ClientRow, AuthCodeRow, RefreshTokenRow,
        DeviceCodeRow, OAuthAuditEvent, RequestContext
 ```
 
+## @atlas/sso
+```
+mountSso(cfg: SsoConfig) → readonly Route[]            mount /login + /callback + logout routes
+ensureSsoStateTable(db, table?)                        idempotent CREATE TABLE IF NOT EXISTS
+sweepExpiredSsoState(db, table?)                       prune expired state rows (10m TTL)
+clearDiscoveryCache()                                  for tests / hot-reload
+
+SsoConfig: { db, issuerUrl, clientId, clientSecret,
+             onAuthenticated(db, claims) → { localUserId, displayName? },
+             issueSession(conn, user, claims) → Conn,
+             redirectUri?, scopes?, basePath?, defaultPostLoginPath?, stateTable?,
+             findLocalUserBySub?(db, sub), invalidateSessions?(db, { sub, localUserId }) }
+IdTokenClaims: { sub, iss, aud, email?, email_verified?, name?, preferred_username?, picture?, ... }
+DiscoveryDoc: { issuer, authorization_endpoint, token_endpoint, jwks_uri, userinfo_endpoint?, end_session_endpoint? }
+```
+
 ## @atlas/security
 ```
 withSecurityHeaders(fetch, { dev?, csp?, disableCsp? }) → fetch     HSTS/CSP/COOP/CORP + req.peerIp shim
@@ -306,8 +322,8 @@ collectTools(...tools) → Tool[]
 McpServer: .start() .stop()
 
 Always-on tools (independent of context):
-  docs.list                    list every package's AGENTS.md + docs/*.md
-  docs.read({ package?, doc? }) read packages/<pkg>/AGENTS.md or docs/<name>.md
+  docs.list                              list packages with AGENTS.md, docs/*.md, and root llms.txt/SOUL.md/CLAUDE.md/README.md
+  docs.read({ package?, doc?, root? })   read packages/<pkg>/AGENTS.md, docs/<name>.md, or a root file
 ```
 
 ## @atlas/ai
