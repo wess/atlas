@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "bun src/dev.ts"
+    "dev": "bun --hot src/server.ts",
+    "start": "bun src/server.ts"
   },
   "devDependencies": {
     "@types/react": "latest",
@@ -12,7 +13,6 @@
   "dependencies": {
     "react": "^19",
     "react-dom": "^19",
-    "@atlas/cli": "workspace:*",
     "@atlas/config": "workspace:*",
     "@atlas/db": "workspace:*",
     "@atlas/migrate": "workspace:*",
