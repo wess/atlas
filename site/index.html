@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Atlas — composable Bun/TypeScript packages for APIs, apps, and CLIs</title>
+    <meta
+      name="description"
+      content="Atlas is an à la carte set of functional, minimal-dependency Bun/TypeScript packages that snap together like Lego blocks. Config, db, server, auth, storage, AI, and more — no framework lock-in, no classes."
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <style>:root{--accent:#2dd4bf;--accent2:#3b82f6}</style>
+  </head>
+  <body>
+    <!-- nav -->
+    <nav class="nav">
+      <div class="wrap">
+        <a class="brand" href="index.html"><span class="mark">⬡</span> Atlas</a>
+        <button class="navtoggle" aria-label="Menu" data-nav>☰</button>
+        <div class="navlinks" data-navlinks>
+          <a href="#features">Features</a>
+          <a href="#packages">Packages</a>
+          <a href="#start">Quick start</a>
+          <a href="docs.html">Docs</a>
+          <a class="btn primary" href="https://github.com/wess/atlas">GitHub</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- hero -->
+    <header class="hero">
+      <div class="wrap">
+        <span class="pill"><span class="dot"></span> Functional · minimal-dependency · Bun-native</span>
+        <h1>Composable packages that <span class="accent">snap together like Lego</span>.</h1>
+        <p class="lead">
+          Atlas is an à la carte set of functional, minimal-dependency Bun/TypeScript packages. Pick what you need —
+          config, database, HTTP server, auth, storage, AI — and compose them into your app. No framework lock-in.
+          No classes. Just functions and immutable data flowing through pipes.
+        </p>
+        <div class="cta">
+          <a class="btn primary" href="#start">Get started</a>
+          <a class="btn ghost" href="https://github.com/wess/atlas">View on GitHub →</a>
+        </div>
+
+        <!-- code mockup -->
+        <div class="mock">
+          <div class="bar">
+            <span class="hash">#</span><span>server.ts</span>
+            <span class="muted" style="font-size: 13px">· a user API in a few lines</span>
+            <span class="dots"><i></i><i></i><i></i></span>
+          </div>
+          <div class="body">
+            <pre style="margin: 0; padding: 18px; font-size: 13px; line-height: 1.7; overflow-x: auto"><span class="men">import</span> { defineConfig, env } <span class="men">from</span> <span style="color:var(--accent)">"@atlas/config"</span>
+<span class="men">import</span> { connect } <span class="men">from</span> <span style="color:var(--accent)">"@atlas/db"</span>
+<span class="men">import</span> { serve, router, get, json } <span class="men">from</span> <span style="color:var(--accent)">"@atlas/server"</span>
+<span class="men">import</span> { requireAuth, token } <span class="men">from</span> <span style="color:var(--accent)">"@atlas/auth"</span>
+
+<span class="men">const</span> db = connect({ driver: <span style="color:var(--accent)">"sqlite"</span>, path: <span style="color:var(--accent)">"./app.db"</span> })
+
+serve({
+  port: <span style="color:var(--accent2)">3000</span>,
+  routes: [
+    get(<span style="color:var(--accent)">"/me"</span>, pipeline(requireAuth({ secret }))(
+      (c) => json(c, <span style="color:var(--accent2)">200</span>, { id: c.assigns.auth.id })
+    )),
+  ],
+})</pre>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- features -->
+    <section class="block" id="features">
+      <div class="wrap">
+        <div class="eyebrow">Features</div>
+        <h2>A toolkit, not a framework.</h2>
+        <p class="sub">Each package works on its own or with the others. Wrap Bun's native APIs, not a pile of external dependencies.</p>
+        <div class="grid">
+          <div class="card">
+            <div class="ico">🧩</div>
+            <h3>Composable</h3>
+            <p>Each package works independently or with others. Snap them together — there's no all-or-nothing buy-in.</p>
+          </div>
+          <div class="card">
+            <div class="ico">λ</div>
+            <h3>Functional</h3>
+            <p>No classes, immutable data, composition over inheritance. Pipes compose via <code>pipeline()</code>; <code>halt()</code> short-circuits.</p>
+          </div>
+          <div class="card">
+            <div class="ico">🪶</div>
+            <h3>Minimal deps</h3>
+            <p>Wrap Bun's native APIs, not external packages. Most packages ship with zero runtime dependencies.</p>
+          </div>
+          <div class="card">
+            <div class="ico">⚡</div>
+            <h3>Bun-native</h3>
+            <p>Idiomatic to Bun: <code>Bun.serve</code>, <code>bun:sqlite</code>, <code>Bun.sql</code>, <code>Bun.redis</code>, <code>Bun.password</code> — no dotenv, no Node shims.</p>
+          </div>
+          <div class="card">
+            <div class="ico">🔓</div>
+            <h3>No lock-in</h3>
+            <p>Use what you need and combine it with anything else. Atlas never demands you adopt the whole stack.</p>
+          </div>
+          <div class="card">
+            <div class="ico">🛠️</div>
+            <h3>Pipe-based server</h3>
+            <p>A <code>Bun.serve</code> router with a Plug-inspired pipe system — middleware that's just composed functions.</p>
+          </div>
+          <div class="card">
+            <div class="ico">🗄️</div>
+            <h3>Typed data layer</h3>
+            <p>Query builder, schemas, changesets, and migrations across Postgres and SQLite, validated with zod.</p>
+          </div>
+          <div class="card">
+            <div class="ico">🔐</div>
+            <h3>Auth & security</h3>
+            <p>Password hashing, JWT, sessions, OAuth 2.1 server, OIDC sign-in, CSP, rate limiting, TOTP, audit logs.</p>
+          </div>
+          <div class="card">
+            <div class="ico">🧰</div>
+            <h3>Templates & CLI</h3>
+            <p>Scaffold with <code>atlas init --template</code> — minimal, api, edge, fullstack, admin, realtime, ai, and more.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- packages -->
+    <section class="block" id="packages">
+      <div class="wrap">
+        <div class="eyebrow">Packages</div>
+        <h2>Twenty packages. Pick the ones you need.</h2>
+        <p class="sub">Import each <code>@atlas/&lt;pkg&gt;</code> directly. Map paths in <code>tsconfig.json</code> and Bun resolves them at runtime.</p>
+        <div class="split">
+          <ul>
+            <li><span class="ck">✦</span><span><b>@atlas/config</b> — typed environment variables and config resolution.</span></li>
+            <li><span class="ck">✦</span><span><b>@atlas/db · migrate</b> — query builder, schemas, changesets, and timestamped SQL migrations.</span></li>
+            <li><span class="ck">✦</span><span><b>@atlas/server · edge</b> — pipe-based HTTP server, WebSocket/SSE, and a TLS-terminating reverse proxy.</span></li>
+            <li><span class="ck">✦</span><span><b>@atlas/auth · security · oauth · sso</b> — sessions, OAuth 2.1 server, OIDC relying-party, TOTP, audit log.</span></li>
+            <li><span class="ck">✦</span><span><b>@atlas/storage · cache · email · request</b> — S3 storage, Redis cache, email transport, HTTP client.</span></li>
+            <li><span class="ck">✦</span><span><b>@atlas/ui · admin · cli · mcp · ai</b> — React/Mantine blocks, auto admin, CLI framework, MCP server, AI/RAG/agents.</span></li>
+          </ul>
+          <div class="diagram">      @atlas/config   @atlas/db
+              │             │
+        @atlas/migrate   @atlas/server
+              │             │
+   ┌──────────┴─────────────┴─────────┐
+@atlas/auth   @atlas/cache   @atlas/storage
+@atlas/oauth  @atlas/ai      @atlas/edge
+@atlas/sso    @atlas/cli     @atlas/admin
+              │
+        compose with pipeline()</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- get started -->
+    <section class="block" id="start">
+      <div class="wrap">
+        <div class="eyebrow">Get started</div>
+        <h2>Add Atlas as one Bun package.</h2>
+        <p class="sub">Atlas isn't on npm. Install it directly from the repo, then map <code>@atlas/&lt;pkg&gt;</code> imports in your tsconfig paths.</p>
+        <div class="code" style="margin-top: 32px; max-width: 720px">
+          <div class="top">
+            <span>terminal</span>
+            <button class="copy" data-copy>Copy</button>
+          </div>
+          <pre data-code><span class="c"># 1. install Atlas as a single bun package from GitHub</span>
+bun add github:wess/atlas
+
+<span class="c"># 2. map @atlas/&lt;pkg&gt; imports in tsconfig.json paths, e.g.</span>
+<span class="c">#   "@atlas/config": ["./node_modules/atlas/packages/config/index.ts"]</span>
+<span class="c">#   "@atlas/server": ["./node_modules/atlas/packages/server/index.ts"]</span>
+
+<span class="c"># 3. import and compose</span>
+<span class="c"># import { defineConfig, env } from "@atlas/config"</span>
+<span class="c"># import { serve, router, get, json } from "@atlas/server"</span>
+
+<span class="c"># 4. run with Bun — and bump Atlas anytime with</span>
+bun update atlas   <span class="c"># resolved commit is pinned in bun.lock</span></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- cta band -->
+    <section class="band">
+      <div class="wrap">
+        <h2>Build APIs, full-stack apps, and CLIs — your way.</h2>
+        <p>Open source under MIT. Inspired by Elixir's ecosystem, idiomatic to TypeScript and Bun's native APIs.</p>
+        <div class="cta">
+          <a class="btn primary" href="docs.html">Read the docs</a>
+          <a class="btn ghost" href="https://github.com/wess/atlas">Star on GitHub →</a>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <a class="brand" href="index.html"><span class="mark">⬡</span> Atlas</a>
+        <div class="links">
+          <a href="docs.html">Docs</a>
+          <a href="../docs/quickstart.md">Quick start</a>
+          <a href="../docs/api.md">API</a>
+          <a href="https://github.com/wess/atlas">GitHub</a>
+        </div>
+        <span>MIT · © 2026</span>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
