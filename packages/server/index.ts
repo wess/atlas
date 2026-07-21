@@ -3,7 +3,7 @@
 export type { ComposedServer, ServerAdapter } from "./adapter/index.ts";
 // adapter
 export { compose, createAdapter } from "./adapter/index.ts";
-export type { Conn } from "./conn/index.ts";
+export type { Conn, ConnLike } from "./conn/index.ts";
 export { assign, createConn, halt, putHeader, setStatus } from "./conn/index.ts";
 // errors
 export type { HttpError, HttpErrorOptions } from "./errors/index.ts";

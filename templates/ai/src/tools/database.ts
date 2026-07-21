@@ -14,7 +14,7 @@ export const databaseTool: AgentTool = {
       return "Error: only SELECT queries are allowed"
     }
     try {
-      const rows = await db.query(sql)
+      const rows = await db.all<Record<string, unknown>>({ text: sql, values: [] })
       return JSON.stringify(rows)
     } catch (err) {
       return `Error: ${(err as Error).message}`

@@ -1,21 +1,17 @@
-export const documents = {
-  table: "documents",
-  columns: {
-    id: "integer primary key autoincrement",
-    title: "text not null",
-    content: "text not null",
-    embeddingId: "text",
-    createdAt: "datetime default current_timestamp",
-  },
-}
+import { column, defineSchema } from "@atlas/db"
 
-export const conversations = {
-  table: "conversations",
-  columns: {
-    id: "integer primary key autoincrement",
-    title: "text not null default 'New conversation'",
-    messages: "text not null default '[]'",
-    createdAt: "datetime default current_timestamp",
-    updatedAt: "datetime default current_timestamp",
-  },
-}
+export const documents = defineSchema("documents", {
+  id: column.serial().primaryKey(),
+  title: column.text(),
+  content: column.text(),
+  embedding_id: column.text().nullable(),
+  created_at: column.timestamp(),
+})
+
+export const conversations = defineSchema("conversations", {
+  id: column.serial().primaryKey(),
+  title: column.text().default("New conversation"),
+  messages: column.text().default("[]"),
+  created_at: column.timestamp(),
+  updated_at: column.timestamp(),
+})

@@ -1,65 +1,69 @@
-import { get, post, json } from "@atlas/server"
+import { from } from "@atlas/db"
+import { get, json, post } from "@atlas/server"
 import { db } from "../db.ts"
-import { authed } from "../pipes/auth.ts"
+import { claims, guard } from "../pipes/auth.ts"
+import { entries, revisions } from "../schema.ts"
 
 export const revisionRoutes = [
-  get("/admin/api/entries/:id/revisions", authed(
-    async (c) => {
-      const entryRows = await db.query(
-        "select id from entries where id = $1",
-        [c.params.id],
+  get(
+    "/admin/api/entries/:id/revisions",
+    guard(async (c) => {
+      const id = Number(c.params.id)
+
+      const entry = await db.one(
+        from(entries)
+          .select("id")
+          .where((q) => q("id").equals(id)),
       )
+      if (!entry) return json(c, 404, { error: "Entry not found" })
 
-      if (entryRows.length === 0) {
-        return json(c, 404, { error: "Entry not found" })
-      }
-
-      const rows = await db.query(
-        `select r.id, r.entry_id, r.data, r.author_id, r.created_at,
-          u.name as author_name
-         from revisions r
-         join users u on u.id = r.author_id
-         where r.entry_id = $1
-         order by r.created_at desc`,
-        [c.params.id],
+      const rows = await db.all(
+        from("revisions", "r")
+          .join("users", "u.id = r.authorId", "u")
+          .select("r.id", "r.entryId", "r.data", "r.authorId", "r.createdAt", "u.name as authorName")
+          .where((q) => q("r.entryId").equals(id))
+          .orderBy("r.createdAt", "DESC"),
       )
 
       return json(c, 200, rows)
-    },
-  )),
+    }),
+  ),
 
-  post("/admin/api/entries/:id/revisions/:revId/restore", authed(
-    async (c) => {
-      if (c.auth.role === "viewer") {
-        return json(c, 403, { error: "Viewers cannot restore revisions" })
-      }
+  post(
+    "/admin/api/entries/:id/revisions/:revId/restore",
+    guard(async (c) => {
+      if (claims(c).role === "viewer") return json(c, 403, { error: "Viewers cannot restore revisions" })
 
-      const revRows = await db.query(
-        "select id, entry_id, data from revisions where id = $1 and entry_id = $2",
-        [c.params.revId, c.params.id],
+      const entryId = Number(c.params.id)
+      const revId = Number(c.params.revId)
+
+      const revision = await db.one(
+        from(revisions)
+          .where((q) => q("id").equals(revId))
+          .where((q) => q("entryId").equals(entryId)),
+      )
+      if (!revision) return json(c, 404, { error: "Revision not found" })
+
+      const rows = await db.execute(
+        from(entries)
+          .update({ data: revision.data, updatedAt: new Date().toISOString() })
+          .where((q) => q("id").equals(entryId))
+          .returning(
+            "id",
+            "contentTypeId",
+            "slug",
+            "data",
+            "status",
+            "authorId",
+            "publishedAt",
+            "createdAt",
+            "updatedAt",
+          ),
       )
 
-      if (revRows.length === 0) {
-        return json(c, 404, { error: "Revision not found" })
-      }
-
-      const revision = revRows[0]
-
-      const rows = await db.query(
-        `update entries
-         set data = $1, updated_at = datetime('now')
-         where id = $2
-         returning id, content_type_id, slug, data, status, author_id, published_at, created_at, updated_at`,
-        [revision.data, c.params.id],
-      )
-
-      await db.query(
-        `insert into revisions (entry_id, data, author_id)
-         values ($1, $2, $3)`,
-        [c.params.id, revision.data, c.auth.userId],
-      )
+      await db.execute(from(revisions).insert({ entryId, data: revision.data, authorId: claims(c).userId }))
 
       return json(c, 200, rows[0])
-    },
-  )),
+    }),
+  ),
 ]

@@ -2,7 +2,7 @@ import { token as jwt } from "../../auth/index.ts";
 import { from } from "../../db/index.ts";
 import type { Route } from "../../server/index.ts";
 import { get, halt, json, redirect } from "../../server/index.ts";
-import { issuerFromRequest, isAllowedRedirect } from "../helpers";
+import { isAllowedRedirect, issuerFromRequest } from "../helpers";
 import { signLogoutToken } from "../oidc";
 import type { ClientRow, OAuthConfig } from "../types.ts";
 import { resolveTables } from "../types.ts";
@@ -72,7 +72,9 @@ export const oauthEndSessionRoutes = (cfg: OAuthConfig, basePath = "/oauth"): re
       // that bind, /end_session becomes an open redirect.
       if (clientIdHint) {
         const row = (await cfg.db.one(
-          from(tables.clients).where((q) => q("client_id").equals(clientIdHint)).select("post_logout_redirect_uris"),
+          from(tables.clients)
+            .where((q) => q("client_id").equals(clientIdHint))
+            .select("post_logout_redirect_uris"),
         )) as { post_logout_redirect_uris: string | null } | null;
         const allowed = row?.post_logout_redirect_uris ? (JSON.parse(row.post_logout_redirect_uris) as string[]) : [];
         if (!isAllowedRedirect(postLogoutRedirectUri, allowed)) {

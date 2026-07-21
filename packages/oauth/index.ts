@@ -7,17 +7,14 @@ import { oauthEndSessionRoutes } from "./endsession";
 import { oauthJwksRoutes } from "./jwks";
 import { oauthRevokeRoutes } from "./revoke";
 import { oauthTokenRoutes } from "./token";
-import { oauthUserinfoRoutes } from "./userinfo";
 import type { OAuthConfig } from "./types";
+import { oauthUserinfoRoutes } from "./userinfo";
 
 export { oauthAuthorizeRoutes } from "./authorize";
 export { findClient, oauthClientRoutes, verifyClientCredentials } from "./clients";
 export { oauthDeviceRoutes } from "./device";
 export { oauthDiscoveryRoutes } from "./discovery";
 export { oauthEndSessionRoutes } from "./endsession";
-export { oauthJwksRoutes } from "./jwks";
-export { signIdToken, signLogoutToken } from "./oidc";
-export { oauthUserinfoRoutes } from "./userinfo";
 export {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_CODE_TTL_SECONDS,
@@ -38,6 +35,8 @@ export {
   shortId,
   verifyPkceS256,
 } from "./helpers";
+export { oauthJwksRoutes } from "./jwks";
+export { signIdToken, signLogoutToken } from "./oidc";
 export { oauthRevokeRoutes } from "./revoke";
 export {
   sweepExpired,
@@ -57,6 +56,7 @@ export type {
   RefreshTokenRow,
   RequestContext,
 } from "./types";
+export { oauthUserinfoRoutes } from "./userinfo";
 
 /**
  * Convenience: returns every route the OAuth server publishes — authorize +

@@ -20,13 +20,13 @@ Stream:
 - `streamToSse(stream)` → `ReadableStream` (for HTTP responses)
 
 Embeddings:
-- `embed(provider, inputs, opts?)` → `number[][]`
+- `embed(provider, inputs)` → `number[][]` — inputs: `string | string[]`
 - `cosineSimilarity(a, b)` → `number`
 - `createVectorStore()` → `{ add, search, size }`
 
 Structured / tools:
 - `generateJson<T>(provider, prompt, opts?)` → `T`
-- `tool(name, description, schema)` → `ToolDefinition`
+- `tool(name, description, parameters)` → `ToolDef`
 
 RAG:
 - `index(rag, id, text)` → `Promise<void>` — `rag = { ai, store, topK? }`

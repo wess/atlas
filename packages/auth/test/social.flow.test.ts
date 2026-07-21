@@ -103,7 +103,8 @@ test("callback() surfaces provider error via onError", async () => {
     },
   })(conn);
   expect(result.status).toBe(401);
-  expect(captured?.message).toContain("access_denied");
+  // TS narrows `captured` to null here (assignment happens inside the closure).
+  expect((captured as Error | null)?.message).toContain("access_denied");
 });
 
 test("callback() halts 400 when exchange throws", async () => {

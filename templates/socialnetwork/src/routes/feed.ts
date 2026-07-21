@@ -1,29 +1,49 @@
+import { from, raw } from "@atlas/db"
 import { get, json } from "@atlas/server"
 import { db } from "../db.ts"
-import { authed } from "../pipes/auth.ts"
+import { currentUserId, guard } from "../pipes/auth.ts"
+import { likes } from "../schema.ts"
 
 export const feedRoutes = [
-  get("/api/feed", authed(
-    async (c) => {
+  get(
+    "/api/feed",
+    guard(async (c) => {
+      const userId = currentUserId(c)
       const limit = Number(c.query.limit) || 20
       const offset = Number(c.query.offset) || 0
 
-      const rows = await db.query(
-        `select p.id, p.user_id, p.content, p.image_url, p.created_at,
-          u.username, u.name, u.avatar_url,
-          (select count(*) from likes where post_id = p.id) as like_count,
-          exists(select 1 from likes where post_id = p.id and user_id = $1) as liked_by_me
-         from posts p
-         join users u on u.id = p.user_id
-         where p.user_id in (
-           select following_id from follows where follower_id = $1
-         )
-         order by p.created_at desc
-         limit $2 offset $3`,
-        [c.auth.userId, limit, offset],
+      const rows = await db.all<any>(
+        from("posts", "p")
+          .join("users", "u.id = p.userId", "u")
+          .select(
+            "p.id",
+            "p.userId",
+            "p.content",
+            "p.imageUrl",
+            "p.createdAt",
+            "u.username",
+            "u.name",
+            "u.avatarUrl",
+            "(select count(*) from likes where likes.postId = p.id) as likeCount",
+          )
+          .where((q) => q.raw(raw("p.userId in (select followingId from follows where followerId = $1)", userId)))
+          .orderBy("p.createdAt", "DESC")
+          .limit(limit)
+          .offset(offset),
       )
 
-      return json(c, 200, rows)
-    },
-  )),
+      const liked = await db.all(
+        from(likes)
+          .select("postId")
+          .where((q) => q("userId").equals(userId)),
+      )
+      const likedIds = new Set(liked.map((row) => row.postId))
+
+      return json(
+        c,
+        200,
+        rows.map((row) => ({ ...row, likedByMe: likedIds.has(row.id) })),
+      )
+    }),
+  ),
 ]

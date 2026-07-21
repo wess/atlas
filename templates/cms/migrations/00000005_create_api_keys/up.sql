@@ -1,10 +1,8 @@
-create table api_keys (
-  id integer primary key autoincrement,
-  name text not null,
-  key text unique not null,
-  permissions text not null default '[]',
-  created_at text default (datetime('now')),
-  last_used_at text
+CREATE TABLE api_keys (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  key TEXT UNIQUE NOT NULL,
+  permissions TEXT NOT NULL DEFAULT '[]',
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  lastUsedAt DATETIME
 );
-
-create unique index idx_api_keys_key on api_keys (key);

@@ -16,7 +16,7 @@ test("command creates a command definition", () => {
   });
   expect(cmd.name).toBe("serve");
   expect(cmd.description).toBe("Start server");
-  expect(cmd.flags?.port.type).toBe("number");
+  expect(cmd.flags?.port?.type).toBe("number");
 });
 
 test("parseArgs extracts flags and positional args", () => {

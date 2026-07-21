@@ -6,26 +6,26 @@ export const users = defineSchema("users", {
   email: column.text().unique(),
   password: column.text(),
   bio: column.text().nullable(),
-  createdAt: column.timestamp().default("now()"),
+  createdAt: column.timestamp().defaultRaw("CURRENT_TIMESTAMP"),
 })
 
 export const posts = defineSchema("posts", {
   id: column.serial().primaryKey(),
   userId: column.integer().ref("users", "id"),
   content: column.text(),
-  createdAt: column.timestamp().default("now()"),
+  createdAt: column.timestamp().defaultRaw("CURRENT_TIMESTAMP"),
 })
 
 export const follows = defineSchema("follows", {
   id: column.serial().primaryKey(),
   followerId: column.integer().ref("users", "id"),
   followingId: column.integer().ref("users", "id"),
-  createdAt: column.timestamp().default("now()"),
+  createdAt: column.timestamp().defaultRaw("CURRENT_TIMESTAMP"),
 })
 
 export const likes = defineSchema("likes", {
   id: column.serial().primaryKey(),
   userId: column.integer().ref("users", "id"),
   postId: column.integer().ref("posts", "id"),
-  createdAt: column.timestamp().default("now()"),
+  createdAt: column.timestamp().defaultRaw("CURRENT_TIMESTAMP"),
 })

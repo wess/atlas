@@ -1,8 +1,7 @@
-create table follows (
-  id integer primary key autoincrement,
-  follower_id integer not null references users(id),
-  following_id integer not null references users(id),
-  created_at text default (datetime('now'))
+CREATE TABLE follows (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  followerId INTEGER NOT NULL REFERENCES users(id),
+  followingId INTEGER NOT NULL REFERENCES users(id),
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(followerId, followingId)
 );
-
-create unique index idx_follows_pair on follows (follower_id, following_id);

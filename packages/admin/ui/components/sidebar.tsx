@@ -8,7 +8,7 @@ export type SidebarProps = {
   onNavigate: (path: string) => void;
 };
 
-export const AdminSidebar = ({ models, active, _basePath, onNavigate }: SidebarProps) => (
+export const AdminSidebar = ({ models, active, onNavigate }: SidebarProps) => (
   <Stack gap={0} p="md">
     <Title order={4} mb="md">
       Admin

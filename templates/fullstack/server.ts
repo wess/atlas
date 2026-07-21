@@ -1,16 +1,16 @@
-import { config } from "./src/config.ts"
-import { serve } from "@atlas/server"
-import { userRoutes } from "./src/routes/users.ts"
+import { router } from "@atlas/server"
 import index from "./index.html"
+import { config } from "./src/config.ts"
+import { userRoutes } from "./src/routes/users.ts"
 
-serve({
+const api = router(...userRoutes)
+
+const server = Bun.serve({
   port: config.port,
-  routes: [
-    ...userRoutes,
-  ],
-  static: {
-    "/": index,
+  routes: {
+    "/api/*": api,
+    "/*": index,
   },
 })
 
-console.log(`Server running on :${config.port}`)
+console.log(`Server running on ${server.url}`)

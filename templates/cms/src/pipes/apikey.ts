@@ -1,32 +1,30 @@
-import { pipe, withCors, withJson, halt, assign } from "@atlas/server"
+import { from } from "@atlas/db"
+import type { Conn } from "@atlas/server"
+import { assign, halt, pipe, pipeline } from "@atlas/server"
 import { db } from "../db.ts"
+import { apiKeys } from "../schema.ts"
+import { cors } from "./cors.ts"
 
-export const apiKeyAuth = pipe(
-  withCors(),
-  withJson(),
-  async (c) => {
-    const key = c.headers.get("x-api-key")
+const verifyKey = pipe(async (c) => {
+  const key = c.headers.get("x-api-key")
+  if (!key) return halt(c, 401, { error: "API key required" })
 
-    if (!key) {
-      return halt(c, 401, { error: "API key required" })
-    }
+  const record = await db.one(from(apiKeys).where((q) => q("key").equals(key)))
+  if (!record) return halt(c, 401, { error: "Invalid API key" })
 
-    const rows = await db.query(
-      "select id, name, key, permissions, created_at, last_used_at from api_keys where key = $1",
-      [key],
-    )
+  await db.execute(
+    from(apiKeys)
+      .update({ lastUsedAt: new Date().toISOString() })
+      .where((q) => q("id").equals(record.id)),
+  )
 
-    if (rows.length === 0) {
-      return halt(c, 401, { error: "Invalid API key" })
-    }
+  return assign(c, { apiKey: record })
+})
 
-    const record = rows[0]
+export const apiKeyAuth = pipeline(cors, verifyKey)
 
-    await db.query(
-      "update api_keys set last_used_at = datetime('now') where id = $1",
-      [record.id],
-    )
-
-    return assign(c, { apiKey: record })
-  },
-)
+export const keyPermissions = (c: Conn): string[] => {
+  const { permissions } = c.assigns.apiKey as { permissions: unknown }
+  if (typeof permissions === "string") return JSON.parse(permissions)
+  return Array.isArray(permissions) ? permissions : []
+}

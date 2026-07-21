@@ -9,6 +9,8 @@ export type RequestOptions = {
   json?: unknown;
   body?: BodyInit;
   retry?: RetryOptions;
+  /** Abort the request after this many milliseconds. Each retry attempt gets its own window. */
+  timeout?: number;
 };
 
 export type ClientOptions = {
@@ -16,6 +18,8 @@ export type ClientOptions = {
   headers?: Record<string, string>;
   retry?: RetryOptions;
   interceptors?: Interceptors;
+  /** Default per-request timeout in milliseconds; overridable per call. */
+  timeout?: number;
 };
 
 export type Client = {
@@ -42,7 +46,8 @@ export const request = async (url: string, opts?: RequestOptions): Promise<Respo
     body,
   };
 
-  const doFetch = () => fetch(url, init);
+  const timeout = opts?.timeout;
+  const doFetch = () => fetch(url, timeout ? { ...init, signal: AbortSignal.timeout(timeout) } : init);
 
   if (opts?.retry) {
     return withRetry(doFetch, opts.retry);
@@ -79,9 +84,10 @@ export const createClient = (config: ClientOptions): Client => {
     }
 
     const retryOpts = opts?.retry ?? config.retry;
+    const timeout = opts?.timeout ?? config.timeout;
 
     const doFetch = async () => {
-      const res = await fetch(finalUrl, init);
+      const res = await fetch(finalUrl, timeout ? { ...init, signal: AbortSignal.timeout(timeout) } : init);
       if (config.interceptors?.response) {
         return applyResponseInterceptors(res, config.interceptors.response);
       }

@@ -10,57 +10,58 @@ No framework lock-in. No classes. Just functions and immutable data flowing thro
 
 ## Install
 
-Atlas is not on npm. Install it as a single bun package directly from this repo.
-
 ```bash
-bun add github:wess/atlas
+bun add @wess/atlas
 ```
 
-That lands the whole repo under `node_modules/atlas/`. Map each `@atlas/<pkg>`
-import to its file via `tsconfig.json` `paths` (bun reads tsconfig paths at
-runtime):
+Every package is a subpath export, so you can import directly:
+
+```ts
+import { defineConfig, env } from "@wess/atlas/config"
+import { connect } from "@wess/atlas/db"
+import { serve, router, get, json } from "@wess/atlas/server"
+```
+
+Prefer the `@atlas/<pkg>` spelling used throughout these docs? Map it via
+`tsconfig.json` `paths` (bun reads tsconfig paths at runtime):
 
 ```json
 {
   "compilerOptions": {
     "paths": {
-      "@atlas/auth":        ["./node_modules/atlas/packages/auth/index.ts"],
-      "@atlas/auth/social": ["./node_modules/atlas/packages/auth/social/index.ts"],
-      "@atlas/cache":       ["./node_modules/atlas/packages/cache/index.ts"],
-      "@atlas/cli":         ["./node_modules/atlas/packages/cli/index.ts"],
-      "@atlas/config":      ["./node_modules/atlas/packages/config/index.ts"],
-      "@atlas/db":          ["./node_modules/atlas/packages/db/index.ts"],
-      "@atlas/edge":        ["./node_modules/atlas/packages/edge/index.ts"],
-      "@atlas/email":       ["./node_modules/atlas/packages/email/index.ts"],
-      "@atlas/mcp":         ["./node_modules/atlas/packages/mcp/index.ts"],
-      "@atlas/migrate":     ["./node_modules/atlas/packages/migrate/index.ts"],
-      "@atlas/oauth":       ["./node_modules/atlas/packages/oauth/index.ts"],
-      "@atlas/request":     ["./node_modules/atlas/packages/request/index.ts"],
-      "@atlas/security":    ["./node_modules/atlas/packages/security/index.ts"],
-      "@atlas/server":      ["./node_modules/atlas/packages/server/index.ts"],
-      "@atlas/server/ws":   ["./node_modules/atlas/packages/server/ws/index.ts"],
-      "@atlas/server/sse":  ["./node_modules/atlas/packages/server/sse/index.ts"],
-      "@atlas/share":       ["./node_modules/atlas/packages/share/index.ts"],
-      "@atlas/sso":         ["./node_modules/atlas/packages/sso/index.ts"],
-      "@atlas/storage":     ["./node_modules/atlas/packages/storage/index.ts"],
-      "@atlas/ai":          ["./node_modules/atlas/packages/ai/index.ts"],
-      "@atlas/admin":       ["./node_modules/atlas/packages/admin/index.ts"],
-      "@atlas/ui":          ["./node_modules/atlas/packages/ui/index.ts"],
-      "@atlas/ui/*":        ["./node_modules/atlas/packages/ui/*/index.tsx"]
+      "@atlas/auth":        ["./node_modules/@wess/atlas/packages/auth/index.ts"],
+      "@atlas/auth/social": ["./node_modules/@wess/atlas/packages/auth/social/index.ts"],
+      "@atlas/cache":       ["./node_modules/@wess/atlas/packages/cache/index.ts"],
+      "@atlas/cli":         ["./node_modules/@wess/atlas/packages/cli/index.ts"],
+      "@atlas/config":      ["./node_modules/@wess/atlas/packages/config/index.ts"],
+      "@atlas/db":          ["./node_modules/@wess/atlas/packages/db/index.ts"],
+      "@atlas/edge":        ["./node_modules/@wess/atlas/packages/edge/index.ts"],
+      "@atlas/email":       ["./node_modules/@wess/atlas/packages/email/index.ts"],
+      "@atlas/mcp":         ["./node_modules/@wess/atlas/packages/mcp/index.ts"],
+      "@atlas/migrate":     ["./node_modules/@wess/atlas/packages/migrate/index.ts"],
+      "@atlas/oauth":       ["./node_modules/@wess/atlas/packages/oauth/index.ts"],
+      "@atlas/request":     ["./node_modules/@wess/atlas/packages/request/index.ts"],
+      "@atlas/request/providers": ["./node_modules/@wess/atlas/packages/request/providers/index.ts"],
+      "@atlas/security":    ["./node_modules/@wess/atlas/packages/security/index.ts"],
+      "@atlas/server":      ["./node_modules/@wess/atlas/packages/server/index.ts"],
+      "@atlas/server/ws":   ["./node_modules/@wess/atlas/packages/server/ws/index.ts"],
+      "@atlas/server/sse":  ["./node_modules/@wess/atlas/packages/server/sse/index.ts"],
+      "@atlas/share":       ["./node_modules/@wess/atlas/packages/share/index.ts"],
+      "@atlas/sso":         ["./node_modules/@wess/atlas/packages/sso/index.ts"],
+      "@atlas/storage":     ["./node_modules/@wess/atlas/packages/storage/index.ts"],
+      "@atlas/ai":          ["./node_modules/@wess/atlas/packages/ai/index.ts"],
+      "@atlas/admin":       ["./node_modules/@wess/atlas/packages/admin/index.ts"],
+      "@atlas/ui":          ["./node_modules/@wess/atlas/packages/ui/index.ts"],
+      "@atlas/ui/*":        ["./node_modules/@wess/atlas/packages/ui/*/index.tsx"]
     }
   }
 }
 ```
 
-Then import normally:
+Installing straight from the repo also works (`bun add github:wess/atlas`) and
+lands in the same `node_modules/@wess/atlas/` location.
 
-```ts
-import { defineConfig, env } from "@atlas/config"
-import { connect } from "@atlas/db"
-import { serve, router, get, json } from "@atlas/server"
-```
-
-Bump atlas with `bun update atlas`. The resolved commit is pinned in `bun.lock`.
+Bump atlas with `bun update @wess/atlas`.
 
 ## Packages
 
@@ -76,6 +77,7 @@ Bump atlas with `bun update atlas`. The resolved commit is pinned in `bun.lock`.
 | `@atlas/oauth` | OAuth 2.1 server: PKCE, refresh rotation, device flow, RFC 8414 discovery | none |
 | `@atlas/sso` | OIDC relying-party (Sign in with $IdP): discovery, PKCE, state, code exchange, id_token verify | none |
 | `@atlas/email` | Provider-agnostic transport (Resend) + invite/reset templates | none |
+| `@atlas/share` | Share-URL builders (socials, messengers, mailto) + server-side share-by-email | none |
 | `@atlas/storage` | S3-compatible object storage with presigned URLs | none |
 | `@atlas/cache` | Redis-backed caching with TTL and cache-aside patterns | none |
 | `@atlas/request` | HTTP client with retries, interceptors, provider configs | none |
@@ -136,7 +138,6 @@ import { connect } from "@atlas/db"
 import { migrate } from "@atlas/migrate"
 import { serve, router, pipeline, parseJson, json, get, post } from "@atlas/server"
 import { signup, login, requireAuth, token } from "@atlas/auth"
-import { users } from "./schema"
 
 const config = defineConfig({
   database: env("DATABASE_URL"),
@@ -155,7 +156,7 @@ serve({
     post("/signup", api(
       signup({
         db,
-        table: users,
+        table: "users",
         fields: ["email", "password"],
         onSuccess: (c, user) => json(c, 201, { id: user.id, email: user.email }),
       })
@@ -163,10 +164,10 @@ serve({
     post("/login", api(
       login({
         db,
-        table: users,
+        table: "users",
         identity: "email",
         password: "password",
-        onSuccess: (c, user) =>
+        onSuccess: async (c, user) =>
           json(c, 200, { token: await token.sign({ id: user.id }, config.secret) }),
       })
     )),

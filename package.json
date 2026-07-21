@@ -1,11 +1,66 @@
 {
-  "name": "atlas",
-  "version": "0.1.1",
+  "name": "@wess/atlas",
+  "version": "0.2.0",
+  "description": "Composable Bun/TypeScript packages for building APIs, full-stack apps, and CLI tools",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wess/atlas.git"
+  },
+  "homepage": "https://github.com/wess/atlas",
+  "bugs": "https://github.com/wess/atlas/issues",
+  "keywords": [
+    "bun",
+    "typescript",
+    "framework",
+    "api",
+    "fullstack",
+    "functional",
+    "http-server",
+    "websocket",
+    "auth",
+    "oauth",
+    "database",
+    "cli"
+  ],
   "workspaces": [
     "packages/*",
     "example"
   ],
+  "files": [
+    "packages",
+    "llms.txt"
+  ],
+  "exports": {
+    "./admin": "./packages/admin/index.ts",
+    "./ai": "./packages/ai/index.ts",
+    "./auth": "./packages/auth/index.ts",
+    "./auth/social": "./packages/auth/social/index.ts",
+    "./cache": "./packages/cache/index.ts",
+    "./cli": "./packages/cli/index.ts",
+    "./config": "./packages/config/index.ts",
+    "./db": "./packages/db/index.ts",
+    "./edge": "./packages/edge/index.ts",
+    "./email": "./packages/email/index.ts",
+    "./mcp": "./packages/mcp/index.ts",
+    "./migrate": "./packages/migrate/index.ts",
+    "./oauth": "./packages/oauth/index.ts",
+    "./request": "./packages/request/index.ts",
+    "./request/providers": "./packages/request/providers/index.ts",
+    "./security": "./packages/security/index.ts",
+    "./server": "./packages/server/index.ts",
+    "./server/sse": "./packages/server/sse/index.ts",
+    "./server/ws": "./packages/server/ws/index.ts",
+    "./share": "./packages/share/index.ts",
+    "./sso": "./packages/sso/index.ts",
+    "./storage": "./packages/storage/index.ts",
+    "./ui": "./packages/ui/index.ts",
+    "./ui/*": "./packages/ui/*/index.tsx",
+    "./packages/*": "./packages/*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "bun test",
     "lint": "bunx biome lint packages/",
@@ -14,16 +69,17 @@
     "lint:fix": "bunx biome lint --write packages/",
     "format:fix": "bunx biome format --write packages/",
     "check:fix": "bunx biome check --write packages/",
-    "tidy": "bun run check:fix"
+    "tidy": "bun run check:fix",
+    "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
     "zod": "^3.23.0"
   },
   "peerDependencies": {
-    "typescript": "^5",
+    "typescript": ">=5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "lucide-react": "^0.468.0",
+    "lucide-react": ">=0.468.0 <2",
     "@mantine/core": "^7.0.0",
     "@mantine/hooks": "^7.0.0",
     "@mantine/form": "^7.0.0",
@@ -39,7 +95,9 @@
     "@tanstack/react-table": { "optional": true }
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.10",
-    "@types/bun": "latest"
+    "@biomejs/biome": "2.5.5",
+    "@types/bun": "^1.3.14",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
   }
 }

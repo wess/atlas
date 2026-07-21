@@ -72,7 +72,7 @@ Environment variables: `DATABASE_URL`, `DATABASE_PATH`, `REDIS_URL`, `S3_ENDPOIN
 
 ## Types
 
-- `McpServer = { start(): Promise<void>; stop(): Promise<void> }`
+- `McpServer = { start(): Promise<void>; stop(): void }`
 - `AtlasMcpContext = { db?, cache?, routes?, config?, storage?, migrationsDir?, logBuffer? }`
 - `Tool = { name; description; inputSchema; handler(input, ctx) → Promise<unknown> }`
 - `ToolInput` — JSON-schema-shaped input descriptor

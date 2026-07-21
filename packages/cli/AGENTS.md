@@ -50,7 +50,7 @@ Project file generators based on user answers.
 
 ### init/index.ts
 
-The `atlas init` command. Flags: `--yes/-y` (skip prompts), `--name/-n` (project name).
+The `atlas init` command. Flags: `--yes/-y` (skip prompts), `--name/-n` (project name), `--template/-t` (project template).
 
 ### add/index.ts
 
@@ -58,7 +58,7 @@ The `atlas add` command. Maps short names (auth, db, cache, etc.) to `@atlas/*` 
 
 ### entry.ts
 
-CLI bin entry point. Registers init, add, and dev commands, then calls `cli("atlas", commands)`.
+CLI bin entry point. Registers init, add, dev, mcp, and docs commands, then calls `cli("atlas", commands)`.
 
 ## CLI Commands
 

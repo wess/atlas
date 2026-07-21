@@ -1,73 +1,67 @@
-import { post, json } from "@atlas/server"
-import { hashPassword, verifyPassword, signToken } from "@atlas/auth"
-import { db } from "../db.ts"
+import { hash, token, verify } from "@atlas/auth"
+import { from } from "@atlas/db"
+import { json, post } from "@atlas/server"
 import { config } from "../config.ts"
-import { public_ } from "../pipes/auth.ts"
+import { db } from "../db.ts"
+import { api } from "../pipes/auth.ts"
+import { users } from "../schema.ts"
+
+const weekInSeconds = 60 * 60 * 24 * 7
+
+const issueToken = (userId: number) => token.sign({ userId }, config.auth.secret, { expiresIn: weekInSeconds })
 
 export const authRoutes = [
-  post("/api/auth/signup", public_(
-    async (c) => {
-      const { email, username, name, password } = await c.req.json()
+  post(
+    "/api/auth/signup",
+    api(async (c) => {
+      const { email, username, name, password } = (c.body ?? {}) as {
+        email?: string
+        username?: string
+        name?: string
+        password?: string
+      }
 
       if (!email || !username || !name || !password) {
         return json(c, 400, { error: "email, username, name, and password are required" })
       }
 
-      const existing = await db.query(
-        "select id from users where email = $1 or username = $2",
-        [email, username],
+      const existing = await db.one(
+        from(users)
+          .select("id")
+          .where((q) => q.or(q("email").equals(email), q("username").equals(username))),
       )
+      if (existing) return json(c, 409, { error: "Email or username already taken" })
 
-      if (existing.length > 0) {
-        return json(c, 409, { error: "Email or username already taken" })
-      }
-
-      const passwordHash = await hashPassword(password)
-
-      const rows = await db.query(
-        `insert into users (email, username, name, password_hash)
-         values ($1, $2, $3, $4)
-         returning id, email, username, name, created_at`,
-        [email, username, name, passwordHash],
+      const rows = await db.execute(
+        from(users)
+          .insert({ email, username, name, passwordHash: await hash(password) })
+          .returning("id", "email", "username", "name", "createdAt"),
       )
-
       const user = rows[0]
-      const token = await signToken({ userId: user.id }, config.auth.secret)
+      if (!user) return json(c, 500, { error: "Signup failed" })
 
-      return json(c, 201, { user, token })
-    },
-  )),
+      return json(c, 201, { user, token: await issueToken(user.id) })
+    }),
+  ),
 
-  post("/api/auth/login", public_(
-    async (c) => {
-      const { email, password } = await c.req.json()
+  post(
+    "/api/auth/login",
+    api(async (c) => {
+      const { email, password } = (c.body ?? {}) as { email?: string; password?: string }
 
       if (!email || !password) {
         return json(c, 400, { error: "email and password are required" })
       }
 
-      const rows = await db.query(
-        "select id, email, username, name, password_hash from users where email = $1",
-        [email],
-      )
-
-      if (rows.length === 0) {
+      const user = await db.one(from(users).where((q) => q("email").equals(email)))
+      if (!user || !(await verify(password, user.passwordHash))) {
         return json(c, 401, { error: "Invalid credentials" })
       }
-
-      const user = rows[0]
-      const valid = await verifyPassword(password, user.password_hash)
-
-      if (!valid) {
-        return json(c, 401, { error: "Invalid credentials" })
-      }
-
-      const token = await signToken({ userId: user.id }, config.auth.secret)
 
       return json(c, 200, {
         user: { id: user.id, email: user.email, username: user.username, name: user.name },
-        token,
+        token: await issueToken(user.id),
       })
-    },
-  )),
+    }),
+  ),
 ]

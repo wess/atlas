@@ -20,3 +20,18 @@ test("create returns unique ids", async () => {
   const b = await store.create({ b: 2 });
   expect(a).not.toBe(b);
 });
+
+test("ttl expires sessions", async () => {
+  const store = createMemoryStore({ ttl: 0.05 });
+  const id = await store.create({ userId: 1 });
+  expect(await store.get(id)).toEqual({ userId: 1 });
+  await Bun.sleep(80);
+  expect(await store.get(id)).toBeNull();
+});
+
+test("no ttl keeps sessions alive", async () => {
+  const store = createMemoryStore();
+  const id = await store.create({ userId: 1 });
+  await Bun.sleep(80);
+  expect(await store.get(id)).toEqual({ userId: 1 });
+});

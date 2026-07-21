@@ -1,57 +1,58 @@
-import { get, post, pipe, json, stream, putHeader } from "@atlas/server"
+import type { Message } from "@atlas/ai"
+import { from } from "@atlas/db"
+import { get, internal, json, pipe, post, putHeader, stream } from "@atlas/server"
 import { ai } from "../ai.ts"
 import { db } from "../db.ts"
-import type { StreamChunk } from "@atlas/ai"
+import { conversations } from "../schema.ts"
 
 const systemPrompt = "You are a helpful assistant. Be concise and informative."
 
+const sseHeaders = (c: Parameters<typeof putHeader>[0]) =>
+  putHeader(
+    putHeader(putHeader(c, "content-type", "text/event-stream"), "cache-control", "no-cache"),
+    "connection",
+    "keep-alive",
+  )
+
 export const chatRoutes = [
   post("/api/chat", pipe(async (c) => {
-    const body = await c.request.json()
-    const { message, conversationId } = body as { message: string; conversationId?: number }
+    const body = (await c.request.json()) as { message: string; conversationId?: number }
+    const { message, conversationId } = body
 
-    let messages: { role: string; content: string }[] = []
-    let convId = conversationId
+    const existing = conversationId
+      ? await db.one(
+          from(conversations).select("id", "messages").where(q => q("id").equals(conversationId)),
+        )
+      : null
 
-    if (convId) {
-      const rows = await db.query(
-        "select id, title, messages from conversations where id = $1",
-        [convId],
+    const history: Message[] = existing ? JSON.parse(existing.messages) : []
+    const messages: Message[] = [...history, { role: "user", content: message }]
+    const serialized = JSON.stringify(messages)
+
+    let convId: number
+    if (existing) {
+      convId = existing.id
+      await db.execute(
+        from(conversations)
+          .where(q => q("id").equals(convId))
+          .update({ messages: serialized, updated_at: new Date().toISOString() }),
       )
-      if (rows.length > 0) {
-        messages = JSON.parse(rows[0].messages as string)
-      }
-    }
-
-    messages.push({ role: "user", content: message })
-
-    if (!convId) {
-      const title = message.slice(0, 80)
-      const rows = await db.query(
-        "insert into conversations (title, messages) values ($1, $2) returning id",
-        [title, JSON.stringify(messages)],
-      )
-      convId = rows[0].id as number
     } else {
-      await db.query(
-        "update conversations set messages = $1, updated_at = current_timestamp where id = $2",
-        [JSON.stringify(messages), convId],
+      const rows = await db.execute(
+        from(conversations).insert({ title: message.slice(0, 80), messages: serialized }).returning("id"),
       )
+      const row = rows[0]
+      if (!row) throw internal("Failed to create conversation")
+      convId = row.id
     }
 
     const chatStream = ai.chatStream({
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
     })
 
-    const savedConvId = convId
-    const savedMessages = messages
-
+    const encoder = new TextEncoder()
     const sseStream = new ReadableStream({
       async start(controller) {
-        const encoder = new TextEncoder()
         let fullContent = ""
         try {
           for await (const chunk of chatStream) {
@@ -61,10 +62,11 @@ export const chatRoutes = [
           controller.enqueue(encoder.encode("data: [DONE]\n\n"))
           controller.close()
 
-          savedMessages.push({ role: "assistant", content: fullContent })
-          await db.query(
-            "update conversations set messages = $1, updated_at = current_timestamp where id = $2",
-            [JSON.stringify(savedMessages), savedConvId],
+          const withReply: Message[] = [...messages, { role: "assistant", content: fullContent }]
+          await db.execute(
+            from(conversations)
+              .where(q => q("id").equals(convId))
+              .update({ messages: JSON.stringify(withReply), updated_at: new Date().toISOString() }),
           )
         } catch (err) {
           controller.error(err)
@@ -72,26 +74,21 @@ export const chatRoutes = [
       },
     })
 
-    const conn = putHeader(c, "content-type", "text/event-stream")
-    const conn2 = putHeader(conn, "cache-control", "no-cache")
-    const conn3 = putHeader(conn2, "connection", "keep-alive")
-    return stream(conn3, 200, sseStream)
+    return stream(sseHeaders(c), 200, sseStream)
   })),
 
   get("/api/conversations", pipe(async (c) => {
-    const rows = await db.query(
-      "select id, title, created_at, updated_at from conversations order by updated_at desc",
+    const rows = await db.all(
+      from(conversations).select("id", "title", "created_at", "updated_at").orderBy("updated_at", "DESC"),
     )
     return json(c, 200, rows)
   })),
 
   get("/api/conversations/:id", pipe(async (c) => {
-    const rows = await db.query(
-      "select id, title, messages, created_at, updated_at from conversations where id = $1",
-      [c.params.id],
+    const conv = await db.one(
+      from(conversations).where(q => q("id").equals(Number(c.params.id))),
     )
-    if (rows.length === 0) return json(c, 404, { error: "Conversation not found" })
-    const conv = rows[0]
-    return json(c, 200, { ...conv, messages: JSON.parse(conv.messages as string) })
+    if (!conv) return json(c, 404, { error: "Conversation not found" })
+    return json(c, 200, { ...conv, messages: JSON.parse(conv.messages) })
   })),
 ]

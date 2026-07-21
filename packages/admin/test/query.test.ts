@@ -45,7 +45,7 @@ test("POST /admin/api/query executes query with filters", async () => {
     }),
   );
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data).toHaveLength(1);
   expect(body.data[0].name).toBe("Wess");
   expect(body.sql).toContain("users");
@@ -64,7 +64,7 @@ test("POST /admin/api/query supports select and sort", async () => {
     }),
   );
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data).toHaveLength(2);
   expect(body.data[0].name).toBe("Other");
   expect(body.data[1].name).toBe("Wess");
@@ -84,7 +84,7 @@ test("POST /admin/api/query supports limit and offset", async () => {
     }),
   );
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data).toHaveLength(1);
   expect(body.data[0].name).toBe("Other");
 });
@@ -115,7 +115,7 @@ test("POST /admin/api/query/preview returns SQL without executing", async () => 
     }),
   );
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.sql).toBeDefined();
   expect(body.params).toBeDefined();
   expect(body.sql).toContain("users");
@@ -133,7 +133,7 @@ test("POST /admin/api/query supports eq filter", async () => {
     }),
   );
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data).toHaveLength(1);
   expect(body.data[0].name).toBe("Wess");
 });

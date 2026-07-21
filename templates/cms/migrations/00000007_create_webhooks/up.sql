@@ -1,8 +1,8 @@
-create table webhooks (
-  id integer primary key autoincrement,
-  url text not null,
-  events text not null default '[]',
-  secret text not null,
-  active integer not null default 1,
-  created_at text default (datetime('now'))
+CREATE TABLE webhooks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  url TEXT NOT NULL,
+  events TEXT NOT NULL DEFAULT '[]',
+  secret TEXT NOT NULL,
+  active INTEGER NOT NULL DEFAULT 1,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );

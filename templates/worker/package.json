@@ -6,17 +6,12 @@
     "start": "bun run server.ts",
     "worker": "bun run worker.ts",
     "test": "bun test",
-    "lint": "bunx biome lint src/",
-    "migrate:up": "atlas migrate up",
-    "migrate:down": "atlas migrate down",
-    "migrate:new": "atlas migrate new"
+    "lint": "bunx biome lint src/"
   },
   "dependencies": {
     "@atlas/config": "latest",
     "@atlas/server": "latest",
-    "@atlas/db": "latest",
     "@atlas/cache": "latest",
-    "@atlas/migrate": "latest",
     "@atlas/cli": "latest"
   },
   "devDependencies": {

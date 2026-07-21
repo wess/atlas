@@ -23,7 +23,7 @@ column.serial() → number   .text() → string   .integer() → number
   .bigint() → bigint   .real() → number   .boolean() → boolean
   .timestamp() → Date  .json<T>() → T       .uuid() → string
   modifiers: .primaryKey() .unique() .nullable() (widens to T|null)
-             .default(val) .ref(table, col)
+             .default(val) .defaultRaw(sql) .ref(table, col)
 RowOf<typeof schema>                             extract row TS type
 changeset(schema, { cast, required?, validate? }) → (data) => ChangesetResult
 connect({ driver, path|url, pool? }) → Connection
@@ -120,9 +120,9 @@ ForwardContext: { remoteIp, tls, host }
 
 ## @atlas/server/ws
 ```
-ws(config) → { handler, rooms, upgrade }
+ws(config) → { websocket, rooms, upgrade }
 channel(name, handlers) → Channel
-createRooms() → { join, leave, broadcast, members }
+createRooms() → { join, leave, leaveAll, broadcast, members }
 WsConn<T>: wrapped ws with auto-JSON send
 ```
 
@@ -139,11 +139,11 @@ hash(password) → Promise<string>           Argon2id via Bun.password
 verify(password, hashed) → Promise<bool>
 token.sign(payload, secret, opts?) → jwt   opts: { expiresIn: seconds }
 token.verify(jwt, secret) → payload
-createMemoryStore() → SessionStore         dev/testing session store
+createMemoryStore({ ttl? }) → SessionStore dev/testing session store; ttl seconds expires entries
 signup({ db, table, fields, onSuccess }) → PipeFn
 login({ db, table, identity, password, onSuccess }) → PipeFn
 requireAuth({ secret }) → PipeFn           reads Bearer token, sets conn.assigns.auth
-passwordReset({ db, table, transport }) → PipeFn
+passwordReset({ db, table, secret, transport, expiresIn? }) → PipeFn
 ```
 
 ## @atlas/auth/social
@@ -204,7 +204,7 @@ oauthRoutes(cfg, { basePath?, adminBasePath? }) → Route[]   all OAuth endpoint
 oauthAuthorizeRoutes(cfg, base) | oauthTokenRoutes | oauthRevokeRoutes
 oauthDeviceRoutes | oauthDiscoveryRoutes | oauthClientRoutes(cfg, adminBase)
 findClient(db, id) | verifyClientCredentials(db, id, secret)
-sweepExpired(db) | sweepExpiredAuthCodes | sweepExpiredRefreshTokens | sweepExpiredDeviceCodes
+sweepExpired(cfg) | sweepExpiredAuthCodes | sweepExpiredRefreshTokens | sweepExpiredDeviceCodes(cfg)
 helpers: parseScope, formatScope, includesScopes, isAllowedRedirect,
          verifyPkceS256, randomId, shortId, sha256, newUserCode, normalizeUserCode
 constants: ACCESS_TOKEN_TTL_SECONDS, REFRESH_TOKEN_TTL_SECONDS,
@@ -215,7 +215,7 @@ types: OAuthConfig, OAuthUser, ClientRow, AuthCodeRow, RefreshTokenRow,
 
 ## @atlas/sso
 ```
-mountSso(cfg: SsoConfig) → readonly Route[]            mount /login + /callback + logout routes
+mountSso(cfg: SsoConfig) → readonly Route[]            mount /login + /callback + /backchannel-logout
 ensureSsoStateTable(db, table?)                        idempotent CREATE TABLE IF NOT EXISTS
 sweepExpiredSsoState(db, table?)                       prune expired state rows (10m TTL)
 clearDiscoveryCache()                                  for tests / hot-reload
@@ -234,7 +234,7 @@ DiscoveryDoc: { issuer, authorization_endpoint, token_endpoint, jwks_uri, userin
 withSecurityHeaders(fetch, { dev?, csp?, disableCsp? }) → fetch     HSTS/CSP/COOP/CORP + req.peerIp shim
 developmentCsp | productionCsp                                       string CSP presets
 decideInline(mime, name, wantInline) → { contentType, disposition }  safe-MIME allowlist for inline
-createDbRateLimit({ db }) | createMemoryRateLimit() → RateLimit      .check(bucket, max, windowSec)
+createDbRateLimit({ db }) | createMemoryRateLimit() → RateLimit      .check(bucket, max, windowSec) .reset(bucket) .sweep(olderThanSec)
 clientIp(req, { trustedProxies? }) → string                          honors X-Forwarded-For only via trusted proxy
 userAgent(req) → string | undefined
 parseTrustedProxies(env) → string[]
@@ -265,15 +265,17 @@ presign(store, key, { expires?, method? }) → string
 createCache({ url }) → Cache               Redis-backed
 createMemoryCache() → Cache                 in-memory for dev
 cached(cache, prefix, fn, { ttl? }) → cached function
-invalidate(cache, prefix, key) → Promise
+invalidate(cache, prefix, ...args) → Promise
 ```
 
 ## @atlas/request
 ```
-request(url, opts?) → Promise<Response>     opts: { json, headers, method, ... }
-createClient(baseUrl, opts?) → Client       Client: .get .post .put .patch .delete
-withRetry(fn, { retries?, delay? })
-github({ token }) | stripe({ key }) | openai({ key }) | resend({ key })  preconfigured clients
+request(url, opts?) → Promise<Response>     opts: { json, headers, method, body, retry, timeout (ms) }
+createClient({ baseUrl, headers?, retry?, interceptors?, timeout? }) → Client
+  Client: .get .post .put .patch .del .request — all return Promise<Response>
+withRetry(fn, { attempts?, delay?, backoff?, retryOn? })
+github({ token }) | stripe({ key }) | openai({ key }) | resend({ key })
+  preconfigured clients — import from @atlas/request/providers
 ```
 
 ## @atlas/cli
@@ -308,17 +310,17 @@ CLI surface:
 
 ## @atlas/admin
 ```
-admin({ db, models, auth? }) → { mount, routes }
-model({ schema, searchFields?, readOnly?, bulkActions?, customActions? }) → ModelConfig
+admin({ db, models, basePath?, auth? }) → { mount, routes }
+model({ schema, listFields?, searchFields?, filterFields?, relations?, actions?, bulkActions?, readOnly? }) → ModelConfig
 Components: AdminApp, AdminSidebar, Dashboard, ModelList, Detail, Create, FilterBuilder, QueryBuilder, BulkBar
 ```
 
 ## @atlas/mcp
 ```
-createMcpServer({ db?, routes?, config? }) → McpServer
-createContext(opts) → AtlasMcpContext
-defineTool(name, description, schema, handler) → Tool
-collectTools(...tools) → Tool[]
+createContext(opts?) → AtlasMcpContext      opts: { db?, cache?, routes?, config?, storage?, migrationsDir?, logBuffer? }
+collectTools(ctx) → Tool[]                  tools auto-register from what's in ctx
+createMcpServer(tools, ctx) → McpServer
+defineTool({ name, description, inputSchema, handler }) → Tool
 McpServer: .start() .stop()
 
 Always-on tools (independent of context):
@@ -332,18 +334,19 @@ createProvider({ provider, key?, baseUrl? }) → AiProvider   provider: "openai"
 createConversation(system?) → Conversation
 addMessage(conv, msg) → Conversation
 send(provider, conv, content, opts?) → { conversation, response }
-userMessage|assistantMessage|systemMessage|toolMessage(content) → Message
+userMessage|assistantMessage|systemMessage(content) → Message
+toolMessage(toolCallId, content) → Message
 chatStream: provider.chatStream(opts) → AsyncIterable
 collectStream(stream) → ChatResponse
 streamToSse(stream) → ReadableStream
 parseSSE(text) → events
-embed(provider, inputs, opts?) → number[][]
+embed(provider, input) → number[][]        input: string | string[]
 cosineSimilarity(a, b) → number
 createVectorStore() → { add, search, size }
 generateJson<T>(provider, prompt, opts?) → T
-tool(name, desc, schema) → ToolDefinition
-index(rag, id, text) → Promise             rag: { ai, store, topK? }
+tool(name, desc, parameters) → ToolDef
+index(rag, id, text, metadata?) → Promise  rag: { ai, store, topK? }
 query(rag, question) → { answer, sources }
-runAgent({ ai, system?, tools, maxIterations? }, prompt) → result
+runAgent({ ai, system?, tools, maxIterations? }, prompt) → { response, messages, iterations }
 withAi(provider) → PipeFn                  adds ai to conn.assigns
 ```

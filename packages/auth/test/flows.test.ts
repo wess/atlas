@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
-import { createConn } from "../../server/index.ts";
-import { requireAuth } from "../flows/index.ts";
+import { column, connect, defineSchema } from "../../db/index.ts";
+import { createConn, json } from "../../server/index.ts";
+import { requireAuth, signup } from "../flows/index.ts";
 import * as token from "../token/index.ts";
 
 test("requireAuth adds auth to assigns", async () => {
@@ -56,4 +57,32 @@ test("requireAuth halts 401 with non-Bearer auth", async () => {
   const result = await authPipe(conn);
   expect(result.halted).toBe(true);
   expect(result.status).toBe(401);
+});
+
+test("signup accepts a defineSchema table", async () => {
+  const db = connect({ driver: "sqlite", path: ":memory:" });
+  await db.execute({
+    text: "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL)",
+    values: [],
+  });
+  const users = defineSchema("users", {
+    id: column.serial().primaryKey(),
+    email: column.text().unique(),
+    password: column.text(),
+  });
+
+  const pipe = signup({
+    db,
+    table: users,
+    fields: ["email", "password"],
+    onSuccess: (c) => json(c, 201, { ok: true }),
+  });
+  const req = new Request("http://localhost/signup", { method: "POST" });
+  const conn = { ...createConn(req), body: { email: "a@b.c", password: "secret" } };
+  const result = await pipe(conn);
+  expect(result.status).toBe(201);
+
+  const row = await db.one<{ email: string }>({ text: "SELECT email FROM users", values: [] });
+  expect(row?.email).toBe("a@b.c");
+  await db.close();
 });

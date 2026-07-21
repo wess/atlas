@@ -36,6 +36,7 @@ const columnDdl = (col: LiveColumn, dialect: Dialect): string => {
     else parts.push("PRIMARY KEY");
   }
   if (!col.nullable && !col.primary) parts.push("NOT NULL");
+  if (col.defaultSql) parts.push(`DEFAULT ${col.defaultSql}`);
   return parts.join(" ");
 };
 

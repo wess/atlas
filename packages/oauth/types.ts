@@ -1,5 +1,5 @@
-import type { Connection } from "../db/index.ts";
 import type { Jwk } from "../auth/index.ts";
+import type { Connection } from "../db/index.ts";
 import type { PipeFn } from "../server/index.ts";
 
 /**

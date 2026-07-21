@@ -1,7 +1,8 @@
-import { createPool } from "@atlas/db"
+import { connect } from "@atlas/db"
 import { config } from "./config.ts"
 
-export const db = createPool({
+export const db = connect({
+  driver: "postgres",
   url: config.databaseUrl,
-  poolSize: config.dbPoolSize,
+  pool: config.dbPoolSize,
 })

@@ -211,3 +211,16 @@ test("internal tables (schema_migrations, sqlite_*) are ignored", async () => {
 
   await db.close();
 });
+
+test("defaultRaw columns emit DEFAULT in generated DDL", async () => {
+  const db = connect({ driver: "sqlite", path: ":memory:" });
+  const posts = defineSchema("posts", {
+    id: column.serial().primaryKey(),
+    createdAt: column.timestamp().defaultRaw("CURRENT_TIMESTAMP"),
+  });
+
+  const result = await diffPlan(db, [posts]);
+  expect(result.up).toContain("createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
+
+  await db.close();
+});

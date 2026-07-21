@@ -39,8 +39,11 @@
     const userId = Math.random().toString(36).slice(2, 8)
 
     const connect = () => {
-      ws = new WebSocket(`ws://${location.host}/ws?room=${room}&user=${userId}`)
-      ws.onopen = () => { document.getElementById("status").textContent = "connected" }
+      ws = new WebSocket(`ws://${location.host}/ws`)
+      ws.onopen = () => {
+        document.getElementById("status").textContent = "connected"
+        ws.send(JSON.stringify({ channel: "chat", event: "join", payload: { room, user: userId } }))
+      }
       ws.onclose = () => {
         document.getElementById("status").textContent = "disconnected"
         setTimeout(connect, 2000)
@@ -54,7 +57,7 @@
     const send = () => {
       const input = document.getElementById("input")
       if (input.value.trim() && ws?.readyState === 1) {
-        ws.send(JSON.stringify({ text: input.value.trim() }))
+        ws.send(JSON.stringify({ channel: "chat", event: "message", payload: { text: input.value.trim() } }))
         input.value = ""
       }
     }
@@ -76,13 +79,13 @@
 
     // SSE notifications
     const events = new EventSource("/events/notifications")
-    events.onmessage = (e) => {
+    events.addEventListener("notification", (e) => {
       const el = document.createElement("div")
       el.className = "notification"
-      el.textContent = e.data
+      el.textContent = JSON.parse(e.data).text
       document.getElementById("notifications").appendChild(el)
       setTimeout(() => el.remove(), 3500)
-    }
+    })
 
     connect()
   </script>

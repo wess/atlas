@@ -1,6 +1,6 @@
-import { createPool } from "@atlas/db"
+import { connect } from "@atlas/db"
 import { config } from "./config.ts"
 
-export const db = createPool({
-  url: config.databaseUrl,
-})
+const path = config.databaseUrl.replace(/^sqlite:\/\//, "")
+
+export const db = connect({ driver: "sqlite", path })

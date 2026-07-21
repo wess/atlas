@@ -30,11 +30,7 @@ export type AuthenticatedUser = {
 /**
  * Where to send the user after a successful login. Defaults to "/".
  */
-export type SessionIssuer = (
-  conn: Conn,
-  user: AuthenticatedUser,
-  claims: IdTokenClaims,
-) => Promise<Conn> | Conn;
+export type SessionIssuer = (conn: Conn, user: AuthenticatedUser, claims: IdTokenClaims) => Promise<Conn> | Conn;
 
 /**
  * Configuration passed to `mountSso`. The host app supplies the issuer URL,
@@ -67,10 +63,7 @@ export type SsoConfig = {
    * local user row and return its primary key. Throwing aborts the login
    * with a 500 — RPs should surface the message to the user.
    */
-  readonly onAuthenticated: (
-    db: Connection,
-    claims: IdTokenClaims,
-  ) => Promise<AuthenticatedUser>;
+  readonly onAuthenticated: (db: Connection, claims: IdTokenClaims) => Promise<AuthenticatedUser>;
   /**
    * Issue whatever session the host app uses (set-cookie, write to sessions
    * table, etc.) and return the Conn with the redirect-home response.
@@ -100,10 +93,7 @@ export type SsoConfig = {
    * (so back-channel logout knows which local row to invalidate). When
    * unset, the package skips local-session invalidation and just acks.
    */
-  readonly findLocalUserBySub?: (
-    db: Connection,
-    sub: string,
-  ) => Promise<number | string | null>;
+  readonly findLocalUserBySub?: (db: Connection, sub: string) => Promise<number | string | null>;
   /** Override table name for the transient state store. Default: `sso_state`. */
   readonly stateTable?: string;
 };

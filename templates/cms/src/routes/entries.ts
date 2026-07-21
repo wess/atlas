@@ -1,258 +1,259 @@
-import { get, post, put, del, json } from "@atlas/server"
+import { from } from "@atlas/db"
+import { del, get, json, post, put } from "@atlas/server"
 import { db } from "../db.ts"
-import { authed } from "../pipes/auth.ts"
 import { dispatchWebhooks } from "../dispatch/index.ts"
+import { authed, claims, guard } from "../pipes/auth.ts"
+import { contentTypes, entries, revisions } from "../schema.ts"
+
+const entryColumns = [
+  "id",
+  "contentTypeId",
+  "slug",
+  "data",
+  "status",
+  "authorId",
+  "publishedAt",
+  "createdAt",
+  "updatedAt",
+] as const
+
+const entryDetails = (...extra: string[]) =>
+  from("entries", "e")
+    .join("users", "u.id = e.authorId", "u")
+    .join("content_types", "ct.id = e.contentTypeId", "ct")
+    .select(
+      "e.id",
+      "e.contentTypeId",
+      "e.slug",
+      "e.data",
+      "e.status",
+      "e.authorId",
+      "e.publishedAt",
+      "e.createdAt",
+      "e.updatedAt",
+      "u.name as authorName",
+      "ct.displayName as typeName",
+      ...extra,
+    )
 
 export const entryRoutes = [
-  get("/admin/api/entries", authed(
-    async (c) => {
+  get(
+    "/admin/api/entries",
+    guard(async (c) => {
       const limit = Number(c.query.limit) || 20
       const offset = Number(c.query.offset) || 0
-      const typeId = c.query.type
-      const status = c.query.status
 
-      let sql = `select e.id, e.content_type_id, e.slug, e.data, e.status,
-        e.author_id, e.published_at, e.created_at, e.updated_at,
-        u.name as author_name, ct.display_name as type_name
-        from entries e
-        join users u on u.id = e.author_id
-        join content_types ct on ct.id = e.content_type_id
-        where 1=1`
-      const params: unknown[] = []
-      let paramIdx = 1
+      const base = entryDetails()
+      const byType = c.query.type ? base.where((q) => q("e.contentTypeId").equals(Number(c.query.type))) : base
+      const byStatus = c.query.status ? byType.where((q) => q("e.status").equals(c.query.status)) : byType
 
-      if (typeId) {
-        sql += ` and e.content_type_id = $${paramIdx++}`
-        params.push(typeId)
-      }
-
-      if (status) {
-        sql += ` and e.status = $${paramIdx++}`
-        params.push(status)
-      }
-
-      sql += ` order by e.updated_at desc limit $${paramIdx++} offset $${paramIdx++}`
-      params.push(limit, offset)
-
-      const rows = await db.query(sql, params)
+      const rows = await db.all(byStatus.orderBy("e.updatedAt", "DESC").limit(limit).offset(offset))
 
       return json(c, 200, rows)
-    },
-  )),
+    }),
+  ),
 
-  get("/admin/api/entries/:id", authed(
-    async (c) => {
-      const rows = await db.query(
-        `select e.id, e.content_type_id, e.slug, e.data, e.status,
-          e.author_id, e.published_at, e.created_at, e.updated_at,
-          u.name as author_name, ct.display_name as type_name, ct.fields as type_fields
-         from entries e
-         join users u on u.id = e.author_id
-         join content_types ct on ct.id = e.content_type_id
-         where e.id = $1`,
-        [c.params.id],
+  get(
+    "/admin/api/entries/:id",
+    guard(async (c) => {
+      const row = await db.one(
+        entryDetails("ct.fields as typeFields").where((q) => q("e.id").equals(Number(c.params.id))),
       )
 
-      return rows.length > 0
-        ? json(c, 200, rows[0])
-        : json(c, 404, { error: "Entry not found" })
-    },
-  )),
+      return row ? json(c, 200, row) : json(c, 404, { error: "Entry not found" })
+    }),
+  ),
 
-  post("/admin/api/entries", authed(
-    async (c) => {
-      if (c.auth.role === "viewer") {
-        return json(c, 403, { error: "Viewers cannot create entries" })
+  post(
+    "/admin/api/entries",
+    authed(async (c) => {
+      if (claims(c).role === "viewer") return json(c, 403, { error: "Viewers cannot create entries" })
+
+      const { contentTypeId, slug, data } = (c.body ?? {}) as {
+        contentTypeId?: number
+        slug?: string
+        data?: unknown
       }
-
-      const { contentTypeId, slug, data } = await c.req.json()
-
       if (!contentTypeId || !slug || !data) {
         return json(c, 400, { error: "contentTypeId, slug, and data are required" })
       }
 
-      const typeRows = await db.query(
-        "select id from content_types where id = $1",
-        [contentTypeId],
+      const type = await db.one(
+        from(contentTypes)
+          .select("id")
+          .where((q) => q("id").equals(contentTypeId)),
       )
+      if (!type) return json(c, 404, { error: "Content type not found" })
 
-      if (typeRows.length === 0) {
-        return json(c, 404, { error: "Content type not found" })
-      }
-
-      const existing = await db.query(
-        "select id from entries where content_type_id = $1 and slug = $2",
-        [contentTypeId, slug],
+      const existing = await db.one(
+        from(entries)
+          .select("id")
+          .where((q) => q("contentTypeId").equals(contentTypeId))
+          .where((q) => q("slug").equals(slug)),
       )
+      if (existing) return json(c, 409, { error: "Slug already exists for this content type" })
 
-      if (existing.length > 0) {
-        return json(c, 409, { error: "Slug already exists for this content type" })
-      }
-
-      const rows = await db.query(
-        `insert into entries (content_type_id, slug, data, status, author_id)
-         values ($1, $2, $3, 'draft', $4)
-         returning id, content_type_id, slug, data, status, author_id, published_at, created_at, updated_at`,
-        [contentTypeId, slug, JSON.stringify(data), c.auth.userId],
+      const rows = await db.execute(
+        from(entries)
+          .insert({
+            contentTypeId,
+            slug,
+            data: JSON.stringify(data),
+            status: "draft",
+            authorId: claims(c).userId,
+          })
+          .returning(...entryColumns),
       )
-
       const entry = rows[0]
+      if (!entry) return json(c, 500, { error: "Create failed" })
 
-      await db.query(
-        `insert into revisions (entry_id, data, author_id)
-         values ($1, $2, $3)`,
-        [entry.id, JSON.stringify(data), c.auth.userId],
+      await db.execute(
+        from(revisions).insert({ entryId: entry.id, data: JSON.stringify(data), authorId: claims(c).userId }),
       )
 
       return json(c, 201, entry)
-    },
-  )),
+    }),
+  ),
 
-  put("/admin/api/entries/:id", authed(
-    async (c) => {
-      if (c.auth.role === "viewer") {
-        return json(c, 403, { error: "Viewers cannot update entries" })
-      }
+  put(
+    "/admin/api/entries/:id",
+    authed(async (c) => {
+      if (claims(c).role === "viewer") return json(c, 403, { error: "Viewers cannot update entries" })
 
-      const { slug, data } = await c.req.json()
+      const id = Number(c.params.id)
+      const { slug, data } = (c.body ?? {}) as { slug?: string; data?: unknown }
 
-      const existing = await db.query(
-        "select id, content_type_id from entries where id = $1",
-        [c.params.id],
+      const existing = await db.one(
+        from(entries)
+          .select("id", "contentTypeId")
+          .where((q) => q("id").equals(id)),
       )
-
-      if (existing.length === 0) {
-        return json(c, 404, { error: "Entry not found" })
-      }
+      if (!existing) return json(c, 404, { error: "Entry not found" })
 
       if (slug) {
-        const slugCheck = await db.query(
-          "select id from entries where content_type_id = $1 and slug = $2 and id != $3",
-          [existing[0].content_type_id, slug, c.params.id],
+        const clash = await db.one(
+          from(entries)
+            .select("id")
+            .where((q) => q("contentTypeId").equals(existing.contentTypeId))
+            .where((q) => q("slug").equals(slug))
+            .where((q) => q("id").notEquals(id)),
         )
-
-        if (slugCheck.length > 0) {
-          return json(c, 409, { error: "Slug already exists for this content type" })
-        }
+        if (clash) return json(c, 409, { error: "Slug already exists for this content type" })
       }
 
-      const rows = await db.query(
-        `update entries
-         set slug = coalesce($1, slug),
-             data = coalesce($2, data),
-             updated_at = datetime('now')
-         where id = $3
-         returning id, content_type_id, slug, data, status, author_id, published_at, created_at, updated_at`,
-        [slug || null, data ? JSON.stringify(data) : null, c.params.id],
+      const changes = {
+        ...(slug === undefined ? {} : { slug }),
+        ...(data === undefined ? {} : { data: JSON.stringify(data) }),
+        updatedAt: new Date().toISOString(),
+      }
+
+      const rows = await db.execute(
+        from(entries)
+          .update(changes)
+          .where((q) => q("id").equals(id))
+          .returning(...entryColumns),
       )
-
       const entry = rows[0]
+      if (!entry) return json(c, 500, { error: "Update failed" })
 
-      if (data) {
-        await db.query(
-          `insert into revisions (entry_id, data, author_id)
-           values ($1, $2, $3)`,
-          [entry.id, JSON.stringify(data), c.auth.userId],
+      if (data !== undefined) {
+        await db.execute(
+          from(revisions).insert({ entryId: id, data: JSON.stringify(data), authorId: claims(c).userId }),
         )
       }
 
       return json(c, 200, entry)
-    },
-  )),
+    }),
+  ),
 
-  del("/admin/api/entries/:id", authed(
-    async (c) => {
-      if (c.auth.role === "viewer") {
-        return json(c, 403, { error: "Viewers cannot delete entries" })
-      }
+  del(
+    "/admin/api/entries/:id",
+    guard(async (c) => {
+      const { role, userId } = claims(c)
+      if (role === "viewer") return json(c, 403, { error: "Viewers cannot delete entries" })
 
-      const existing = await db.query(
-        "select id, author_id from entries where id = $1",
-        [c.params.id],
+      const id = Number(c.params.id)
+      const existing = await db.one(
+        from(entries)
+          .select("id", "authorId")
+          .where((q) => q("id").equals(id)),
       )
-
-      if (existing.length === 0) {
-        return json(c, 404, { error: "Entry not found" })
-      }
-
-      if (c.auth.role === "editor" && existing[0].author_id !== c.auth.userId) {
+      if (!existing) return json(c, 404, { error: "Entry not found" })
+      if (role === "editor" && existing.authorId !== userId) {
         return json(c, 403, { error: "Editors can only delete their own entries" })
       }
 
-      await db.query("delete from revisions where entry_id = $1", [c.params.id])
-      await db.query("delete from entries where id = $1", [c.params.id])
+      await db.execute(
+        from(revisions)
+          .where((q) => q("entryId").equals(id))
+          .del(),
+      )
+      await db.execute(
+        from(entries)
+          .where((q) => q("id").equals(id))
+          .del(),
+      )
 
       return json(c, 200, { deleted: true })
-    },
-  )),
+    }),
+  ),
 
-  post("/admin/api/entries/:id/publish", authed(
-    async (c) => {
-      if (c.auth.role === "viewer") {
-        return json(c, 403, { error: "Viewers cannot publish entries" })
-      }
+  post(
+    "/admin/api/entries/:id/publish",
+    guard(async (c) => {
+      if (claims(c).role === "viewer") return json(c, 403, { error: "Viewers cannot publish entries" })
 
-      const existing = await db.query(
-        "select id, status, data, content_type_id, slug from entries where id = $1",
-        [c.params.id],
+      const id = Number(c.params.id)
+      const existing = await db.one(
+        from(entries)
+          .select("id", "status")
+          .where((q) => q("id").equals(id)),
       )
+      if (!existing) return json(c, 404, { error: "Entry not found" })
+      if (existing.status === "published") return json(c, 409, { error: "Entry is already published" })
 
-      if (existing.length === 0) {
-        return json(c, 404, { error: "Entry not found" })
-      }
-
-      if (existing[0].status === "published") {
-        return json(c, 409, { error: "Entry is already published" })
-      }
-
-      const rows = await db.query(
-        `update entries
-         set status = 'published', published_at = datetime('now'), updated_at = datetime('now')
-         where id = $1
-         returning id, content_type_id, slug, data, status, author_id, published_at, created_at, updated_at`,
-        [c.params.id],
+      const now = new Date().toISOString()
+      const rows = await db.execute(
+        from(entries)
+          .update({ status: "published", publishedAt: now, updatedAt: now })
+          .where((q) => q("id").equals(id))
+          .returning(...entryColumns),
       )
-
       const entry = rows[0]
+      if (!entry) return json(c, 500, { error: "Publish failed" })
 
-      dispatchWebhooks("entry.published", entry)
+      await dispatchWebhooks("entry.published", entry)
 
       return json(c, 200, entry)
-    },
-  )),
+    }),
+  ),
 
-  post("/admin/api/entries/:id/unpublish", authed(
-    async (c) => {
-      if (c.auth.role === "viewer") {
-        return json(c, 403, { error: "Viewers cannot unpublish entries" })
-      }
+  post(
+    "/admin/api/entries/:id/unpublish",
+    guard(async (c) => {
+      if (claims(c).role === "viewer") return json(c, 403, { error: "Viewers cannot unpublish entries" })
 
-      const existing = await db.query(
-        "select id, status from entries where id = $1",
-        [c.params.id],
+      const id = Number(c.params.id)
+      const existing = await db.one(
+        from(entries)
+          .select("id", "status")
+          .where((q) => q("id").equals(id)),
       )
+      if (!existing) return json(c, 404, { error: "Entry not found" })
+      if (existing.status !== "published") return json(c, 409, { error: "Entry is not published" })
 
-      if (existing.length === 0) {
-        return json(c, 404, { error: "Entry not found" })
-      }
-
-      if (existing[0].status !== "published") {
-        return json(c, 409, { error: "Entry is not published" })
-      }
-
-      const rows = await db.query(
-        `update entries
-         set status = 'draft', published_at = null, updated_at = datetime('now')
-         where id = $1
-         returning id, content_type_id, slug, data, status, author_id, published_at, created_at, updated_at`,
-        [c.params.id],
+      const rows = await db.execute(
+        from(entries)
+          .update({ status: "draft", publishedAt: null, updatedAt: new Date().toISOString() })
+          .where((q) => q("id").equals(id))
+          .returning(...entryColumns),
       )
-
       const entry = rows[0]
+      if (!entry) return json(c, 500, { error: "Unpublish failed" })
 
-      dispatchWebhooks("entry.unpublished", entry)
+      await dispatchWebhooks("entry.unpublished", entry)
 
       return json(c, 200, entry)
-    },
-  )),
+    }),
+  ),
 ]

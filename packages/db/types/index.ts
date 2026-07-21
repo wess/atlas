@@ -125,7 +125,7 @@ export type SqlResult<Row = unknown> = {
 //   Selected — what a query returning rows yields (narrows after .select(...))
 // Both default to `any` so untyped from("users") usage keeps working.
 export type Chainable<Row = any, Selected = Row> = {
-  readonly select: <K extends keyof Row & string>(...columns: K[]) => Chainable<Row, { [P in K]: Row[P] }>;
+  readonly select: <K extends keyof Row & string>(...columns: (K | Fragment)[]) => Chainable<Row, { [P in K]: Row[P] }>;
   readonly where: (callback: WhereCallback) => Chainable<Row, Selected>;
   readonly join: (table: string, on: string | Fragment, alias?: string) => Chainable<Row, Selected>;
   readonly leftJoin: (table: string, on: string | Fragment, alias?: string) => Chainable<Row, Selected>;

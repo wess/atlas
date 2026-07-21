@@ -8,10 +8,13 @@ export type ColumnDef<TS = unknown, N extends boolean = false> = {
   readonly isUnique: boolean;
   readonly isNullable: N;
   readonly defaultValue: unknown;
+  readonly defaultSql: string | null;
   readonly references: { table: string; column: string } | null;
   readonly primaryKey: () => ColumnDef<TS, N>;
   readonly nullable: () => ColumnDef<TS, true>;
   readonly default: (value: TS) => ColumnDef<TS, N>;
+  /** SQL-expression default (e.g. `now()`), emitted verbatim into DDL. */
+  readonly defaultRaw: (sql: string) => ColumnDef<TS, N>;
   readonly unique: () => ColumnDef<TS, N>;
   readonly ref: (table: string, col: string) => ColumnDef<TS, N>;
   // Phantom marker so TS infers the column's row type at the type level.
@@ -23,6 +26,7 @@ type ColumnState = {
   isUnique: boolean;
   isNullable: boolean;
   defaultValue: unknown;
+  defaultSql: string | null;
   references: { table: string; column: string } | null;
 };
 
@@ -31,6 +35,7 @@ const baseState: ColumnState = {
   isUnique: false,
   isNullable: false,
   defaultValue: undefined,
+  defaultSql: null,
   references: null,
 };
 
@@ -40,10 +45,12 @@ const buildColumn = <TS, N extends boolean>(type: ColumnType, state: ColumnState
   isUnique: state.isUnique,
   isNullable: state.isNullable as N,
   defaultValue: state.defaultValue,
+  defaultSql: state.defaultSql,
   references: state.references,
   primaryKey: () => buildColumn<TS, N>(type, { ...state, primary: true }),
   nullable: () => buildColumn<TS, true>(type, { ...state, isNullable: true }),
   default: (value: TS) => buildColumn<TS, N>(type, { ...state, defaultValue: value }),
+  defaultRaw: (sql: string) => buildColumn<TS, N>(type, { ...state, defaultSql: sql }),
   unique: () => buildColumn<TS, N>(type, { ...state, isUnique: true }),
   ref: (table: string, col: string) => buildColumn<TS, N>(type, { ...state, references: { table, column: col } }),
 });

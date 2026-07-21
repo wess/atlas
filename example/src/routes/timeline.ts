@@ -15,7 +15,7 @@ export const timelineRoutes = (db: Connection, secret: string) => {
           .join("follows", raw("follows.followingId = posts.userId"))
           .where(q => q("follows.followerId").equals(userId))
           .select("posts.id", "posts.content", "posts.userId", "posts.createdAt")
-          .orderBy("posts.createdAt", "desc")
+          .orderBy("posts.createdAt", "DESC")
           .limit(50)
       )
 
@@ -31,7 +31,7 @@ export const timelineRoutes = (db: Connection, secret: string) => {
       const rows = await db.all(
         from("posts")
           .where(q => q("userId").equals(user.id))
-          .orderBy("createdAt", "desc")
+          .orderBy("createdAt", "DESC")
           .limit(50)
       )
 

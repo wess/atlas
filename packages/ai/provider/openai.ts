@@ -17,6 +17,16 @@ type OpenAiConfig = {
   defaultModel?: string;
 };
 
+type OpenAiChatResponse = {
+  choices: Array<{ message: { content?: string | null } }>;
+  usage?: { prompt_tokens: number; completion_tokens: number };
+  model: string;
+};
+
+type OpenAiEmbedResponse = {
+  data: Array<{ embedding: number[] }>;
+};
+
 const formatTools = (tools: ToolDef[]) =>
   tools.map((t) => ({
     type: "function" as const,
@@ -88,11 +98,11 @@ export const createOpenAi = (config: OpenAiConfig): AiProvider => {
       );
     }
 
-    const data = await res.json();
+    const data = (await res.json()) as OpenAiChatResponse;
     const choice = data.choices[0];
 
     return {
-      content: choice.message.content ?? "",
+      content: choice?.message.content ?? "",
       toolCalls: parseToolCalls(data.choices),
       usage: data.usage
         ? { promptTokens: data.usage.prompt_tokens, completionTokens: data.usage.completion_tokens }
@@ -177,8 +187,8 @@ export const createOpenAi = (config: OpenAiConfig): AiProvider => {
       );
     }
 
-    const data = await res.json();
-    return { embeddings: data.data.map((d: any) => d.embedding) };
+    const data = (await res.json()) as OpenAiEmbedResponse;
+    return { embeddings: data.data.map((d) => d.embedding) };
   };
 
   return { name: "openai", chat, chatStream, embed };

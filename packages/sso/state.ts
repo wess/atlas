@@ -1,5 +1,5 @@
-import { from } from "../db/index.ts";
 import type { Connection } from "../db/index.ts";
+import { from } from "../db/index.ts";
 
 /**
  * The transient row that survives the redirect dance between
@@ -35,13 +35,12 @@ export const writeState = async (
 /**
  * Atomic single-use: delete-and-return so a replay attempt finds nothing.
  */
-export const consumeState = async (
-  db: Connection,
-  table: string,
-  state: string,
-): Promise<StateRow | null> => {
+export const consumeState = async (db: Connection, table: string, state: string): Promise<StateRow | null> => {
   const rows = (await db.execute(
-    from(table).where((q) => q("state").equals(state)).del().returning("state", "verifier", "nonce", "return_to", "expires_at"),
+    from(table)
+      .where((q) => q("state").equals(state))
+      .del()
+      .returning("state", "verifier", "nonce", "return_to", "expires_at"),
   )) as StateRow[];
   const row = rows[0];
   if (!row) return null;
@@ -51,7 +50,10 @@ export const consumeState = async (
 
 export const sweepExpiredSsoState = async (db: Connection, table = "sso_state"): Promise<number> => {
   const rows = (await db.execute(
-    from(table).where((q) => q("expires_at").lessThan(new Date().toISOString())).del().returning("state"),
+    from(table)
+      .where((q) => q("expires_at").lessThan(new Date().toISOString()))
+      .del()
+      .returning("state"),
   )) as { state: string }[];
   return rows.length;
 };

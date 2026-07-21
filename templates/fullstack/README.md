@@ -1,6 +1,6 @@
 # {{name}}
 
-Full-stack Atlas app with REST API and React frontend using Atlas UI blocks.
+Full-stack Atlas app with REST API and a React + Mantine frontend wrapped in Atlas UI's provider.
 
 ## Setup
 
@@ -15,5 +15,6 @@ bun run server.ts
 
 - `server.ts` — serves API routes and the frontend HTML
 - `src/routes/` — API endpoints
-- `src/frontend/` — React app with Atlas UI components
+- `src/frontend/` — React app (Atlas UI provider + Mantine components)
 - `index.html` — Bun HTML import entry point
+- `migrations/` — SQL migrations (`atlas migrate up`)

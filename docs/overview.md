@@ -17,6 +17,7 @@ Atlas is a collection of composable, functional Bun/TypeScript packages for buil
 @atlas/admin (depends on @atlas/db, @atlas/server)
 @atlas/security (depends on @atlas/db, @atlas/auth)
 @atlas/oauth (depends on @atlas/db, @atlas/server, @atlas/auth)
+@atlas/sso (depends on @atlas/db, @atlas/server, @atlas/auth)
 @atlas/edge (standalone — no sibling deps)
 @atlas/email (standalone — no sibling deps)
 @atlas/share (depends on @atlas/email — share URL builders + server-side share-by-email)
@@ -24,7 +25,7 @@ Atlas is a collection of composable, functional Bun/TypeScript packages for buil
 @atlas/cache (optional, can use @atlas/config)
 @atlas/request (standalone — no sibling deps)
 @atlas/mcp (depends on @atlas/db, @atlas/server, @atlas/config)
-@atlas/ai (standalone — no sibling deps, no external deps)
+@atlas/ai (depends on @atlas/server for the withAi pipe; no external deps)
 
 @atlas/ui (frontend, optional browser-side usage)
 ```
@@ -69,10 +70,9 @@ const result = await db.one(query)
 `@atlas/server` wraps `Bun.serve` with a Plug-inspired pipe system. Requests flow through immutable `Conn` objects that pipes transform.
 
 Sub-modules:
-- `@atlas/server` — Core HTTP routing with `get()`, `post()`, `put()`, `patch()`, `del()` route builders
+- `@atlas/server` — Core HTTP routing with `get()`, `post()`, `put()`, `patch()`, `del()` route builders, plus the adapter pattern (`createAdapter`, `compose`) for running multiple listeners
 - `@atlas/server/ws` — WebSocket support
 - `@atlas/server/sse` — Server-Sent Events
-- `@atlas/server/adapter` — Adapter pattern for deploying to different runtimes
 
 ```ts
 const logger = pipe(c => { console.log(c.method); return c })
@@ -125,7 +125,7 @@ The `templates/edge` scaffold ships a complete deploy pattern: Procfile for loca
 ```ts
 const signupPipe = signup({
   db,
-  table: users,
+  table: "users",
   fields: ["email", "password"],
   onSuccess: (c, user) => json(c, 201, user),
 })
@@ -164,10 +164,19 @@ get("/auth/google/callback", social.callback("google", {
 
 ```ts
 import { oauthRoutes } from "@atlas/oauth"
+import { requireAuth } from "@atlas/auth"
 
 serve({
   routes: [
-    ...oauthRoutes({ db, issuer: "https://auth.example.com", findUser, ... }),
+    ...oauthRoutes({
+      db,
+      secret,
+      scopes: ["read", "write"],
+      loadUser,
+      buildAccessTokenClaims,
+      requireUser: requireAuth({ secret }),
+      requireAdmin,
+    }),
     ...appRoutes,
   ],
 })
@@ -243,13 +252,15 @@ const getUser = cached(cache, "user", async (id) => {
 
 - `request()` — One-off requests
 - `createClient()` — Preconfigured clients with base URL, headers, retries
-- Providers — Drop-in configs for GitHub, Stripe, OpenAI, Resend
+- Providers — Drop-in configs for GitHub, Stripe, OpenAI, Resend (import from `@atlas/request/providers`)
 - Retry logic with exponential backoff
 - Request/response interceptors
 
 ```ts
-const github = github({ token: process.env.GITHUB_TOKEN })
-const repos = await github.get("/user/repos").json()
+import { github } from "@atlas/request/providers"
+
+const gh = github({ token: process.env.GITHUB_TOKEN! })
+const repos = await (await gh.get("/user/repos")).json()
 ```
 
 ### CLI
@@ -329,13 +340,10 @@ Serves SPA at `/admin` with full CRUD UI.
 `@atlas/mcp` provides a Model Context Protocol server for AI/LLM debugging and introspection. It exposes your app's database, routes, config, and logs to AI agents through the standard MCP protocol.
 
 ```ts
-import { createMcpServer } from "@atlas/mcp"
+import { collectTools, createContext, createMcpServer } from "@atlas/mcp"
 
-const mcp = createMcpServer({
-  db,
-  routes: myRoutes,
-  config,
-})
+const ctx = createContext({ db, routes: myRoutes, config })
+const mcp = createMcpServer(collectTools(ctx), ctx)
 
 mcp.start()
 ```
@@ -403,10 +411,10 @@ await migrate.up(db)
 // 4. HTTP with pipes
 serve({
   routes: [
-    post("/auth/signup", signup({ db, table: users, ... })),
-    post("/auth/login", login({ db, table: users, ... })),
-    get("/api/users", pipeline(requireAuth)(listUsers)),
-    post("/api/files", pipeline(requireAuth, parseMultipart)(uploadFile)),
+    post("/auth/signup", signup({ db, table: "users", ... })),
+    post("/auth/login", login({ db, table: "users", ... })),
+    get("/api/users", pipeline(requireAuth({ secret }))(listUsers)),
+    post("/api/files", pipeline(requireAuth({ secret }), parseMultipart)(uploadFile)),
   ],
 })
 ```
@@ -417,12 +425,15 @@ Use `@atlas/ui` blocks on the client:
 
 ```tsx
 // server.ts
-import admin from "./admin.html" // HTML file that imports React SPA
+import { get, halt, pipe, putHeader, serve } from "@atlas/server"
+
+const page = await Bun.file("./admin.html").text() // HTML file that loads the React SPA
+const spa = pipe((c) => putHeader(halt(c, 200, page), "content-type", "text/html; charset=utf-8"))
 
 serve({
   routes: [
-    get("/admin", admin),
-    get("/admin/*", admin),
+    get("/admin", spa),
+    get("/admin/*", spa),
     ...apiRoutes,
   ],
 })
@@ -440,7 +451,7 @@ serve({
 
 ```tsx
 // admin.tsx
-import { admin } from "@atlas/admin"
+import { AdminApp } from "@atlas/admin"
 import { createRoot } from "react-dom/client"
 
 const root = createRoot(document.getElementById("root")!)
@@ -497,6 +508,7 @@ LLMs can read `packages/db/AGENTS.md` instead of traversing 20+ source files. Th
 | storage | none |
 | cache | none |
 | request | none |
+| sso | none |
 | cli | none |
 | ui | `react`, `@mantine/*`, `@tanstack/*`, `lucide-react` |
 | admin | `react`, `@mantine/*`, `@tanstack/*`, `lucide-react` |

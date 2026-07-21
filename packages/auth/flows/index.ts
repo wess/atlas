@@ -1,4 +1,4 @@
-import type { Connection } from "../../db/index.ts";
+import type { Connection, Schema, SchemaColumns } from "../../db/index.ts";
 import { from } from "../../db/index.ts";
 import type { Conn, PipeFn } from "../../server/index.ts";
 import { assign, halt, json } from "../../server/index.ts";
@@ -7,7 +7,7 @@ import * as token from "../token/index.ts";
 
 type SignupOptions = {
   readonly db: Connection;
-  readonly table: string;
+  readonly table: string | Schema<SchemaColumns>;
   readonly fields: readonly string[];
   readonly onSuccess: (conn: Conn, user: Record<string, unknown>) => Conn | Promise<Conn>;
 };
@@ -49,7 +49,7 @@ export const signup =
 
 type LoginOptions = {
   readonly db: Connection;
-  readonly table: string;
+  readonly table: string | Schema<SchemaColumns>;
   readonly identity: string;
   readonly password: string;
   readonly onSuccess: (conn: Conn, user: Record<string, unknown>) => Conn | Promise<Conn>;
@@ -108,7 +108,7 @@ export const requireAuth =
 
 type PasswordResetOptions = {
   readonly db: Connection;
-  readonly table: string;
+  readonly table: string | Schema<SchemaColumns>;
   /**
    * Secret used to sign the reset JWT. The endpoint that consumes the token
    * must verify with the same secret — typically a dedicated env var like

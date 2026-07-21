@@ -1,30 +1,30 @@
-import { config } from "./src/config.ts"
-import { serve, get, post, pipe, json } from "@atlas/server"
+import { get, json, parseJson, pipe, pipeline, post, serve } from "@atlas/server"
 import { cache } from "./src/cache.ts"
+import { config } from "./src/config.ts"
+import { enqueue } from "./src/queue.ts"
+
+const parsed = pipeline(parseJson)
 
 serve({
   port: config.port,
   routes: [
     get("/health", pipe((c) => json(c, 200, { healthy: true }))),
 
-    post("/api/jobs", pipe(
-      async (c) => {
-        const body = await c.req.json()
-        const jobId = crypto.randomUUID()
-        const job = { id: jobId, type: body.type, payload: body.payload, status: "pending" }
-        await cache.lpush("jobs:queue", JSON.stringify(job))
-        return json(c, 201, { id: jobId, status: "pending" })
-      },
-    )),
+    post("/api/jobs", parsed(async (c) => {
+      const { type, payload } = c.body as { type: string; payload?: unknown }
+      if (!type) return json(c, 400, { error: "type is required" })
 
-    get("/api/jobs/:id/status", pipe(
-      async (c) => {
-        const status = await cache.get(`jobs:status:${c.params.id}`)
-        return status
-          ? json(c, 200, JSON.parse(status))
-          : json(c, 404, { error: "Job not found" })
-      },
-    )),
+      const job = { id: crypto.randomUUID(), type, payload }
+      await cache.set(`jobs:status:${job.id}`, { ...job, status: "pending" })
+      await enqueue(job)
+
+      return json(c, 201, { id: job.id, status: "pending" })
+    })),
+
+    get("/api/jobs/:id/status", pipe(async (c) => {
+      const status = await cache.get(`jobs:status:${c.params.id}`)
+      return status ? json(c, 200, status) : json(c, 404, { error: "Job not found" })
+    })),
   ],
 })
 

@@ -59,6 +59,7 @@ const introspectPostgres = async (db: Connection): Promise<LiveTable[]> => {
       nullable: String(r.is_nullable).toUpperCase() === "YES",
       primary: r.is_primary === true || r.is_primary === "t",
       hasDefault: r.column_default !== null && r.column_default !== undefined,
+      defaultSql: r.column_default ?? null,
     });
     byTable.set(r.table_name, list);
   }
@@ -98,6 +99,7 @@ const introspectSqlite = async (db: Connection): Promise<LiveTable[]> => {
         nullable: c.notnull === 0,
         primary: c.pk > 0,
         hasDefault: c.dflt_value !== null && c.dflt_value !== undefined,
+        defaultSql: c.dflt_value != null ? String(c.dflt_value) : null,
       })),
     });
   }

@@ -11,8 +11,7 @@ export const indexDocument = async (
   const chunks = chunkText(text, 500)
   const id = metadata.id as string
 
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i]
+  for (const [i, chunk] of chunks.entries()) {
     const [embedding] = await embed(ai, chunk)
     if (embedding) {
       vectorStore.add(`${id}-${i}`, embedding, { ...metadata, text: chunk, chunkIndex: i })

@@ -104,11 +104,8 @@ curl -X POST http://localhost:3000/api/agent \
 
 ## Indexing Documents
 
-Upload documents through the API or the web UI. You can also index the sample document:
-
-```bash
-bun run index
-```
+Upload documents through the API or the web UI at http://localhost:3000. Embeddings
+live in an in-memory vector store, so re-upload documents after a restart.
 
 ## Available Tools
 

@@ -1,52 +1,35 @@
+import { from, raw } from "@atlas/db"
 import { get } from "@atlas/server"
+import { eventStream } from "@atlas/server/sse"
 import { db } from "../db.ts"
-import { authed } from "../pipes/auth.ts"
+import { currentUserId, guard } from "../pipes/auth.ts"
+
+const pollInterval = 10_000
+
+const latestFromFollowed = (userId: number) =>
+  from("posts", "p")
+    .join("users", "u.id = p.userId", "u")
+    .select("p.id", "p.userId", "p.content", "p.imageUrl", "p.createdAt", "u.username", "u.name", "u.avatarUrl")
+    .where((q) => q.raw(raw("p.userId in (select followingId from follows where followerId = $1)", userId)))
+    .orderBy("p.createdAt", "DESC")
+    .limit(5)
 
 export const feedEventRoutes = [
-  get("/api/feed/stream", authed(
-    async (c) => {
-      const stream = new ReadableStream({
-        start(controller) {
-          const encoder = new TextEncoder()
+  get(
+    "/api/feed/stream",
+    guard((c) =>
+      eventStream(c, async (send) => {
+        const userId = currentUserId(c)
 
-          const send = (data: unknown) => {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+        while (!c.request.signal.aborted) {
+          try {
+            send("feed", await db.all(latestFromFollowed(userId)))
+          } catch {
+            break
           }
-
-          const interval = setInterval(async () => {
-            try {
-              const rows = await db.query(
-                `select p.id, p.user_id, p.content, p.image_url, p.created_at,
-                  u.username, u.name, u.avatar_url
-                 from posts p
-                 join users u on u.id = p.user_id
-                 where p.user_id in (
-                   select following_id from follows where follower_id = $1
-                 )
-                 order by p.created_at desc
-                 limit 5`,
-                [c.auth.userId],
-              )
-              send({ type: "feed_update", posts: rows })
-            } catch {
-              // connection may have closed
-            }
-          }, 10000)
-
-          c.req.signal.addEventListener("abort", () => {
-            clearInterval(interval)
-            controller.close()
-          })
-        },
-      })
-
-      return new Response(stream, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          "Connection": "keep-alive",
-        },
-      })
-    },
-  )),
+          await new Promise((resolve) => setTimeout(resolve, pollInterval))
+        }
+      }),
+    ),
+  ),
 ]

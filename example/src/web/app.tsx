@@ -1,6 +1,8 @@
+/// <reference lib="dom" />
 import React, { useState, useEffect } from "react"
 import { createRoot } from "react-dom/client"
 import * as api from "./api.ts"
+import type { Post } from "./api.ts"
 
 const Auth = ({ onLogin }: { onLogin: () => void }) => {
   const [mode, setMode] = useState<"login" | "signup">("login")
@@ -38,8 +40,6 @@ const Auth = ({ onLogin }: { onLogin: () => void }) => {
     </div>
   )
 }
-
-type Post = { id: number; content: string; userId: number; createdAt: string; handle?: string }
 
 const PostItem = ({ post }: { post: Post }) => (
   <div className="post">

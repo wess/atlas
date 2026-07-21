@@ -9,6 +9,7 @@ export const config = defineConfig({
   },
   storage: {
     path: env("STORAGE_PATH", { default: "./uploads" }),
+    s3Endpoint: env("S3_ENDPOINT", { default: "" }),
     s3Bucket: env("S3_BUCKET", { default: "" }),
     s3Region: env("S3_REGION", { default: "" }),
     s3AccessKey: env("S3_ACCESS_KEY", { default: "" }),

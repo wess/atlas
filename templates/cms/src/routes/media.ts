@@ -1,86 +1,88 @@
-import { get, post, del, json } from "@atlas/server"
-import { upload } from "@atlas/storage"
-import { db } from "../db.ts"
+import { from } from "@atlas/db"
+import { del, get, halt, json, pipe, post, putHeader, stream } from "@atlas/server"
 import { config } from "../config.ts"
-import { authed } from "../pipes/auth.ts"
+import { db } from "../db.ts"
+import { claims, guard, uploads } from "../pipes/auth.ts"
+import { media } from "../schema.ts"
+import { saveUpload } from "../storage.ts"
 
 export const mediaRoutes = [
-  get("/admin/api/media", authed(
-    async (c) => {
+  get(
+    "/admin/api/media",
+    guard(async (c) => {
       const limit = Number(c.query.limit) || 20
       const offset = Number(c.query.offset) || 0
-      const contentType = c.query.contentType
 
-      let sql = `select id, filename, key, url, content_type, size, alt, uploaded_by, created_at
-        from media where 1=1`
-      const params: unknown[] = []
-      let paramIdx = 1
+      const base = from(media)
+      const filtered = c.query.contentType ? base.where((q) => q("contentType").like(`${c.query.contentType}%`)) : base
 
-      if (contentType) {
-        sql += ` and content_type like $${paramIdx++}`
-        params.push(`${contentType}%`)
-      }
-
-      sql += ` order by created_at desc limit $${paramIdx++} offset $${paramIdx++}`
-      params.push(limit, offset)
-
-      const rows = await db.query(sql, params)
+      const rows = await db.all(filtered.orderBy("createdAt", "DESC").limit(limit).offset(offset))
 
       return json(c, 200, rows)
-    },
-  )),
+    }),
+  ),
 
-  post("/admin/api/media", authed(
-    async (c) => {
-      if (c.auth.role === "viewer") {
-        return json(c, 403, { error: "Viewers cannot upload media" })
-      }
+  post(
+    "/admin/api/media",
+    uploads(async (c) => {
+      if (claims(c).role === "viewer") return json(c, 403, { error: "Viewers cannot upload media" })
 
-      const formData = await c.req.formData()
-      const file = formData.get("file")
-      const alt = formData.get("alt") as string | null
+      const body = c.body as { fields?: Record<string, string>; files?: Record<string, Blob> }
+      const file = body.files?.file
+      if (!file || !(file instanceof File)) return json(c, 400, { error: "file is required" })
 
-      if (!file || !(file instanceof File)) {
-        return json(c, 400, { error: "file is required" })
-      }
-
-      const result = await upload(file, {
-        bucket: config.storage.s3Bucket,
-        region: config.storage.s3Region,
-        accessKey: config.storage.s3AccessKey,
-        secretKey: config.storage.s3SecretKey,
-        localPath: config.storage.path,
-      })
-
-      const rows = await db.query(
-        `insert into media (filename, key, url, content_type, size, alt, uploaded_by)
-         values ($1, $2, $3, $4, $5, $6, $7)
-         returning id, filename, key, url, content_type, size, alt, uploaded_by, created_at`,
-        [file.name, result.key, result.url, file.type, file.size, alt || null, c.auth.userId],
+      const saved = await saveUpload(file)
+      const rows = await db.execute(
+        from(media)
+          .insert({
+            filename: file.name,
+            key: saved.key,
+            url: saved.url,
+            contentType: file.type,
+            size: file.size,
+            alt: body.fields?.alt ?? null,
+            uploadedBy: claims(c).userId,
+          })
+          .returning("id", "filename", "key", "url", "contentType", "size", "alt", "uploadedBy", "createdAt"),
       )
 
       return json(c, 201, rows[0])
-    },
-  )),
+    }),
+  ),
 
-  del("/admin/api/media/:id", authed(
-    async (c) => {
-      if (c.auth.role === "viewer") {
-        return json(c, 403, { error: "Viewers cannot delete media" })
-      }
+  del(
+    "/admin/api/media/:id",
+    guard(async (c) => {
+      if (claims(c).role === "viewer") return json(c, 403, { error: "Viewers cannot delete media" })
 
-      const existing = await db.query(
-        "select id from media where id = $1",
-        [c.params.id],
+      const id = Number(c.params.id)
+      const existing = await db.one(
+        from(media)
+          .select("id")
+          .where((q) => q("id").equals(id)),
+      )
+      if (!existing) return json(c, 404, { error: "Media not found" })
+
+      await db.execute(
+        from(media)
+          .where((q) => q("id").equals(id))
+          .del(),
       )
 
-      if (existing.length === 0) {
-        return json(c, 404, { error: "Media not found" })
-      }
-
-      await db.query("delete from media where id = $1", [c.params.id])
-
       return json(c, 200, { deleted: true })
-    },
-  )),
+    }),
+  ),
+
+  get(
+    "/uploads/:key",
+    pipe(async (c) => {
+      const key = c.params.key ?? ""
+      if (!key || key.includes("/") || key.includes("..")) return halt(c, 404, { error: "Not found" })
+
+      const file = Bun.file(`${config.storage.path}/${key}`)
+      if (!(await file.exists())) return halt(c, 404, { error: "Not found" })
+
+      return stream(putHeader(c, "content-type", file.type), 200, file.stream())
+    }),
+  ),
 ]

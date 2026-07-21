@@ -112,9 +112,13 @@
     }
 
     function connectWs() {
-      ws = new WebSocket(`ws://${location.host}?token=${token}`)
+      ws = new WebSocket(`ws://${location.host}`)
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ channel: "notifications", event: "join", payload: { token } }))
+      }
       ws.onmessage = (e) => {
-        const notification = JSON.parse(e.data)
+        let notification
+        try { notification = JSON.parse(e.data) } catch { return }
         const el = document.createElement("div")
         el.className = "notification"
         el.textContent = notification.type === "like"
@@ -149,10 +153,10 @@
 
     function renderPost(post) {
       return `<div class="card post">
-        <div class="meta">@${post.username} &middot; ${new Date(post.created_at).toLocaleString()}</div>
+        <div class="meta">@${post.username} &middot; ${new Date(post.createdAt).toLocaleString()}</div>
         <div class="content">${post.content}</div>
         <div class="actions">
-          <a onclick="likePost(${post.id})">${post.like_count} likes</a>
+          <a onclick="likePost(${post.id})">${post.likeCount} likes</a>
         </div>
       </div>`
     }

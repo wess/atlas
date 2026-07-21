@@ -115,3 +115,29 @@ test("userAgent caps the header at 256 characters", () => {
 test("userAgent returns empty string when missing", () => {
   expect(userAgent(new Request("http://localhost/"))).toBe("");
 });
+
+test("memory limiter sweep drops old buckets", async () => {
+  const lim = createMemoryRateLimit();
+  await lim.check("a", 5, 60);
+  await lim.check("b", 5, 60);
+  expect(await lim.sweep(3600)).toBe(0);
+  expect(await lim.sweep(0)).toBe(2);
+});
+
+test("DB-backed (sqlite) limiter sweep deletes stale rows", async () => {
+  const db = connect({ driver: "sqlite", path: ":memory:" });
+  await db.execute({
+    text: "CREATE TABLE rate_limits (bucket TEXT PRIMARY KEY, count INTEGER NOT NULL, window_started_at INTEGER NOT NULL)",
+    values: [],
+  });
+  const lim = createDbRateLimit({ db });
+  await lim.check("fresh", 5, 60);
+  await db.execute({
+    text: "INSERT INTO rate_limits (bucket, count, window_started_at) VALUES (?, ?, ?)",
+    values: ["stale", 1, Math.floor(Date.now() / 1000) - 7200],
+  });
+  expect(await lim.sweep(3600)).toBe(1);
+  const remaining = await db.all<{ bucket: string }>({ text: "SELECT bucket FROM rate_limits", values: [] });
+  expect(remaining.map((r) => r.bucket)).toEqual(["fresh"]);
+  await db.close();
+});

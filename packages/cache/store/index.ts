@@ -60,7 +60,7 @@ export const createMemoryCache = (opts?: { maxEntries?: number }): Cache => {
 };
 
 export const createCache = (opts: { url: string }): Cache => {
-  const redis = new (Bun as any).RedisClient(opts.url);
+  const redis = new Bun.RedisClient(opts.url);
 
   return {
     get: async <T = unknown>(key: string): Promise<T | null> => {
@@ -71,7 +71,7 @@ export const createCache = (opts: { url: string }): Cache => {
     set: async (key, value, setOpts?) => {
       const serialized = JSON.stringify(value);
       if (setOpts?.ttl) {
-        await redis.set(key, serialized, { EX: setOpts.ttl });
+        await redis.set(key, serialized, "EX", setOpts.ttl);
       } else {
         await redis.set(key, serialized);
       }
@@ -83,10 +83,10 @@ export const createCache = (opts: { url: string }): Cache => {
       await redis.expire(key, seconds);
     },
     flush: async () => {
-      await redis.flushdb();
+      await redis.send("FLUSHDB", []);
     },
     close: async () => {
-      await redis.close();
+      redis.close();
     },
   };
 };

@@ -71,7 +71,13 @@ CREATE TABLE rate_limits (
 );
 ```
 
-`createMemoryRateLimit()` returns the same interface for tests / dev.
+`createMemoryRateLimit()` returns the same interface for tests / dev (it also
+self-sweeps expired buckets opportunistically).
+
+Both limiters expose `sweep(olderThanSeconds)` — drop buckets whose window
+started more than that many seconds ago, returning the removed count. Run it
+periodically (cron) with a value >= your longest window to keep the table/map
+from accumulating one row per bucket key forever.
 
 `clientIp(req, { trustedProxies })` returns the real client IP. It honors
 `X-Forwarded-For` / `X-Real-IP` *only* when the request actually arrived from a
@@ -137,7 +143,7 @@ const { token, jti } = await sessions.issue(user, { ip: clientIp(req), userAgent
 
 // every request
 const status = await sessions.isActive(jwtPayload.jti)
-if (!status.active) return halt(401)
+if (!status.active) return halt(conn, 401)
 sessions.touch(jwtPayload.jti)
 
 // logout / logout-everywhere

@@ -9,7 +9,7 @@ and back-channel logout.
 ## Exports
 
 ```
-mountSso(cfg: SsoConfig) → readonly Route[]      mount /login + /callback + /logout
+mountSso(cfg: SsoConfig) → readonly Route[]      mount /login + /callback + /backchannel-logout
 ensureSsoStateTable(db, table?)                  idempotent CREATE TABLE IF NOT EXISTS
 sweepExpiredSsoState(db, table?)                 delete expired state rows
 clearDiscoveryCache()                            for tests / hot-reload
@@ -47,13 +47,12 @@ DiscoveryDoc { issuer, authorization_endpoint, token_endpoint, jwks_uri, userinf
 
 ## Routes mounted
 
-`mountSso` returns four routes under `basePath` (default `/auth/sso`):
+`mountSso` returns three routes under `basePath` (default `/auth/sso`):
 
 | Method + Path | Purpose |
 |---|---|
 | `GET /login`          | Generate state + PKCE + nonce, persist them, 302 to IdP's authorize endpoint. Honors `?return_to=` for deep links. |
 | `GET /callback`       | Validate state, exchange code, verify id_token, call `onAuthenticated`, then `issueSession`. |
-| `POST /logout`        | Back-channel logout (RP-initiated end-session, when the IdP advertises one). |
 | `POST /backchannel-logout` | Receive IdP-pushed logout token, verify, look up `localUserId` via `findLocalUserBySub`, call `invalidateSessions`. |
 
 ## Wire up

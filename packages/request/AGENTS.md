@@ -6,7 +6,7 @@ HTTP client for outbound API/web requests, built on fetch.
 
 ### `request(url, opts?)`
 
-One-off HTTP request. Accepts `RequestOptions` with optional `method`, `headers`, `json`, `body`, and `retry`.
+One-off HTTP request. Accepts `RequestOptions` with optional `method`, `headers`, `json`, `body`, `retry`, and `timeout` (ms; each retry attempt gets its own window).
 
 ```ts
 import { request } from "@atlas/request"
@@ -104,9 +104,9 @@ Available providers: `github`, `stripe`, `openai`, `resend`.
 
 ## Types
 
-- `RequestOptions = { method?, headers?, json?, body?, retry?, signal?, ... }`
+- `RequestOptions = { method?, headers?, json?, body?, retry?, timeout? }`
 - `Client = { get, post, put, patch, del, request }` — all return `Promise<Response>`
-- `ClientOptions = { baseUrl, headers?, retry?, interceptors? }`
+- `ClientOptions = { baseUrl, headers?, retry?, interceptors?, timeout? }`
 - `RetryOptions = { attempts?, delay?, backoff?, retryOn? }`
 - `Interceptors = { request?: RequestInterceptor[]; response?: ResponseInterceptor[] }`
 - `RequestInterceptor = (url, init) => { url, init }` (or Promise of)

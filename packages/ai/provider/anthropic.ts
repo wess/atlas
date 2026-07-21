@@ -15,6 +15,12 @@ type AnthropicConfig = {
   defaultModel?: string;
 };
 
+type AnthropicChatResponse = {
+  content: Array<{ type: string; text?: string; id?: string; name?: string; input?: unknown }>;
+  usage?: { input_tokens: number; output_tokens: number };
+  model: string;
+};
+
 const formatTools = (tools: ToolDef[]) =>
   tools.map((t) => ({
     name: t.name,
@@ -92,7 +98,7 @@ export const createAnthropic = (config: AnthropicConfig): AiProvider => {
       );
     }
 
-    const data = await res.json();
+    const data = (await res.json()) as AnthropicChatResponse;
 
     const textBlocks = data.content.filter((b: any) => b.type === "text");
     const toolBlocks = data.content.filter((b: any) => b.type === "tool_use");

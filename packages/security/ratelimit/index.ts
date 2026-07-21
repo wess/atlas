@@ -9,19 +9,41 @@ export type RateLimitResult = {
 export type RateLimit = {
   readonly check: (bucket: string, max: number, windowSeconds: number) => Promise<RateLimitResult>;
   readonly reset: (bucket: string) => Promise<void>;
+  /**
+   * Drop buckets whose window started more than `olderThanSeconds` ago and
+   * return how many were removed. Call periodically (e.g. from a cron) with a
+   * value at least as large as your longest window.
+   */
+  readonly sweep: (olderThanSeconds: number) => Promise<number>;
 };
 
 // In-memory limiter. Single-process only — fine for dev / tests / single-node
 // services, but not suitable for horizontally-scaled deployments where every
 // instance would track its own counters.
 export const createMemoryRateLimit = (): RateLimit => {
-  const buckets = new Map<string, { count: number; startedAt: number }>();
+  const buckets = new Map<string, { count: number; startedAt: number; windowSeconds: number }>();
+  let opsSinceSweep = 0;
+
+  // Expired buckets otherwise accumulate forever — one entry per distinct key
+  // (typically per client IP). Sweep opportunistically instead of on a timer
+  // so the limiter holds no live handle that would keep the process alive.
+  const sweep = (now: number): void => {
+    for (const [key, b] of buckets) {
+      if (now - b.startedAt >= b.windowSeconds) buckets.delete(key);
+    }
+  };
+
   return {
     check: async (bucket, max, windowSeconds) => {
       const now = Math.floor(Date.now() / 1000);
+      opsSinceSweep += 1;
+      if (opsSinceSweep >= 4096) {
+        opsSinceSweep = 0;
+        sweep(now);
+      }
       const existing = buckets.get(bucket);
       if (!existing || now - existing.startedAt >= windowSeconds) {
-        buckets.set(bucket, { count: 1, startedAt: now });
+        buckets.set(bucket, { count: 1, startedAt: now, windowSeconds });
         return { ok: true, count: 1, retryAfterSeconds: 0 };
       }
       existing.count += 1;
@@ -33,6 +55,14 @@ export const createMemoryRateLimit = (): RateLimit => {
     },
     reset: async (bucket) => {
       buckets.delete(bucket);
+    },
+    sweep: async (olderThanSeconds) => {
+      const now = Math.floor(Date.now() / 1000);
+      const before = buckets.size;
+      for (const [key, b] of buckets) {
+        if (now - b.startedAt >= olderThanSeconds) buckets.delete(key);
+      }
+      return before - buckets.size;
     },
   };
 };
@@ -140,6 +170,22 @@ export const createDbRateLimit = (opts: DbRateLimitOptions): RateLimit => {
           ? { text: `DELETE FROM ${table} WHERE bucket = $1`, values: [bucket] }
           : { text: `DELETE FROM ${table} WHERE bucket = ?`, values: [bucket] };
       await opts.db.execute(sql);
+    },
+    // RETURNING routes through .all() on both drivers, so the row count comes
+    // back even for a DELETE.
+    sweep: async (olderThanSeconds) => {
+      const sql =
+        opts.db.dialect === "postgres"
+          ? {
+              text: `DELETE FROM ${table} WHERE window_started_at < NOW() - ($1 || ' seconds')::interval RETURNING bucket`,
+              values: [String(olderThanSeconds)],
+            }
+          : {
+              text: `DELETE FROM ${table} WHERE window_started_at < ? RETURNING bucket`,
+              values: [Math.floor(Date.now() / 1000) - olderThanSeconds],
+            };
+      const rows = (await opts.db.execute(sql)) as unknown[];
+      return rows.length;
     },
   };
 };

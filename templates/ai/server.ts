@@ -1,15 +1,18 @@
-import { serve } from "@atlas/server"
+import { get, pipe, putHeader, serve, text } from "@atlas/server"
 import { config } from "./src/config.ts"
-import { healthRoutes } from "./src/routes/health.ts"
+import { agentRoutes } from "./src/routes/agent.ts"
 import { chatRoutes } from "./src/routes/chat.ts"
 import { documentRoutes } from "./src/routes/documents.ts"
-import { searchRoutes } from "./src/routes/search.ts"
+import { healthRoutes } from "./src/routes/health.ts"
 import { ragRoutes } from "./src/routes/rag.ts"
-import { agentRoutes } from "./src/routes/agent.ts"
+import { searchRoutes } from "./src/routes/search.ts"
+
+const page = await Bun.file(new URL("./index.html", import.meta.url)).text()
 
 serve({
   port: config.port,
   routes: [
+    get("/", pipe((c) => putHeader(text(c, 200, page), "content-type", "text/html; charset=utf-8"))),
     ...healthRoutes,
     ...chatRoutes,
     ...documentRoutes,

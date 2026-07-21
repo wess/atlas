@@ -195,12 +195,12 @@
       const el = document.getElementById("types-list")
       if (rows.length === 0) { el.innerHTML = '<div class="empty">No content types yet</div>'; return }
       el.innerHTML = rows.map((t) =>
-        '<div class="row"><div><strong>' + t.display_name + '</strong> <span class="meta">(' + t.name + ')</span>' +
+        '<div class="row"><div><strong>' + t.displayName + '</strong> <span class="meta">(' + t.name + ')</span>' +
         '<br><span class="meta">' + (typeof t.fields === "string" ? JSON.parse(t.fields) : t.fields).length + ' fields</span></div>' +
         '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteType(' + t.id + ')">Delete</button></div>'
       ).join("")
       const sel = document.getElementById("entry-type")
-      sel.innerHTML = rows.map((t) => '<option value="' + t.id + '">' + t.display_name + '</option>').join("")
+      sel.innerHTML = rows.map((t) => '<option value="' + t.id + '">' + t.displayName + '</option>').join("")
     }
 
     async function createType() {
@@ -233,7 +233,7 @@
       if (rows.length === 0) { el.innerHTML = '<div class="empty">No entries yet</div>'; return }
       el.innerHTML = rows.map((e) =>
         '<div class="row"><div><strong>' + e.slug + '</strong> <span class="badge ' + e.status + '">' + e.status + '</span>' +
-        '<br><span class="meta">' + (e.type_name || "") + ' &middot; by ' + (e.author_name || "") + '</span></div>' +
+        '<br><span class="meta">' + (e.typeName || "") + ' &middot; by ' + (e.authorName || "") + '</span></div>' +
         '<div class="inline" style="width:auto">' +
         (e.status !== "published" ? '<button style="width:auto;padding:4px 12px" onclick="publishEntry(' + e.id + ')">Publish</button>' : '') +
         (e.status === "published" ? '<button class="secondary" style="width:auto;padding:4px 12px" onclick="unpublishEntry(' + e.id + ')">Unpublish</button>' : '') +
@@ -281,7 +281,7 @@
       if (rows.length === 0) { el.innerHTML = '<div class="empty">No media yet</div>'; return }
       el.innerHTML = rows.map((m) =>
         '<div class="row"><div><strong>' + m.filename + '</strong>' +
-        '<br><span class="meta">' + m.content_type + ' &middot; ' + Math.round(m.size / 1024) + ' KB</span></div>' +
+        '<br><span class="meta">' + m.contentType + ' &middot; ' + Math.round(m.size / 1024) + ' KB</span></div>' +
         '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteMedia(' + m.id + ')">Delete</button></div>'
       ).join("")
     }
@@ -312,7 +312,7 @@
       el.innerHTML = rows.map((k) =>
         '<div class="row"><div><strong>' + k.name + '</strong>' +
         '<br><code style="font-size:11px;color:#666">' + k.key.slice(0, 12) + '...</code>' +
-        '<br><span class="meta">Last used: ' + (k.last_used_at || "never") + '</span></div>' +
+        '<br><span class="meta">Last used: ' + (k.lastUsedAt || "never") + '</span></div>' +
         '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteKey(' + k.id + ')">Revoke</button></div>'
       ).join("")
     }

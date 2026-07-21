@@ -22,7 +22,11 @@ bun run migrate:up
 bun run dev
 ```
 
-Open `http://localhost:3000` for the admin panel. Register an account to get started.
+Open `http://localhost:3000` for the admin panel. Register an account to get
+started. Migrations also run automatically on server boot.
+
+An auto-generated CRUD dashboard (from `@atlas/admin`) covering every table is
+mounted at `http://localhost:3000/panel`.
 
 ## Environment Variables
 
@@ -34,8 +38,8 @@ See `.env.example` for all options:
 | `DATABASE_URL` | `sqlite://{{name}}.db` | Database connection |
 | `AUTH_SECRET` | `change-me-in-production` | JWT signing secret |
 | `STORAGE_PATH` | `./uploads` | Local file storage path |
+| `S3_ENDPOINT` | | S3 endpoint for media (optional) |
 | `S3_BUCKET` | | S3 bucket for media (optional) |
-| `WEBHOOK_TIMEOUT` | `5000` | Webhook delivery timeout (ms) |
 
 ## API Endpoints
 
@@ -129,7 +133,7 @@ Payloads are signed with HMAC-SHA256. Verify using the `X-Webhook-Signature` hea
 |---|---|---|
 | `limit` | `10` | Number of entries per page |
 | `offset` | `0` | Pagination offset |
-| `sort` | `published_at` | Sort field (published_at, created_at, updated_at, slug) |
+| `sort` | `publishedAt` | Sort field (publishedAt, createdAt, updatedAt, slug) |
 | `order` | `desc` | Sort order (asc, desc) |
 | `fields` | all | Sparse fields, comma-separated (e.g. `?fields=title,body`) |
 | `include` | none | Include relations (e.g. `?include=author`) |

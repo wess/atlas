@@ -4,32 +4,33 @@ Composable, functional Bun/TypeScript building blocks. No classes, no mutation, 
 
 ## Usage
 
-Atlas is not on npm. Install it as a single bun package from
-[github.com/wess/atlas](https://github.com/wess/atlas):
+Atlas is published as a single package, `@wess/atlas` (npm), and also installs
+straight from [github.com/wess/atlas](https://github.com/wess/atlas):
 
 ```bash
-bun add github:wess/atlas
+bun add @wess/atlas        # or: bun add github:wess/atlas
 ```
 
-Map `@atlas/<pkg>` imports to source via `tsconfig.json` `paths` (bun reads
-tsconfig paths at runtime; full list in README.md):
+Every package is a subpath export (`@wess/atlas/config`, `@wess/atlas/db`, …).
+To keep the `@atlas/<pkg>` spelling used in these docs, map it via
+`tsconfig.json` `paths` (bun reads tsconfig paths at runtime; full list in
+README.md):
 
 ```json
 {
   "compilerOptions": {
     "paths": {
-      "@atlas/config": ["./node_modules/atlas/packages/config/index.ts"],
-      "@atlas/db":     ["./node_modules/atlas/packages/db/index.ts"],
-      "@atlas/server": ["./node_modules/atlas/packages/server/index.ts"]
+      "@atlas/config": ["./node_modules/@wess/atlas/packages/config/index.ts"],
+      "@atlas/db":     ["./node_modules/@wess/atlas/packages/db/index.ts"],
+      "@atlas/server": ["./node_modules/@wess/atlas/packages/server/index.ts"]
     }
   }
 }
 ```
 
 Atlas's internal cross-package imports use relative paths (`../db/index.ts`),
-so resolution inside `node_modules/atlas/` works without the consumer's
-tsconfig paths reaching in. Bump with `bun update atlas` — the resolved
-commit is pinned in `bun.lock`.
+so resolution inside `node_modules/@wess/atlas/` works without the consumer's
+tsconfig paths reaching in. Bump with `bun update @wess/atlas`.
 
 ## Bun Only
 

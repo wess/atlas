@@ -18,6 +18,8 @@
     "@atlas/migrate": "latest",
     "@atlas/ui": "latest",
     "@atlas/cli": "latest",
+    "@mantine/core": "^7",
+    "@mantine/hooks": "^7",
     "react": "^19",
     "react-dom": "^19"
   },

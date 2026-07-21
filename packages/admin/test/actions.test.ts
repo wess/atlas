@@ -51,11 +51,11 @@ test("POST /admin/api/users/bulk delete removes records", async () => {
     }),
   );
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.message).toContain("2");
 
   const list = await app(new Request("http://localhost/admin/api/users"));
-  const listBody = await list.json();
+  const listBody = (await list.json()) as any;
   expect(listBody.data).toHaveLength(1);
   expect(listBody.data[0].name).toBe("C");
 });
@@ -69,7 +69,7 @@ test("POST /admin/api/users/bulk export returns records", async () => {
     }),
   );
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data).toHaveLength(2);
   expect(body.format).toBe("export");
 });
@@ -94,7 +94,7 @@ test("POST /admin/api/users/action runs custom action", async () => {
     }),
   );
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.message).toBe("Deactivated 2 users");
 });
 

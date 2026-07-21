@@ -1,9 +1,15 @@
 import { expect, test } from "bun:test";
+import type { Conn } from "../conn/index.ts";
 import { assign } from "../conn/index.ts";
 import { pipe } from "../pipe/index.ts";
 import { json } from "../response/index.ts";
 import { delR, getR, postR } from "../route/index.ts";
 import { router } from "../router/index.ts";
+
+// Response helpers take the base Conn; TypedConn narrows params/body/query past
+// Conn's Record types, so widen back at the response boundary. Reads of the
+// narrowed fields stay fully typed — only the helper call widens.
+const widen = (c: unknown) => c as Conn;
 
 // Tiny zod-like validators: anything with `.parse(unknown) -> T` works.
 const asObject = <T extends Record<string, (v: unknown) => unknown>>(shape: T) => ({
@@ -45,7 +51,7 @@ const asNumberWithDefault = (d: number) => (v: unknown) => (v === undefined || v
 test("route() validates params and narrows types", async () => {
   const r = router(
     getR("/users/:id", { params: asObject({ id: asNumber }) }, (c) =>
-      json(c, 200, { idType: typeof c.params.id, id: c.params.id }),
+      json(widen(c), 200, { idType: typeof c.params.id, id: c.params.id }),
     ),
   );
 
@@ -55,7 +61,7 @@ test("route() validates params and narrows types", async () => {
 
   const bad = await r(new Request("http://localhost/users/abc"));
   expect(bad.status).toBe(422);
-  const body = await bad.json();
+  const body = (await bad.json()) as { error: string; code: string };
   expect(body.error).toBe("Invalid params");
   expect(body.code).toBe("VALIDATION_FAILED");
 });
@@ -95,7 +101,7 @@ test("route() rejects non-JSON body when body schema is set", async () => {
     }),
   );
   expect(res.status).toBe(422);
-  expect((await res.json()).code).toBe("INVALID_CONTENT_TYPE");
+  expect(((await res.json()) as { code: string }).code).toBe("INVALID_CONTENT_TYPE");
 });
 
 test("route() runs `before` pipes ahead of validation, populates assigns", async () => {
@@ -111,7 +117,7 @@ test("route() runs `before` pipes ahead of validation, populates assigns", async
         before: [setUser],
         assigns: {} as Auth,
       },
-      (c) => json(c, 200, { authId: c.assigns.auth.id, paramId: c.params.id }),
+      (c) => json(widen(c), 200, { authId: c.assigns.auth.id, paramId: c.params.id }),
     ),
   );
 
@@ -127,7 +133,7 @@ test("route() validates query string", async () => {
       {
         query: asObject({ q: asNonEmptyString, limit: asNumberWithDefault(10) }),
       },
-      (c) => json(c, 200, c.query),
+      (c) => json(widen(c), 200, c.query),
     ),
   );
   const res = await r(new Request("http://localhost/search?q=hello&limit=5"));
@@ -145,7 +151,7 @@ test("route() accepts plain-function validators", async () => {
     return { id: n };
   };
 
-  const r = router(getR("/x/:id", { params: toNum }, (c) => json(c, 200, { id: c.params.id })));
+  const r = router(getR("/x/:id", { params: toNum }, (c) => json(widen(c), 200, { id: c.params.id })));
   const ok = await r(new Request("http://localhost/x/9"));
   expect(await ok.json()).toEqual({ id: 9 });
 });
@@ -204,7 +210,7 @@ test("route() composes with @atlas/auth-style guards: typed claims, typed body, 
         assigns: {} as Auth,
       },
       (c) =>
-        json(c, 201, {
+        json(widen(c), 201, {
           authorId: c.assigns.auth.id,
           groupId: c.params.groupId,
           content: c.body.content,

@@ -1,5 +1,9 @@
 const BASE = "/api"
 
+export type Post = { id: number; content: string; userId: number; createdAt: string; handle?: string }
+
+type Failure = { error?: string }
+
 let token: string | null = localStorage.getItem("chirp_token")
 
 const headers = () => {
@@ -8,13 +12,13 @@ const headers = () => {
   return h
 }
 
-const req = async (method: string, path: string, body?: unknown) => {
+const req = async <T = unknown>(method: string, path: string, body?: unknown): Promise<T> => {
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers: headers(),
     body: body ? JSON.stringify(body) : undefined,
   })
-  return res.json()
+  return res.json() as Promise<T>
 }
 
 export const setToken = (t: string | null) => {
@@ -26,10 +30,10 @@ export const setToken = (t: string | null) => {
 export const getToken = () => token
 
 export const signup = (handle: string, email: string, password: string) =>
-  req("POST", "/signup", { handle, email, password })
+  req<Failure>("POST", "/signup", { handle, email, password })
 
 export const login = async (email: string, password: string) => {
-  const data = await req("POST", "/login", { email, password })
+  const data = await req<Failure & { token?: string }>("POST", "/login", { email, password })
   if (data.token) setToken(data.token)
   return data
 }
@@ -38,10 +42,10 @@ export const createPost = (content: string) =>
   req("POST", "/posts", { content })
 
 export const getTimeline = () =>
-  req("GET", "/timeline")
+  req<Post[] | Failure>("GET", "/timeline")
 
 export const getUserPosts = (handle: string) =>
-  req("GET", `/users/${handle}/posts`)
+  req<Post[] | Failure>("GET", `/users/${handle}/posts`)
 
 export const getProfile = (handle: string) =>
   req("GET", `/users/${handle}`)

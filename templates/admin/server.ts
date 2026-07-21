@@ -1,25 +1,23 @@
-import { config } from "./src/config.ts"
+import { admin, model } from "@atlas/admin"
 import { serve } from "@atlas/server"
-import { createAdmin } from "@atlas/admin"
+import { config } from "./src/config.ts"
 import { db } from "./src/db.ts"
-import { users, posts } from "./src/schema.ts"
 import { apiRoutes } from "./src/routes/api.ts"
+import { posts, users } from "./src/schema.ts"
 
-const admin = createAdmin({
+const panel = admin({
   db,
   basePath: "/admin",
-  resources: [
-    { schema: users, label: "Users" },
-    { schema: posts, label: "Posts" },
+  auth: { secret: config.authSecret },
+  models: [
+    model({ schema: users, searchFields: ["email", "name"], filterFields: ["role"] }),
+    model({ schema: posts, searchFields: ["title"], filterFields: ["published"] }),
   ],
 })
 
 serve({
   port: config.port,
-  routes: [
-    ...apiRoutes,
-    ...admin.routes,
-  ],
+  routes: [...apiRoutes, ...panel.routes],
 })
 
 console.log(`Server running on :${config.port}`)

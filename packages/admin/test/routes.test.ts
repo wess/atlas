@@ -50,7 +50,7 @@ beforeEach(async () => {
 test("GET /admin/api/schema returns model metadata", async () => {
   const res = await app(new Request("http://localhost/admin/api/schema"));
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.models).toHaveLength(2);
   expect(body.models[0].table).toBe("users");
   expect(body.models[1].table).toBe("posts");
@@ -60,7 +60,7 @@ test("GET /admin/api/schema returns model metadata", async () => {
 test("GET /admin/api/users lists records", async () => {
   const res = await app(new Request("http://localhost/admin/api/users"));
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data).toHaveLength(1);
   expect(body.data[0].email).toBe("wess@test.com");
   expect(body.meta.page).toBe(1);
@@ -73,7 +73,7 @@ test("GET /admin/api/users supports pagination", async () => {
 
   const res = await app(new Request("http://localhost/admin/api/users?page=2&limit=1"));
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data).toHaveLength(1);
   expect(body.meta.page).toBe(2);
   expect(body.meta.pages).toBe(3);
@@ -84,7 +84,7 @@ test("GET /admin/api/users supports search", async () => {
 
   const res = await app(new Request("http://localhost/admin/api/users?search=wess"));
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data).toHaveLength(1);
   expect(body.data[0].name).toBe("Wess");
 });
@@ -94,7 +94,7 @@ test("GET /admin/api/users supports filters", async () => {
 
   const res = await app(new Request("http://localhost/admin/api/users?filter.name=Wess"));
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data).toHaveLength(1);
   expect(body.data[0].name).toBe("Wess");
 });
@@ -104,7 +104,7 @@ test("GET /admin/api/users supports sorting", async () => {
 
   const res = await app(new Request("http://localhost/admin/api/users?sort=name&order=desc"));
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data[0].name).toBe("Wess");
   expect(body.data[1].name).toBe("Alpha");
 });
@@ -112,7 +112,7 @@ test("GET /admin/api/users supports sorting", async () => {
 test("GET /admin/api/users/:id gets one", async () => {
   const res = await app(new Request("http://localhost/admin/api/users/1"));
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data.name).toBe("Wess");
 });
 
@@ -130,7 +130,7 @@ test("POST /admin/api/users creates record", async () => {
     }),
   );
   expect(res.status).toBe(201);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data.email).toBe("new@test.com");
 });
 
@@ -143,7 +143,7 @@ test("PUT /admin/api/users/:id updates record", async () => {
     }),
   );
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data.name).toBe("Updated");
 });
 
@@ -151,7 +151,7 @@ test("DELETE /admin/api/users/:id deletes record", async () => {
   const res = await app(new Request("http://localhost/admin/api/users/1", { method: "DELETE" }));
   expect(res.status).toBe(200);
   const list = await app(new Request("http://localhost/admin/api/users"));
-  const body = await list.json();
+  const body = (await list.json()) as any;
   expect(body.data).toHaveLength(0);
 });
 
@@ -172,7 +172,7 @@ test("readOnly model does not generate write routes", async () => {
 test("GET relations returns related records", async () => {
   const res = await app(new Request("http://localhost/admin/api/users/1/relations/posts"));
   expect(res.status).toBe(200);
-  const body = await res.json();
+  const body = (await res.json()) as any;
   expect(body.data).toHaveLength(1);
   expect(body.data[0].title).toBe("Hello");
 });

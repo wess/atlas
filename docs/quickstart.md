@@ -18,12 +18,16 @@ cd myapp
 bun init -y
 ```
 
-Add Atlas packages:
+Add Atlas:
 
 ```bash
-bun add @atlas/config @atlas/db @atlas/migrate @atlas/server @atlas/auth \
-         @atlas/storage @atlas/cli @atlas/admin
+bun add @wess/atlas
 ```
+
+Every package is a subpath export (`@wess/atlas/config`, `@wess/atlas/db`, …).
+To use the `@atlas/<pkg>` spelling this guide uses, map it via `tsconfig.json`
+`paths` (bun reads tsconfig paths at runtime) — the full mapping lives in the
+README's Install section.
 
 Create `.env`:
 
@@ -54,7 +58,7 @@ export const users = defineSchema("users", {
 
 export const uploads = defineSchema("uploads", {
   id: column.serial().primaryKey(),
-  userId: column.integer().ref(users, "id"),
+  userId: column.integer().ref("users", "id"),
   filename: column.text(),
   key: column.text(),
   size: column.integer(),
@@ -256,7 +260,7 @@ serve({
     post("/auth/signup", pipeline(parseJson)(
       signup({
         db,
-        table: users,
+        table: "users",
         fields: ["email", "name", "password"],
         onSuccess: (c, user) =>
           json(c, 201, {
@@ -270,10 +274,10 @@ serve({
     post("/auth/login", pipeline(parseJson)(
       login({
         db,
-        table: users,
+        table: "users",
         identity: "email",
         password: "password",
-        onSuccess: (c, user) =>
+        onSuccess: async (c, user) =>
           json(c, 200, {
             token: await token.sign({ id: user.id }, config.secret),
             user: { id: user.id, email: user.email, name: user.name },
@@ -403,7 +407,7 @@ export default function App() {
   if (!token) {
     return (
       <LoginPage
-        onSubmit={async (email, password) => {
+        onSubmit={async ({ email, password }) => {
           const res = await fetch("/auth/login", {
             method: "POST",
             headers: { "content-type": "application/json" },
@@ -489,9 +493,9 @@ for await (const chunk of openai.chatStream({ messages: [{ role: "user", content
 Add the AI UI block to your frontend:
 
 ```tsx
-import { ChatPanel } from "@atlas/ui/ai"
+import { ChatWindow } from "@atlas/ui/ai"
 
-<ChatPanel endpoint="/api/chat" />
+<ChatWindow messages={messages} onSend={(text) => sendToApi(text)} />
 ```
 
 ### Add Social Login
@@ -575,18 +579,19 @@ await shareEmail({ emailer, to: "friend@example.com", sharerName: "Wess", conten
 ### Add External API Calls
 
 ```ts
-import { createClient, github } from "@atlas/request"
+import { github } from "@atlas/request/providers"
 
-const gh = github({ token: process.env.GITHUB_TOKEN })
-const repos = await gh.get("/user/repos").json()
+const gh = github({ token: process.env.GITHUB_TOKEN! })
+const repos = await (await gh.get("/user/repos")).json()
 ```
 
 ### Add MCP Debugging
 
 ```ts
-import { createMcpServer } from "@atlas/mcp"
+import { collectTools, createContext, createMcpServer } from "@atlas/mcp"
 
-const mcp = createMcpServer({ db, routes: myRoutes, config })
+const ctx = createContext({ db, routes: myRoutes, config })
+const mcp = createMcpServer(collectTools(ctx), ctx)
 mcp.start()
 ```
 
@@ -597,7 +602,7 @@ Or launch via the CLI: `atlas mcp`
 Scaffold a complete project with `atlas init`:
 
 ```bash
-atlas init myapp --template <template>
+atlas init -n myapp --template <template>
 ```
 
 | Template | Description |
@@ -616,10 +621,10 @@ atlas init myapp --template <template>
 Examples:
 
 ```bash
-atlas init myapi --template api
-atlas init mysite --template fullstack
-atlas init mybot --template ai
-atlas init mysocial --template socialnetwork
+atlas init -n myapi --template api
+atlas init -n mysite --template fullstack
+atlas init -n mybot --template ai
+atlas init -n mysocial --template socialnetwork
 ```
 
 ### Deploy with TLS (no Caddy / nginx)

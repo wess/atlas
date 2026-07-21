@@ -7,6 +7,8 @@ export type LiveColumn = {
   readonly nullable: boolean;
   readonly primary: boolean;
   readonly hasDefault: boolean;
+  /** SQL default expression, emitted verbatim into generated DDL when set. */
+  readonly defaultSql: string | null;
 };
 
 export type LiveTable = {

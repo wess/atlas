@@ -12,6 +12,17 @@ export type Conn = {
   readonly request: Request;
 };
 
+// Typed routes hand handlers a TypedConn whose params/body/query/assigns are
+// narrowed to the route's schemas, which makes them un-assignable to Conn's
+// loose records. Helpers that only touch status/body/halted/headers accept
+// this shape so typed handlers can call them without casts.
+export type ConnLike = Omit<Conn, "params" | "body" | "query" | "assigns"> & {
+  readonly params: unknown;
+  readonly body: unknown;
+  readonly query: unknown;
+  readonly assigns: unknown;
+};
+
 export const createConn = (req: Request, params?: Record<string, string>): Conn => {
   const url = new URL(req.url);
   const query: Record<string, string> = {};
@@ -44,11 +55,12 @@ export const putHeader = (conn: Conn, key: string, value: string): Conn => {
   return { ...conn, respHeaders: headers };
 };
 
-export const halt = (conn: Conn, status: number, body?: unknown): Conn => ({
-  ...conn,
-  halted: true,
-  status,
-  body: body ?? conn.body,
-});
+export const halt = (conn: ConnLike, status: number, body?: unknown): Conn =>
+  ({
+    ...conn,
+    halted: true,
+    status,
+    body: body ?? conn.body,
+  }) as Conn;
 
 export const setStatus = (conn: Conn, status: number): Conn => ({ ...conn, status });

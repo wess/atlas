@@ -34,31 +34,36 @@ const connToResponse = (conn: Conn): Response => {
   return new Response(null, { status: conn.status, headers: conn.respHeaders });
 };
 
-const matchRoute = (pattern: string, path: string): Record<string, string> | null => {
-  const patternParts = pattern.split("/");
-  const pathParts = path.split("/");
+type CompiledRoute = {
+  readonly method: string;
+  readonly parts: readonly string[];
+  readonly wildcard: boolean;
+  readonly handler: PipeFn;
+};
 
-  // Handle wildcard patterns (e.g. /admin/*)
-  const lastPart = patternParts[patternParts.length - 1];
-  if (lastPart === "*") {
-    if (pathParts.length < patternParts.length - 1) return null;
-    const params: Record<string, string> = {};
-    for (let i = 0; i < patternParts.length - 1; i++) {
-      const pp = patternParts[i]!;
-      const val = pathParts[i]!;
-      if (pp.startsWith(":")) {
-        params[pp.slice(1)] = val;
-      } else if (pp !== val) {
-        return null;
-      }
-    }
-    return params;
+// Patterns are static, so split them once at router creation instead of on
+// every request. Wildcard patterns (e.g. /admin/*) drop the trailing "*" and
+// match any path at least as deep as the fixed prefix.
+const compileRoute = (route: Route): CompiledRoute => {
+  const parts = route.pattern.split("/");
+  const wildcard = parts[parts.length - 1] === "*";
+  return {
+    method: route.method,
+    parts: wildcard ? parts.slice(0, -1) : parts,
+    wildcard,
+    handler: route.handler,
+  };
+};
+
+const matchParts = (route: CompiledRoute, pathParts: readonly string[]): Record<string, string> | null => {
+  if (route.wildcard) {
+    if (pathParts.length < route.parts.length) return null;
+  } else if (route.parts.length !== pathParts.length) {
+    return null;
   }
-
-  if (patternParts.length !== pathParts.length) return null;
   const params: Record<string, string> = {};
-  for (let i = 0; i < patternParts.length; i++) {
-    const pp = patternParts[i]!;
+  for (let i = 0; i < route.parts.length; i++) {
+    const pp = route.parts[i]!;
     const val = pathParts[i]!;
     if (pp.startsWith(":")) {
       params[pp.slice(1)] = val;
@@ -70,11 +75,14 @@ const matchRoute = (pattern: string, path: string): Record<string, string> | nul
 };
 
 export const router = (...routes: Route[]) => {
+  const compiled = routes.map(compileRoute);
   return async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
-    for (const route of routes) {
-      if (req.method.toUpperCase() !== route.method) continue;
-      const params = matchRoute(route.pattern, url.pathname);
+    const method = req.method.toUpperCase();
+    const pathParts = url.pathname.split("/");
+    for (const route of compiled) {
+      if (method !== route.method) continue;
+      const params = matchParts(route, pathParts);
       if (params === null) continue;
       try {
         const conn = createConn(req, params);

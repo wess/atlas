@@ -1,4 +1,4 @@
-import { defineSchema, column } from "@atlas/db"
+import { column, defineSchema } from "@atlas/db"
 
 export const users = defineSchema("users", {
   id: column.serial().primaryKey(),
@@ -6,7 +6,7 @@ export const users = defineSchema("users", {
   name: column.text(),
   role: column.text().default("editor"),
   passwordHash: column.text(),
-  createdAt: column.timestamp().default("CURRENT_TIMESTAMP"),
+  createdAt: column.timestamp(),
 })
 
 export const contentTypes = defineSchema("content_types", {
@@ -14,8 +14,8 @@ export const contentTypes = defineSchema("content_types", {
   name: column.text().unique(),
   displayName: column.text(),
   fields: column.json(),
-  createdAt: column.timestamp().default("CURRENT_TIMESTAMP"),
-  updatedAt: column.timestamp().default("CURRENT_TIMESTAMP"),
+  createdAt: column.timestamp(),
+  updatedAt: column.timestamp(),
 })
 
 export const entries = defineSchema("entries", {
@@ -26,8 +26,8 @@ export const entries = defineSchema("entries", {
   status: column.text().default("draft"),
   authorId: column.integer().ref("users", "id"),
   publishedAt: column.timestamp().nullable(),
-  createdAt: column.timestamp().default("CURRENT_TIMESTAMP"),
-  updatedAt: column.timestamp().default("CURRENT_TIMESTAMP"),
+  createdAt: column.timestamp(),
+  updatedAt: column.timestamp(),
 })
 
 export const media = defineSchema("media", {
@@ -39,7 +39,7 @@ export const media = defineSchema("media", {
   size: column.integer(),
   alt: column.text().nullable(),
   uploadedBy: column.integer().ref("users", "id"),
-  createdAt: column.timestamp().default("CURRENT_TIMESTAMP"),
+  createdAt: column.timestamp(),
 })
 
 export const apiKeys = defineSchema("api_keys", {
@@ -47,7 +47,7 @@ export const apiKeys = defineSchema("api_keys", {
   name: column.text(),
   key: column.text().unique(),
   permissions: column.json(),
-  createdAt: column.timestamp().default("CURRENT_TIMESTAMP"),
+  createdAt: column.timestamp(),
   lastUsedAt: column.timestamp().nullable(),
 })
 
@@ -56,7 +56,7 @@ export const revisions = defineSchema("revisions", {
   entryId: column.integer().ref("entries", "id"),
   data: column.json(),
   authorId: column.integer().ref("users", "id"),
-  createdAt: column.timestamp().default("CURRENT_TIMESTAMP"),
+  createdAt: column.timestamp(),
 })
 
 export const webhooks = defineSchema("webhooks", {
@@ -65,5 +65,5 @@ export const webhooks = defineSchema("webhooks", {
   events: column.json(),
   secret: column.text(),
   active: column.integer().default(1),
-  createdAt: column.timestamp().default("CURRENT_TIMESTAMP"),
+  createdAt: column.timestamp(),
 })

@@ -43,3 +43,10 @@ test("schema can be used with from()", () => {
   const { text } = from(users).select("id", "email").toSql();
   expect(text).toBe("SELECT id, email FROM users");
 });
+
+test("defaultRaw stores a SQL default expression", () => {
+  const created = column.timestamp().defaultRaw("now()");
+  expect(created.defaultSql).toBe("now()");
+  expect(created.type).toBe("timestamp");
+  expect(column.timestamp().defaultSql).toBeNull();
+});

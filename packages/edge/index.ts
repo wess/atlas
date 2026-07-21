@@ -15,6 +15,7 @@ export {
   createRenewalScheduler,
   fileStore,
   issueCert,
+  loadOrCreateAccount,
   memoryStore,
   renewAt,
 } from "./certs/index.ts";
@@ -34,7 +35,7 @@ export type {
   RunningEdge,
   Site,
 } from "./site/index.ts";
-export { runEdge } from "./site/index.ts";
+export { createChallengeStore, dispatch, runEdge } from "./site/index.ts";
 
 import type { EdgeConfig, RunningEdge } from "./site/index.ts";
 import { runEdge } from "./site/index.ts";

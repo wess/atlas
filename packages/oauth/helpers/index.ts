@@ -93,5 +93,4 @@ export const issuerFromRequest = (req: Request): string => {
   return `${url.protocol}//${url.host}`;
 };
 
-export const hasOpenIdScope = (scope: string): boolean =>
-  parseScope(scope).includes("openid");
+export const hasOpenIdScope = (scope: string): boolean => parseScope(scope).includes("openid");

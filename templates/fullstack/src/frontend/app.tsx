@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from "react"
+/// <reference lib="dom" />
+import { AtlasProvider } from "@atlas/ui/provider"
+import { Button, Card, Stack, Text, TextInput, Title } from "@mantine/core"
+import "@mantine/core/styles.css"
+import { useEffect, useState } from "react"
 import { createRoot } from "react-dom/client"
-import { Button, Card, Stack, Text, Input } from "@atlas/ui"
 
 type User = {
   id: number
@@ -16,7 +19,7 @@ const App = () => {
 
   const fetchUsers = async () => {
     const res = await fetch("/api/users")
-    if (res.ok) setUsers(await res.json())
+    if (res.ok) setUsers((await res.json()) as User[])
   }
 
   const createUser = async () => {
@@ -32,23 +35,25 @@ const App = () => {
     }
   }
 
-  useEffect(() => { fetchUsers() }, [])
+  useEffect(() => {
+    fetchUsers()
+  }, [])
 
   return (
-    <Stack gap="lg" padding="lg">
-      <Text variant="h1">Users</Text>
+    <Stack gap="lg" p="lg">
+      <Title order={1}>Users</Title>
 
-      <Card>
+      <Card withBorder>
         <Stack gap="sm">
-          <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <TextInput placeholder="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
+          <TextInput placeholder="Email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
           <Button onClick={createUser}>Add User</Button>
         </Stack>
       </Card>
 
       {users.map((user) => (
-        <Card key={user.id}>
-          <Text variant="h3">{user.name}</Text>
+        <Card key={user.id} withBorder>
+          <Title order={3}>{user.name}</Title>
           <Text>{user.email}</Text>
         </Card>
       ))}
@@ -56,5 +61,8 @@ const App = () => {
   )
 }
 
-const root = createRoot(document.getElementById("root")!)
-root.render(<App />)
+createRoot(document.getElementById("root")!).render(
+  <AtlasProvider>
+    <App />
+  </AtlasProvider>,
+)

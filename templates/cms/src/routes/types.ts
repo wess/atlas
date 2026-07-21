@@ -1,121 +1,116 @@
-import { get, post, put, del, json } from "@atlas/server"
+import { from } from "@atlas/db"
+import { del, get, json, post, put } from "@atlas/server"
 import { db } from "../db.ts"
-import { authed } from "../pipes/auth.ts"
+import { authed, claims, guard } from "../pipes/auth.ts"
+import { contentTypes, entries } from "../schema.ts"
 
 export const typeRoutes = [
-  get("/admin/api/types", authed(
-    async (c) => {
-      const rows = await db.query(
-        "select id, name, display_name, fields, created_at, updated_at from content_types order by name",
-      )
-
+  get(
+    "/admin/api/types",
+    guard(async (c) => {
+      const rows = await db.all(from(contentTypes).orderBy("name", "ASC"))
       return json(c, 200, rows)
-    },
-  )),
+    }),
+  ),
 
-  get("/admin/api/types/:id", authed(
-    async (c) => {
-      const rows = await db.query(
-        "select id, name, display_name, fields, created_at, updated_at from content_types where id = $1",
-        [c.params.id],
-      )
+  get(
+    "/admin/api/types/:id",
+    guard(async (c) => {
+      const row = await db.one(from(contentTypes).where((q) => q("id").equals(Number(c.params.id))))
+      return row ? json(c, 200, row) : json(c, 404, { error: "Content type not found" })
+    }),
+  ),
 
-      return rows.length > 0
-        ? json(c, 200, rows[0])
-        : json(c, 404, { error: "Content type not found" })
-    },
-  )),
+  post(
+    "/admin/api/types",
+    authed(async (c) => {
+      if (claims(c).role === "viewer") return json(c, 403, { error: "Viewers cannot create content types" })
 
-  post("/admin/api/types", authed(
-    async (c) => {
-      if (c.auth.role === "viewer") {
-        return json(c, 403, { error: "Viewers cannot create content types" })
+      const { name, displayName, fields } = (c.body ?? {}) as {
+        name?: string
+        displayName?: string
+        fields?: unknown
       }
-
-      const { name, displayName, fields } = await c.req.json()
-
       if (!name || !displayName || !fields) {
         return json(c, 400, { error: "name, displayName, and fields are required" })
       }
 
-      const existing = await db.query(
-        "select id from content_types where name = $1",
-        [name],
+      const existing = await db.one(
+        from(contentTypes)
+          .select("id")
+          .where((q) => q("name").equals(name)),
       )
+      if (existing) return json(c, 409, { error: "Content type name already exists" })
 
-      if (existing.length > 0) {
-        return json(c, 409, { error: "Content type name already exists" })
-      }
-
-      const rows = await db.query(
-        `insert into content_types (name, display_name, fields)
-         values ($1, $2, $3)
-         returning id, name, display_name, fields, created_at, updated_at`,
-        [name, displayName, JSON.stringify(fields)],
+      const rows = await db.execute(
+        from(contentTypes)
+          .insert({ name, displayName, fields: JSON.stringify(fields) })
+          .returning("id", "name", "displayName", "fields", "createdAt", "updatedAt"),
       )
 
       return json(c, 201, rows[0])
-    },
-  )),
+    }),
+  ),
 
-  put("/admin/api/types/:id", authed(
-    async (c) => {
-      if (c.auth.role === "viewer") {
-        return json(c, 403, { error: "Viewers cannot update content types" })
-      }
+  put(
+    "/admin/api/types/:id",
+    authed(async (c) => {
+      if (claims(c).role === "viewer") return json(c, 403, { error: "Viewers cannot update content types" })
 
-      const { displayName, fields } = await c.req.json()
+      const id = Number(c.params.id)
+      const { displayName, fields } = (c.body ?? {}) as { displayName?: string; fields?: unknown }
 
-      const existing = await db.query(
-        "select id from content_types where id = $1",
-        [c.params.id],
+      const existing = await db.one(
+        from(contentTypes)
+          .select("id")
+          .where((q) => q("id").equals(id)),
       )
+      if (!existing) return json(c, 404, { error: "Content type not found" })
 
-      if (existing.length === 0) {
-        return json(c, 404, { error: "Content type not found" })
+      const changes = {
+        ...(displayName === undefined ? {} : { displayName }),
+        ...(fields === undefined ? {} : { fields: JSON.stringify(fields) }),
+        updatedAt: new Date().toISOString(),
       }
 
-      const rows = await db.query(
-        `update content_types
-         set display_name = coalesce($1, display_name),
-             fields = coalesce($2, fields),
-             updated_at = datetime('now')
-         where id = $3
-         returning id, name, display_name, fields, created_at, updated_at`,
-        [displayName || null, fields ? JSON.stringify(fields) : null, c.params.id],
+      const rows = await db.execute(
+        from(contentTypes)
+          .update(changes)
+          .where((q) => q("id").equals(id))
+          .returning("id", "name", "displayName", "fields", "createdAt", "updatedAt"),
       )
 
       return json(c, 200, rows[0])
-    },
-  )),
+    }),
+  ),
 
-  del("/admin/api/types/:id", authed(
-    async (c) => {
-      if (c.auth.role !== "admin") {
-        return json(c, 403, { error: "Only admins can delete content types" })
-      }
+  del(
+    "/admin/api/types/:id",
+    guard(async (c) => {
+      if (claims(c).role !== "admin") return json(c, 403, { error: "Only admins can delete content types" })
 
-      const existing = await db.query(
-        "select id from content_types where id = $1",
-        [c.params.id],
+      const id = Number(c.params.id)
+      const existing = await db.one(
+        from(contentTypes)
+          .select("id")
+          .where((q) => q("id").equals(id)),
       )
+      if (!existing) return json(c, 404, { error: "Content type not found" })
 
-      if (existing.length === 0) {
-        return json(c, 404, { error: "Content type not found" })
-      }
-
-      const entryCount = await db.query(
-        "select count(*) as count from entries where content_type_id = $1",
-        [c.params.id],
+      const inUse = await db.one(
+        from(entries)
+          .select("id")
+          .where((q) => q("contentTypeId").equals(id)),
       )
+      if (inUse) return json(c, 409, { error: "Cannot delete content type with existing entries" })
 
-      if (entryCount[0].count > 0) {
-        return json(c, 409, { error: "Cannot delete content type with existing entries" })
-      }
-
-      await db.query("delete from content_types where id = $1", [c.params.id])
+      await db.execute(
+        from(contentTypes)
+          .where((q) => q("id").equals(id))
+          .del(),
+      )
 
       return json(c, 200, { deleted: true })
-    },
-  )),
+    }),
+  ),
 ]

@@ -1,13 +1,7 @@
-import { pipe, withAuth, withCors, withJson } from "@atlas/server"
+import { requireAuth } from "@atlas/auth"
+import { parseJson, pipeline } from "@atlas/server"
 import { config } from "../config.ts"
 
-export const authed = pipe(
-  withCors(),
-  withJson(),
-  withAuth({ secret: config.auth.secret }),
-)
-
-export const public_ = pipe(
-  withCors(),
-  withJson(),
-)
+// Wrap a route handler to require a Bearer JWT signed with AUTH_SECRET.
+// The routes ship open by default; swap `pipe(...)` for `authed(...)` to lock one down.
+export const authed = pipeline(requireAuth({ secret: config.auth.secret }), parseJson)

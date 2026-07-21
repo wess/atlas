@@ -14,6 +14,20 @@ type OllamaConfig = {
   defaultModel?: string;
 };
 
+type OllamaChatResponse = {
+  message?: {
+    content?: string;
+    tool_calls?: Array<{ function: { name: string; arguments: Record<string, unknown> } }>;
+  };
+  prompt_eval_count?: number;
+  eval_count?: number;
+  model?: string;
+};
+
+type OllamaEmbedResponse = {
+  embedding: number[];
+};
+
 const formatMessages = (messages: Message[]) => messages.map((m) => ({ role: m.role, content: m.content }));
 
 const formatTools = (tools: ToolDef[]) =>
@@ -52,7 +66,7 @@ export const createOllama = (config: OllamaConfig): AiProvider => {
       );
     }
 
-    const data = await res.json();
+    const data = (await res.json()) as OllamaChatResponse;
 
     const toolCalls = data.message?.tool_calls?.map((tc: any) => ({
       id: crypto.randomUUID(),
@@ -140,7 +154,7 @@ export const createOllama = (config: OllamaConfig): AiProvider => {
         );
       }
 
-      const data = await res.json();
+      const data = (await res.json()) as OllamaEmbedResponse;
       embeddings.push(data.embedding);
     }
 

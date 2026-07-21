@@ -1,8 +1,7 @@
-create table likes (
-  id integer primary key autoincrement,
-  user_id integer not null references users(id),
-  post_id integer not null references posts(id),
-  created_at text default (datetime('now'))
+CREATE TABLE likes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  userId INTEGER NOT NULL REFERENCES users(id),
+  postId INTEGER NOT NULL REFERENCES posts(id),
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(userId, postId)
 );
-
-create unique index idx_likes_user_post on likes (user_id, post_id);

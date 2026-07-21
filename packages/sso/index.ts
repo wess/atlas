@@ -5,7 +5,6 @@
 // id_token verification, and back-channel logout.
 
 import { token as jwt } from "../auth/index.ts";
-import type { Connection } from "../db/index.ts";
 import type { Route } from "../server/index.ts";
 import { get, halt, json, parseForm, parseJson, pipeline, post, redirect } from "../server/index.ts";
 import { clearDiscoveryCache, discover } from "./discovery.ts";
@@ -13,18 +12,17 @@ import { newPkcePair, randomNonce, randomState } from "./pkce.ts";
 import { consumeState, writeState } from "./state.ts";
 import type { IdTokenClaims, SsoConfig } from "./types.ts";
 
-export type { IdTokenClaims, SsoConfig, AuthenticatedUser, SessionIssuer, DiscoveryDoc } from "./types.ts";
-export { sweepExpiredSsoState } from "./state.ts";
-export { clearDiscoveryCache };
 export { ensureSsoStateTable } from "./migrate.ts";
+export { sweepExpiredSsoState } from "./state.ts";
+export type { AuthenticatedUser, DiscoveryDoc, IdTokenClaims, SessionIssuer, SsoConfig } from "./types.ts";
+export { clearDiscoveryCache };
 
 const issuerOf = (req: Request): string => {
   const url = new URL(req.url);
   return `${url.protocol}//${url.host}`;
 };
 
-const defaultRedirectUri = (req: Request, basePath: string): string =>
-  `${issuerOf(req)}${basePath}/callback`;
+const defaultRedirectUri = (req: Request, basePath: string): string => `${issuerOf(req)}${basePath}/callback`;
 
 const ensureOpenIdScope = (scopes: readonly string[]): readonly string[] =>
   scopes.includes("openid") ? scopes : ["openid", ...scopes];
@@ -153,7 +151,7 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
       try {
         const payload = await jwt.verifyRs256(tokens.id_token, { keys: disc.jwks.keys as any });
         claims = payload as IdTokenClaims;
-      } catch (err) {
+      } catch {
         // First failure might mean the IdP rotated keys. Refresh and retry once.
         clearDiscoveryCache(cfg.issuerUrl);
         try {
@@ -235,7 +233,7 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
           });
         }
         const events = payload.events as Record<string, unknown> | undefined;
-        if (!events || !events["http://schemas.openid.net/event/backchannel-logout"]) {
+        if (!events?.["http://schemas.openid.net/event/backchannel-logout"]) {
           return halt(c, 400, {
             error: "invalid_token",
             error_description: "logout_token missing back-channel-logout event",

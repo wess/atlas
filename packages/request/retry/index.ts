@@ -13,9 +13,17 @@ export const withRetry = async (fn: () => Promise<Response>, opts?: RetryOptions
 
   let lastResponse: Response | undefined;
   for (let i = 0; i < attempts; i++) {
-    const res = await fn();
-    if (!shouldRetry(res) || i === attempts - 1) return res;
-    lastResponse = res;
+    const last = i === attempts - 1;
+    try {
+      const res = await fn();
+      if (!shouldRetry(res) || last) return res;
+      // Abandoned attempt — release its connection before retrying.
+      void res.body?.cancel().catch(() => {});
+      lastResponse = res;
+    } catch (err) {
+      // Network-level failures (refused, reset, DNS) are retryable too.
+      if (last) throw err;
+    }
     await new Promise((r) => setTimeout(r, delay * backoff ** i));
   }
   return lastResponse!;

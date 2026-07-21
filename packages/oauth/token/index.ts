@@ -142,7 +142,10 @@ export const oauthTokenRoutes = (cfg: OAuthConfig, basePath = "/oauth"): readonl
           "auth_time",
         ),
     )) as Array<
-      Pick<AuthCodeRow, "code" | "client_id" | "user_id" | "redirect_uri" | "code_challenge" | "scope" | "expires_at"> & {
+      Pick<
+        AuthCodeRow,
+        "code" | "client_id" | "user_id" | "redirect_uri" | "code_challenge" | "scope" | "expires_at"
+      > & {
         readonly nonce: string | null;
         readonly auth_time: number | null;
       }

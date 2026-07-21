@@ -11,7 +11,8 @@ export const tableFromSchema = (schema: Schema): LiveTable => {
       type: c.type as ColumnType,
       nullable: c.isNullable === true,
       primary: c.primary === true,
-      hasDefault: c.defaultValue !== undefined,
+      hasDefault: c.defaultValue !== undefined || c.defaultSql != null,
+      defaultSql: c.defaultSql ?? null,
     });
   }
   return { name: schema.table, columns: cols };

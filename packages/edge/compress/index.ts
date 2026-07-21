@@ -19,11 +19,11 @@ const supportedByRuntime = (enc: Encoding): boolean => {
   return false;
 };
 
-const compressBuffer = (data: Uint8Array, enc: Encoding): Uint8Array => {
+const compressBuffer = (data: Uint8Array, enc: Encoding): Uint8Array<ArrayBuffer> => {
   const copy = new Uint8Array(data);
   if (enc === "gzip") return Bun.gzipSync(copy);
   if (enc === "zstd") {
-    const fn = (Bun as { zstdCompressSync?: (b: Uint8Array) => Uint8Array }).zstdCompressSync;
+    const fn = (Bun as { zstdCompressSync?: (b: Uint8Array) => Uint8Array<ArrayBuffer> }).zstdCompressSync;
     if (!fn) throw new Error("zstd compression not available");
     return fn(copy);
   }

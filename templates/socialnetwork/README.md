@@ -38,14 +38,26 @@ bun run server.ts
 - `GET /api/feed/stream` — SSE feed updates (auth)
 
 ### Media
-- `POST /api/media/upload` — upload image, returns URL (auth)
+- `POST /api/media/upload` — upload image (multipart form, `file` field), returns URL (auth)
+- `GET /uploads/:key` — serves locally stored uploads (set `S3_*` env vars to use S3 instead)
 
 ### Health
 - `GET /health` — health check
 
+## Admin
+
+An auto-generated admin panel (from `@atlas/admin`) is mounted at `/admin`,
+covering all tables. It uses the same JWT secret as the API.
+
 ## WebSocket
 
-Connect to `ws://localhost:3000` with auth to receive real-time notifications for likes and follows.
+Connect to `ws://localhost:3000`, then join the notifications channel with your JWT:
+
+```js
+const ws = new WebSocket("ws://localhost:3000")
+ws.onopen = () => ws.send(JSON.stringify({ channel: "notifications", event: "join", payload: { token } }))
+ws.onmessage = (e) => console.log(JSON.parse(e.data)) // { type: "like" | "follow", fromUserId, postId? }
+```
 
 ## Packages
 

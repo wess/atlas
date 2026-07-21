@@ -1,10 +1,7 @@
-create table posts (
-  id integer primary key autoincrement,
-  user_id integer not null references users(id),
-  content text not null,
-  image_url text,
-  created_at text default (datetime('now'))
+CREATE TABLE posts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  userId INTEGER NOT NULL REFERENCES users(id),
+  content TEXT NOT NULL,
+  imageUrl TEXT,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-
-create index idx_posts_user_id on posts (user_id);
-create index idx_posts_created_at on posts (created_at);

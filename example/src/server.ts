@@ -31,7 +31,7 @@ const api = router(
 const apiHandler = (req: Request): Promise<Response> => {
   const url = new URL(req.url)
   url.pathname = url.pathname.replace(/^\/api/, "") || "/"
-  return api(new Request(url, req))
+  return api(new Request(url.toString(), req))
 }
 
 const server = Bun.serve({

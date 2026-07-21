@@ -23,7 +23,7 @@ test("questions include template selection as first question", () => {
   const q = questions.find((q) => q.id === "template");
   expect(q).toBeDefined();
   expect(q!.type).toBe("select");
-  expect(questions[0].id).toBe("template");
+  expect(questions[0]!.id).toBe("template");
 });
 
 test("template question has all expected options", () => {

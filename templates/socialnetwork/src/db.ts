@@ -1,6 +1,8 @@
-import { createPool } from "@atlas/db"
+import { connect } from "@atlas/db"
 import { config } from "./config.ts"
 
-export const db = createPool({
-  url: config.databaseUrl,
-})
+const options = config.databaseUrl.startsWith("postgres")
+  ? { driver: "postgres" as const, url: config.databaseUrl }
+  : { driver: "sqlite" as const, path: config.databaseUrl.replace(/^sqlite:\/\//, "") }
+
+export const db = connect(options)

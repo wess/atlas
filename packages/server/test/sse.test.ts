@@ -21,11 +21,11 @@ test("eventStream returns SSE conn", () => {
   expect(result.body).toBeInstanceOf(ReadableStream);
 });
 
-test("SSE channel pipe upgrades conn to SSE", () => {
+test("SSE channel pipe upgrades conn to SSE", async () => {
   const ch = createSseChannel();
   const req = new Request("http://localhost/events");
   const conn = createConn(req);
-  const result = ch.pipe(conn);
+  const result = await ch.pipe(conn);
   expect(result.halted).toBe(true);
   expect(result.status).toBe(200);
   expect(result.respHeaders.get("content-type")).toBe("text/event-stream");

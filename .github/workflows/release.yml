@@ -1,0 +1,95 @@
+name: Release
+
+# Releases are driven by the package version. Bumping `version` in package.json
+# and pushing to main cuts a full release: tag, GitHub Release, and an npm
+# publish of @wess/atlas (skipped with a notice until NPM_TOKEN is set).
+
+on:
+  push:
+    branches: [main]
+    paths: ["package.json"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Read package version
+        id: version
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      # Release when the package version has no matching tag yet. Idempotent
+      # for both push and manual dispatch.
+      - name: Decide whether to release
+        id: diff
+        run: |
+          NEW="${{ steps.version.outputs.version }}"
+          if git ls-remote --tags origin "refs/tags/v${NEW}" | grep -q .; then
+            echo "v${NEW} already released — skipping."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  test:
+    needs: check-version
+    if: needs.check-version.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun test
+
+  release:
+    needs: [check-version, test]
+    if: needs.check-version.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    env:
+      HAS_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Create git tag
+        run: |
+          VERSION="${{ needs.check-version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v${VERSION}"
+          git push origin "v${VERSION}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ needs.check-version.outputs.version }}"
+          generate_release_notes: true
+          draft: false
+
+      - name: Publish @wess/atlas to npm
+        if: ${{ env.HAS_TOKEN == 'true' }}
+        run: |
+          bun install --frozen-lockfile
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+          bun publish --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Note when token is missing
+        if: ${{ env.HAS_TOKEN != 'true' }}
+        run: echo "::notice::NPM_TOKEN is not set — skipped npm publish."

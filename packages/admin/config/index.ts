@@ -1,6 +1,6 @@
 import type { Connection, Schema } from "../../db/index.ts";
-import type { PipeFn, Route } from "../../server/index.ts";
-import { get, pipe } from "../../server/index.ts";
+import type { Conn, PipeFn, Route } from "../../server/index.ts";
+import { get, halt, pipe, putHeader } from "../../server/index.ts";
 import { generateQueryRoutes } from "../query/index.ts";
 import { generateRoutes } from "../routes/index.ts";
 import { adminHtml } from "../ui/shell.ts";
@@ -39,20 +39,8 @@ export type AdminConfig = {
 
 export const model = (config: ModelConfig): ModelConfig => config;
 
-const htmlResponse = (
-  conn: { status: number; body: unknown; halted: boolean; respHeaders: Headers } & Record<string, unknown>,
-  html: string,
-) => ({
-  ...conn,
-  status: 200,
-  body: html,
-  halted: true,
-  respHeaders: (() => {
-    const h = new Headers(conn.respHeaders);
-    h.set("content-type", "text/html; charset=utf-8");
-    return h;
-  })(),
-});
+const htmlResponse = (conn: Conn, html: string): Conn =>
+  putHeader(halt(conn, 200, html), "content-type", "text/html; charset=utf-8");
 
 export const admin = (config: AdminConfig) => {
   const crudRoutes = generateRoutes(config);

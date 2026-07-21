@@ -20,7 +20,7 @@ test("ActionColumn creates a column def", () => {
 test("createTable returns a function", () => {
   const Table = createTable({
     data: [{ name: "test" }],
-    columns: [TextColumn({ key: "name", label: "Name" })],
+    columns: [TextColumn<{ name: string }>({ key: "name", label: "Name" })],
   });
   expect(typeof Table).toBe("function");
 });

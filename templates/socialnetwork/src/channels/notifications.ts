@@ -1,52 +1,66 @@
-import type { ServerWebSocket } from "bun"
+import { token } from "@atlas/auth"
+import type { WsConfig } from "@atlas/server/ws"
+import { channel } from "@atlas/server/ws"
+import { config } from "../config.ts"
 
 type Notification = {
-  type: "like" | "follow"
-  fromUserId: number
-  postId?: number
+  readonly type: "like" | "follow"
+  readonly fromUserId: number
+  readonly postId?: number
 }
 
-const connections = new Map<number, Set<ServerWebSocket<{ userId: number }>>>()
+type RawSocket = { readonly send: (payload: string) => void }
 
-export const addConnection = (userId: number, ws: ServerWebSocket<{ userId: number }>) => {
-  const set = connections.get(userId) ?? new Set()
-  set.add(ws)
-  connections.set(userId, set)
+const sockets = new Map<number, Set<RawSocket>>()
+const owners = new WeakMap<RawSocket, number>()
+
+const register = (socket: RawSocket, userId: number) => {
+  const set = sockets.get(userId) ?? new Set<RawSocket>()
+  set.add(socket)
+  sockets.set(userId, set)
+  owners.set(socket, userId)
 }
 
-export const removeConnection = (userId: number, ws: ServerWebSocket<{ userId: number }>) => {
-  const set = connections.get(userId)
-  if (set) {
-    set.delete(ws)
-    if (set.size === 0) connections.delete(userId)
-  }
+const unregister = (socket: RawSocket) => {
+  const userId = owners.get(socket)
+  if (userId === undefined) return
+
+  owners.delete(socket)
+  const set = sockets.get(userId)
+  if (!set) return
+
+  set.delete(socket)
+  if (set.size === 0) sockets.delete(userId)
 }
 
 export const notifyUser = (userId: number, notification: Notification) => {
-  const set = connections.get(userId)
+  const set = sockets.get(userId)
   if (!set) return
 
   const payload = JSON.stringify(notification)
-  for (const ws of set) {
-    ws.send(payload)
-  }
+  for (const socket of set) socket.send(payload)
 }
 
-export const wsConfig = {
-  open(ws: ServerWebSocket<{ userId: number }>) {
-    if (ws.data?.userId) {
-      addConnection(ws.data.userId, ws)
+// Clients join by sending: { channel: "notifications", event: "join", payload: { token } }
+const notifications = channel("notifications", {
+  join: async (ws, params) => {
+    if (typeof params.token !== "string") return false
+
+    try {
+      const claims = await token.verify(params.token, config.auth.secret)
+      register(ws.raw as RawSocket, Number(claims.userId))
+      return true
+    } catch {
+      return false
     }
   },
-  message(ws: ServerWebSocket<{ userId: number }>, message: string | Buffer) {
-    // clients can send pings; respond with pong
-    if (message === "ping") {
-      ws.send("pong")
-    }
+  leave: (ws) => unregister(ws.raw as RawSocket),
+})
+
+export const wsConfig: WsConfig = {
+  channels: [notifications],
+  onMessage: (ws, message) => {
+    if (message === "ping") ws.send("pong")
   },
-  close(ws: ServerWebSocket<{ userId: number }>) {
-    if (ws.data?.userId) {
-      removeConnection(ws.data.userId, ws)
-    }
-  },
+  onClose: (ws) => unregister(ws.raw as RawSocket),
 }

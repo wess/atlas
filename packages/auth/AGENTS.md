@@ -19,12 +19,12 @@ Authentication primitives and prebuilt auth flow pipes for the Atlas framework.
 
 ### Session Management
 
-- `createMemoryStore(): SessionStore` - In-memory session store for dev/testing
+- `createMemoryStore({ ttl? }): SessionStore` - In-memory session store for dev/testing; `ttl` (seconds) expires sessions, without it they live until `destroy`
 - `SessionStore` type with `create`, `get`, `destroy` methods
 
 ### Auth Flows (PipeFn factories for @atlas/server)
 
-- `signup({ db, table, fields, onSuccess })` - Registration pipe
+- `signup({ db, table, fields, onSuccess })` - Registration pipe; `table` is a name string or a `defineSchema` object
   - Reads body fields, hashes password, inserts into DB
   - Calls onSuccess with conn and new user record
 - `login({ db, table, identity, password, onSuccess })` - Login pipe
@@ -34,8 +34,8 @@ Authentication primitives and prebuilt auth flow pipes for the Atlas framework.
   - Reads Bearer token from Authorization header
   - Puts decoded payload into `conn.assigns.auth`
   - Halts 401 if missing or invalid
-- `passwordReset({ db, table, transport })` - Password reset pipe
-  - Generates reset token, calls transport function
+- `passwordReset({ db, table, secret, transport, expiresIn? })` - Password reset pipe
+  - Generates reset token (JWT signed with `secret`, TTL `expiresIn` seconds, default 3600), calls transport function
   - Always returns 200 to prevent email enumeration
 
 ## Usage
@@ -60,7 +60,7 @@ const loginPipe = login({
   table: "users",
   identity: "email",
   password: "password",
-  onSuccess: (conn, user) =>
+  onSuccess: async (conn, user) =>
     json(conn, 200, { token: await token.sign({ userId: user.id }, SECRET) }),
 })
 ```
@@ -102,8 +102,8 @@ type SocialProfile = {
 import {
   socialAuth, google, github, apple, microsoft, facebook, twitter, tiktok,
 } from "@atlas/auth/social"
-import { router, get } from "@atlas/server"
-import * as token from "@atlas/auth"
+import { get, redirect, putHeader } from "@atlas/server"
+import { token } from "@atlas/auth"
 
 const social = socialAuth({
   secret: process.env.OAUTH_STATE_SECRET!,

@@ -1,33 +1,40 @@
-type ChatSocket = {
-  data: { room: string; user: string }
-}
+import { channel, createRooms, type WsConfig, type WsConn } from "@atlas/server/ws"
 
-const rooms = new Map<string, Set<unknown>>()
+const rooms = createRooms()
+const identities = new Map<WsConn, { room: string; user: string }>()
 
-const getRoom = (name: string): Set<unknown> => {
-  if (!rooms.has(name)) rooms.set(name, new Set())
-  return rooms.get(name)!
-}
-
-export const chatHandlers = {
-  open(ws: ChatSocket & { subscribe: (t: string) => void }) {
-    const { room, user } = ws.data
-    getRoom(room).add(ws)
-    ws.subscribe(`chat:${room}`)
+const chat = channel("chat", {
+  join: (ws, params) => {
+    const room = typeof params.room === "string" ? params.room : "general"
+    const user = typeof params.user === "string" ? params.user : "anon"
+    identities.set(ws, { room, user })
+    rooms.join(ws, room)
     console.log(`${user} joined room ${room}`)
+    return true
   },
 
-  message(ws: ChatSocket & { publish: (t: string, d: string) => void }, message: string) {
-    const { room, user } = ws.data
-    const payload = JSON.stringify({ user, text: JSON.parse(message).text })
-    ws.publish(`chat:${room}`, payload)
+  handle: (ws, event, payload) => {
+    if (event !== "message") return
+    const identity = identities.get(ws)
+    if (!identity) return
+    const { text } = (payload ?? {}) as { text?: string }
+    if (!text) return
+    rooms.broadcast(identity.room, { user: identity.user, text })
   },
 
-  close(ws: ChatSocket & { unsubscribe: (t: string) => void }) {
-    const { room, user } = ws.data
-    getRoom(room).delete(ws)
-    ws.unsubscribe(`chat:${room}`)
-    console.log(`${user} left room ${room}`)
-    if (getRoom(room).size === 0) rooms.delete(room)
+  leave: (ws) => {
+    const identity = identities.get(ws)
+    if (!identity) return
+    rooms.leave(ws, identity.room)
+    identities.delete(ws)
+    console.log(`${identity.user} left room ${identity.room}`)
+  },
+})
+
+export const wsConfig: WsConfig = {
+  channels: [chat],
+  onClose: (ws) => {
+    rooms.leaveAll(ws)
+    identities.delete(ws)
   },
 }

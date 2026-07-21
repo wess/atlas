@@ -14,7 +14,7 @@ whatever guard pipes you want to put in front of it.
 import { oauthRoutes } from "@atlas/oauth"
 import { requireAuth } from "@atlas/auth"
 import { from } from "@atlas/db"
-import { compose } from "@atlas/server"
+import { router } from "@atlas/server"
 
 const cfg = {
   db,
@@ -33,7 +33,7 @@ const cfg = {
 
 Bun.serve({
   port: 3000,
-  fetch: compose([...oauthRoutes(cfg), ...yourAppRoutes]),
+  fetch: router(...oauthRoutes(cfg), ...yourAppRoutes),
 })
 ```
 

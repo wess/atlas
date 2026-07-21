@@ -1,4 +1,4 @@
-import { defineSchema, column } from "@atlas/db"
+import { column, defineSchema } from "@atlas/db"
 
 export const users = defineSchema("users", {
   id: column.serial().primaryKey(),
@@ -8,7 +8,7 @@ export const users = defineSchema("users", {
   bio: column.text().nullable(),
   avatarUrl: column.text().nullable(),
   passwordHash: column.text(),
-  createdAt: column.timestamp().default("CURRENT_TIMESTAMP"),
+  createdAt: column.timestamp(),
 })
 
 export const posts = defineSchema("posts", {
@@ -16,21 +16,21 @@ export const posts = defineSchema("posts", {
   userId: column.integer().ref("users", "id"),
   content: column.text(),
   imageUrl: column.text().nullable(),
-  createdAt: column.timestamp().default("CURRENT_TIMESTAMP"),
+  createdAt: column.timestamp(),
 })
 
 export const follows = defineSchema("follows", {
   id: column.serial().primaryKey(),
   followerId: column.integer().ref("users", "id"),
   followingId: column.integer().ref("users", "id"),
-  createdAt: column.timestamp().default("CURRENT_TIMESTAMP"),
+  createdAt: column.timestamp(),
 })
 
 export const likes = defineSchema("likes", {
   id: column.serial().primaryKey(),
   userId: column.integer().ref("users", "id"),
   postId: column.integer().ref("posts", "id"),
-  createdAt: column.timestamp().default("CURRENT_TIMESTAMP"),
+  createdAt: column.timestamp(),
 })
 
 export const media = defineSchema("media", {
@@ -39,5 +39,5 @@ export const media = defineSchema("media", {
   key: column.text(),
   url: column.text(),
   contentType: column.text(),
-  createdAt: column.timestamp().default("CURRENT_TIMESTAMP"),
+  createdAt: column.timestamp(),
 })
