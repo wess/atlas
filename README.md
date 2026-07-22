@@ -232,3 +232,5 @@ connect to `atlas mcp` and call the `docs.list` / `docs.read` tools.
 ## License
 
 MIT
+
+♥ [Sponsor this project](https://github.com/sponsors/wess)
