@@ -72,7 +72,9 @@ test("createResendEmailer surfaces non-2xx responses as ok:false", async () => {
     const m = createResendEmailer({ apiKey: "key", from: "x@y" });
     const res = await m.send({ to: "u@e", subject: "s", html: "<p>h</p>" });
     expect(res.ok).toBe(false);
-    if (!res.ok) expect(res.error).toContain("Resend 429");
+    // Named by host: "Resend 429" while pointed at a self-hosted sender sends
+    // whoever reads it to the wrong status page.
+    if (!res.ok) expect(res.error).toContain("api.resend.com 429");
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -107,4 +109,43 @@ test("send-time `from` overrides the transport default", async () => {
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+test("a Resend-compatible host can be used instead of Resend", async () => {
+  // The API surface is not Resend's alone — Outbox implements the same paths,
+  // bodies and error envelope — so pointing at a self-hosted sender is a base
+  // URL and nothing else. Which is the difference between a password reset
+  // that works and one that depends on somebody's account with a third party.
+  const seen: string[] = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = (async (url: any) => {
+    seen.push(String(url));
+    return new Response(JSON.stringify({ id: "sent" }), { status: 200 });
+  }) as any;
+
+  const emailer = createEmailer({
+    apiKey: "ob_key",
+    from: "Devpipe <hello@devpipe.com>",
+    // Trailing slash on purpose: a base URL copied out of a browser has one.
+    baseUrl: "https://outbox.example.com/",
+  });
+  await emailer.send({ to: "someone@example.com", subject: "hi", html: "<p>hi</p>" });
+  globalThis.fetch = real;
+
+  expect(seen).toEqual(["https://outbox.example.com/emails"]);
+});
+
+test("and Resend is still the default", async () => {
+  const seen: string[] = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = (async (url: any) => {
+    seen.push(String(url));
+    return new Response(JSON.stringify({ id: "sent" }), { status: 200 });
+  }) as any;
+
+  const emailer = createEmailer({ apiKey: "re_key", from: "Acme <hi@acme.com>" });
+  await emailer.send({ to: "someone@example.com", subject: "hi", html: "<p>hi</p>" });
+  globalThis.fetch = real;
+
+  expect(seen).toEqual(["https://api.resend.com/emails"]);
 });
