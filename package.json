@@ -1,6 +1,6 @@
 {
   "name": "@wess/atlas",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Composable Bun/TypeScript packages for building APIs, full-stack apps, and CLI tools",
   "license": "MIT",
   "repository": {

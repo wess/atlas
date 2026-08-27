@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-27T14:49:05Z",
+  "generatedAt": "2026-08-27T14:57:57Z",
   "title": "Design System: Atlas",
   "extensions": {
     "colorMeta": {
@@ -157,6 +157,20 @@
           "oklch(83% 0.13 220 / 58%)",
           "oklch(95% 0.13 220 / 58%)"
         ]
+      },
+      "modal-backdrop": {
+        "role": "neutral",
+        "displayName": "Modal Backdrop",
+        "tonalRamp": [
+          "oklch(15% 0.03 255 / 82%)",
+          "oklch(26% 0.03 255 / 82%)",
+          "oklch(37% 0.03 255 / 82%)",
+          "oklch(48% 0.03 255 / 82%)",
+          "oklch(59% 0.03 255 / 82%)",
+          "oklch(71% 0.03 255 / 82%)",
+          "oklch(83% 0.03 255 / 82%)",
+          "oklch(95% 0.03 255 / 82%)"
+        ]
       }
     },
     "typographyMeta": {
@@ -179,6 +193,78 @@
       "label": {
         "displayName": "Terminal Label",
         "purpose": "Controls, coordinates, taxonomy, code, and system state."
+      },
+      "micro": {
+        "displayName": "Micro Label",
+        "purpose": "Dense metadata and diagram annotations."
+      },
+      "control": {
+        "displayName": "Control Label",
+        "purpose": "Buttons, compact controls, and local navigation."
+      },
+      "navigation": {
+        "displayName": "Navigation Label",
+        "purpose": "Primary navigation and compact code surfaces."
+      },
+      "node": {
+        "displayName": "Constellation Node",
+        "purpose": "Responsive package labels in the constellation."
+      },
+      "caption": {
+        "displayName": "Supporting Caption",
+        "purpose": "Descriptions in routes, indexes, and package rows."
+      },
+      "compact": {
+        "displayName": "Compact Reading",
+        "purpose": "Tables, pager labels, and dense index prose."
+      },
+      "result": {
+        "displayName": "Search Result",
+        "purpose": "Search result titles."
+      },
+      "lead": {
+        "displayName": "Supporting Lead",
+        "purpose": "Prominent supporting copy and compact mobile introductions."
+      },
+      "intro": {
+        "displayName": "Guide Introduction",
+        "purpose": "Guide and modal introduction text."
+      },
+      "statement": {
+        "displayName": "Product Statement",
+        "purpose": "Responsive home-page thesis."
+      },
+      "minor-heading": {
+        "displayName": "Minor Heading",
+        "purpose": "Fourth-level documentation headings."
+      },
+      "subheading": {
+        "displayName": "Subheading",
+        "purpose": "Third-level documentation headings."
+      },
+      "brand": {
+        "displayName": "Header Brand",
+        "purpose": "Compact sticky-header wordmark."
+      },
+      "article-section": {
+        "displayName": "Article Section",
+        "purpose": "Second-level documentation headings."
+      },
+      "article-display": {
+        "displayName": "Article Display",
+        "purpose": "Documentation and lost-page identities."
+      },
+      "article-display-mobile": {
+        "displayName": "Article Display Mobile",
+        "purpose": "Narrow-screen documentation identities."
+      },
+      "guide-display": {
+        "displayName": "Guide Display",
+        "purpose": "Field-guide index identity."
+      },
+      "guide-display-mobile": {
+        "displayName": "Guide Display Mobile",
+        "purpose": "Narrow-screen field-guide identity."
       }
     },
     "shadows": [

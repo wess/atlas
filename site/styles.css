@@ -20,9 +20,33 @@
   --faint: #748da0;
   --line: rgb(83 199 238 / 28%);
   --line-strong: rgb(83 199 238 / 58%);
+  --backdrop: rgb(0 4 15 / 82%);
   --display: "Big Shoulders", "Arial Narrow", sans-serif;
   --body: Optima, Candara, "Segoe UI", system-ui, sans-serif;
   --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", monospace;
+  --type-display: clamp(5rem, 9vw, 6rem);
+  --type-headline: clamp(28px, 2.8vw, 40px);
+  --type-title: 24px;
+  --type-brand: 32px;
+  --type-statement: clamp(21px, 2.2vw, 30px);
+  --type-article-display: clamp(3.5rem, 7vw, 6rem);
+  --type-article-display-mobile: clamp(3.4rem, 17vw, 5rem);
+  --type-guide-display: clamp(4.8rem, 10vw, 6rem);
+  --type-guide-display-mobile: clamp(4.4rem, 22vw, 6rem);
+  --type-article-section: clamp(30px, 4vw, 42px);
+  --type-subheading: 26px;
+  --type-minor-heading: 21px;
+  --type-intro: 19px;
+  --type-lead: 17px;
+  --type-body: 16px;
+  --type-result: 15px;
+  --type-compact: 14px;
+  --type-caption: 13px;
+  --type-small: 12px;
+  --type-control: 11px;
+  --type-label: 10px;
+  --type-micro: 9px;
+  --type-node: clamp(10px, 0.85vw, 13px);
   --measure: 72ch;
   --page: 1600px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -49,7 +73,7 @@ body {
   background-size: 64px 64px;
   color: var(--limestone);
   font-family: var(--body);
-  font-size: 16px;
+  font-size: var(--type-body);
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -145,7 +169,7 @@ svg {
   border-bottom: 1px solid var(--line);
   color: var(--cyan);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--type-label);
   letter-spacing: 0.12em;
   line-height: 33px;
   text-transform: uppercase;
@@ -186,7 +210,7 @@ svg {
 
 .brand span {
   font-family: var(--display);
-  font-size: 32px;
+  font-size: var(--type-brand);
   font-weight: 900;
   letter-spacing: 0.16em;
   line-height: 1;
@@ -195,7 +219,7 @@ svg {
 .brand i {
   color: var(--magenta);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--type-label);
   font-style: normal;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -206,7 +230,7 @@ svg {
   align-items: center;
   gap: clamp(18px, 2.4vw, 38px);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--type-small);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -283,7 +307,7 @@ svg {
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--type-control);
   letter-spacing: inherit;
   text-transform: inherit;
 }
@@ -304,7 +328,7 @@ kbd {
   border: 1px solid var(--line);
   color: var(--faint);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--type-micro);
 }
 
 .greekrule {
@@ -343,7 +367,7 @@ kbd {
   margin: 0;
   color: var(--bright);
   font-family: var(--display);
-  font-size: clamp(5rem, 9vw, 6rem);
+  font-size: var(--type-display);
   font-weight: 900;
   letter-spacing: 0.08em;
   line-height: 0.82;
@@ -358,7 +382,7 @@ kbd {
   max-width: 22ch;
   margin: 36px 0 0;
   color: var(--bright);
-  font-size: clamp(21px, 2.2vw, 30px);
+  font-size: var(--type-statement);
   letter-spacing: 0.015em;
   line-height: 1.35;
 }
@@ -388,7 +412,7 @@ kbd {
 .facts dd {
   margin: 0;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--type-label);
   letter-spacing: 0.08em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -403,7 +427,7 @@ kbd {
 .facts dd {
   margin-top: 3px;
   color: var(--cyan);
-  font-size: 12px;
+  font-size: var(--type-small);
 }
 
 .homeactions,
@@ -425,7 +449,7 @@ kbd {
   color: var(--cyan);
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--type-control);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-decoration: none;
@@ -468,7 +492,7 @@ kbd {
   left: 0;
   color: var(--faint);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--type-label);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -477,7 +501,7 @@ kbd {
   padding: 12px 14px;
   color: var(--bright);
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--type-caption);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -491,7 +515,7 @@ kbd {
   color: var(--cyan);
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--type-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -525,7 +549,7 @@ kbd {
   max-width: 14ch;
   color: var(--magenta);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--type-micro);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -556,7 +580,7 @@ kbd {
   margin: 0;
   color: var(--bright);
   font-family: var(--display);
-  font-size: clamp(28px, 2.8vw, 40px);
+  font-size: var(--type-headline);
   font-weight: 700;
   letter-spacing: 0.05em;
   line-height: 1;
@@ -568,14 +592,14 @@ kbd {
 .packageindex > div:first-child p {
   margin: 6px 0 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--type-caption);
 }
 
 .charthead label,
 .packagefilter label {
   color: var(--faint);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--type-label);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -591,7 +615,7 @@ kbd {
   background: transparent;
   color: var(--bright);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--type-small);
   outline: 0;
 }
 
@@ -661,7 +685,7 @@ kbd {
   gap: 8px;
   color: var(--cyan);
   font-family: var(--mono);
-  font-size: clamp(10px, 0.85vw, 13px);
+  font-size: var(--type-node);
   letter-spacing: 0.07em;
   text-decoration: none;
   text-transform: uppercase;
@@ -757,7 +781,7 @@ kbd {
   gap: 20px;
   color: var(--faint);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--type-micro);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -789,7 +813,7 @@ kbd {
   margin: 0;
   color: var(--magenta);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--type-small);
   transform: translate(-50%, -50%);
 }
 
@@ -820,7 +844,7 @@ kbd {
 .quickcode > div a {
   color: var(--cyan);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--type-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -842,7 +866,7 @@ kbd {
   min-width: max-content;
   padding: 22px;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--type-small);
   line-height: 1.75;
 }
 
@@ -878,7 +902,7 @@ kbd {
 .fieldroutes strong {
   color: var(--cyan);
   font-family: var(--display);
-  font-size: 24px;
+  font-size: var(--type-title);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -886,7 +910,7 @@ kbd {
 
 .fieldroutes span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--type-caption);
   line-height: 1.5;
 }
 
@@ -903,7 +927,7 @@ kbd {
 .principles header p {
   max-width: 42ch;
   margin-top: 18px;
-  font-size: 17px;
+  font-size: var(--type-lead);
 }
 
 .principles dl {
@@ -922,7 +946,7 @@ kbd {
 .principles dt {
   color: var(--cyan);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--type-control);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -944,7 +968,7 @@ kbd {
   border: 1px solid var(--line);
   color: var(--faint);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--type-label);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -958,7 +982,7 @@ kbd {
 .sitefooter strong {
   color: var(--bright);
   font-family: var(--display);
-  font-size: 25px;
+  font-size: var(--type-title);
   letter-spacing: 0.12em;
 }
 
@@ -998,7 +1022,7 @@ kbd {
   margin: 28px 0 8px;
   color: var(--magenta);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--type-micro);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -1006,7 +1030,7 @@ kbd {
 .docnav a {
   padding: 7px 9px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--type-caption);
   line-height: 1.35;
   text-decoration: none;
 }
@@ -1025,7 +1049,7 @@ kbd {
   border-bottom: 1px solid var(--line);
   color: var(--bright);
   font-family: var(--display);
-  font-size: 22px;
+  font-size: var(--type-title);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1042,7 +1066,7 @@ kbd {
   gap: 10px;
   color: var(--faint);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--type-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1058,7 +1082,7 @@ kbd {
 .article h1 {
   max-width: 13ch;
   margin-bottom: 44px;
-  font-size: clamp(3.5rem, 7vw, 6rem);
+  font-size: var(--type-article-display);
 }
 
 .article h2,
@@ -1078,18 +1102,18 @@ kbd {
   margin: 76px 0 22px;
   padding-top: 20px;
   border-top: 1px solid var(--line);
-  font-size: clamp(30px, 4vw, 42px);
+  font-size: var(--type-article-section);
   text-transform: uppercase;
 }
 
 .article h3 {
   margin: 48px 0 16px;
-  font-size: 26px;
+  font-size: var(--type-subheading);
 }
 
 .article h4 {
   margin: 36px 0 12px;
-  font-size: 21px;
+  font-size: var(--type-minor-heading);
 }
 
 .headinganchor {
@@ -1170,7 +1194,7 @@ kbd {
   color: var(--muted);
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--type-micro);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1213,13 +1237,13 @@ kbd {
   background: var(--field);
   color: var(--cyan);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--type-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .article td {
-  font-size: 14px;
+  font-size: var(--type-compact);
 }
 
 .article hr {
@@ -1238,7 +1262,7 @@ kbd {
   border-block: 1px solid var(--line);
   color: var(--faint);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: var(--type-label);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -1277,7 +1301,7 @@ kbd {
 .pager span {
   color: var(--faint);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--type-micro);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1285,7 +1309,7 @@ kbd {
 .pager strong {
   margin-top: 5px;
   color: var(--cyan);
-  font-size: 14px;
+  font-size: var(--type-compact);
   font-weight: 500;
 }
 
@@ -1305,7 +1329,7 @@ kbd {
   margin-bottom: 14px;
   color: var(--magenta);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--type-micro);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -1314,7 +1338,7 @@ kbd {
 .toc span {
   padding: 5px 0;
   color: var(--faint);
-  font-size: 11px;
+  font-size: var(--type-control);
   line-height: 1.35;
   text-decoration: none;
 }
@@ -1345,14 +1369,14 @@ kbd {
 }
 
 .guideintro h1 {
-  font-size: clamp(4.8rem, 10vw, 6rem);
+  font-size: var(--type-guide-display);
 }
 
 .guideintro p {
   max-width: 52ch;
   margin: 0;
   color: var(--muted);
-  font-size: 19px;
+  font-size: var(--type-intro);
 }
 
 .guideactions {
@@ -1397,13 +1421,13 @@ kbd {
 .indexrow p {
   margin: 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--type-compact);
 }
 
 .indexrow i {
   color: var(--cyan);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--type-micro);
   font-style: normal;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1452,14 +1476,14 @@ kbd {
 
 .packagerow > span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--type-caption);
 }
 
 .packagerow i {
   justify-self: end;
   color: var(--faint);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--type-micro);
   font-style: normal;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1486,7 +1510,7 @@ kbd {
 }
 
 .searchdialog::backdrop {
-  background: rgb(0 4 15 / 82%);
+  background: var(--backdrop);
 }
 
 .searchhead {
@@ -1513,7 +1537,6 @@ kbd {
   border: 0;
   border-left: 1px solid var(--line);
   font-family: var(--mono);
-  font-size: 19px;
 }
 
 .searchdialog > input {
@@ -1538,7 +1561,7 @@ kbd {
 .searchstatus {
   padding: 0 20px 14px;
   color: var(--faint);
-  font-size: 12px;
+  font-size: var(--type-small);
 }
 
 .searchresults {
@@ -1566,13 +1589,13 @@ kbd {
 
 .searchresults strong {
   color: var(--cyan);
-  font-size: 15px;
+  font-size: var(--type-result);
 }
 
 .searchresults i {
   color: var(--magenta);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: var(--type-micro);
   font-style: normal;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1582,7 +1605,7 @@ kbd {
   grid-column: 1 / -1;
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--type-small);
 }
 
 .lostpage {
@@ -1598,14 +1621,14 @@ kbd {
 .lostpage > span {
   color: var(--magenta);
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--type-control);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
 .lostpage h1 {
   margin-top: 28px;
-  font-size: clamp(4rem, 9vw, 6rem);
+  font-size: var(--type-article-display);
 }
 
 .lostpage p {
@@ -1916,7 +1939,7 @@ kbd {
   }
 
   .article h1 {
-    font-size: clamp(3.4rem, 17vw, 5rem);
+    font-size: var(--type-article-display-mobile);
   }
 
   .breadcrumb {
@@ -1948,11 +1971,11 @@ kbd {
   }
 
   .guideintro h1 {
-    font-size: clamp(4.4rem, 22vw, 6rem);
+    font-size: var(--type-guide-display-mobile);
   }
 
   .guideintro p {
-    font-size: 17px;
+    font-size: var(--type-lead);
   }
 
   .guideactions {

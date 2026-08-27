@@ -13,6 +13,7 @@ colors:
   faint-blue-gray: "#748da0"
   survey-line: "rgb(83 199 238 / 28%)"
   survey-line-strong: "rgb(83 199 238 / 58%)"
+  modal-backdrop: "rgb(0 4 15 / 82%)"
 typography:
   display:
     fontFamily: '"Big Shoulders", "Arial Narrow", sans-serif'
@@ -44,6 +45,114 @@ typography:
     fontWeight: 400
     lineHeight: 1.35
     letterSpacing: "0.1em"
+  micro:
+    fontFamily: '"SFMono-Regular", "Cascadia Code", "Roboto Mono", monospace'
+    fontSize: "9px"
+    fontWeight: 400
+    lineHeight: 1.35
+    letterSpacing: "0.1em"
+  control:
+    fontFamily: '"SFMono-Regular", "Cascadia Code", "Roboto Mono", monospace'
+    fontSize: "11px"
+    fontWeight: 400
+    lineHeight: 1.35
+    letterSpacing: "0.08em"
+  navigation:
+    fontFamily: '"SFMono-Regular", "Cascadia Code", "Roboto Mono", monospace'
+    fontSize: "12px"
+    fontWeight: 400
+    lineHeight: 1.35
+    letterSpacing: "0.1em"
+  node:
+    fontFamily: '"SFMono-Regular", "Cascadia Code", "Roboto Mono", monospace'
+    fontSize: "clamp(10px, 0.85vw, 13px)"
+    fontWeight: 400
+    lineHeight: 1.35
+    letterSpacing: "0.07em"
+  caption:
+    fontFamily: 'Optima, Candara, "Segoe UI", system-ui, sans-serif'
+    fontSize: "13px"
+    fontWeight: 400
+    lineHeight: 1.5
+    letterSpacing: "normal"
+  compact:
+    fontFamily: 'Optima, Candara, "Segoe UI", system-ui, sans-serif'
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: 1.5
+    letterSpacing: "normal"
+  result:
+    fontFamily: 'Optima, Candara, "Segoe UI", system-ui, sans-serif'
+    fontSize: "15px"
+    fontWeight: 400
+    lineHeight: 1.5
+    letterSpacing: "normal"
+  lead:
+    fontFamily: 'Optima, Candara, "Segoe UI", system-ui, sans-serif'
+    fontSize: "17px"
+    fontWeight: 400
+    lineHeight: 1.5
+    letterSpacing: "normal"
+  intro:
+    fontFamily: 'Optima, Candara, "Segoe UI", system-ui, sans-serif'
+    fontSize: "19px"
+    fontWeight: 400
+    lineHeight: 1.5
+    letterSpacing: "normal"
+  statement:
+    fontFamily: 'Optima, Candara, "Segoe UI", system-ui, sans-serif'
+    fontSize: "clamp(21px, 2.2vw, 30px)"
+    fontWeight: 400
+    lineHeight: 1.35
+    letterSpacing: "0.015em"
+  minor-heading:
+    fontFamily: '"Big Shoulders", "Arial Narrow", sans-serif'
+    fontSize: "21px"
+    fontWeight: 700
+    lineHeight: 1.1
+    letterSpacing: "0.03em"
+  subheading:
+    fontFamily: '"Big Shoulders", "Arial Narrow", sans-serif'
+    fontSize: "26px"
+    fontWeight: 700
+    lineHeight: 1.1
+    letterSpacing: "0.03em"
+  brand:
+    fontFamily: '"Big Shoulders", "Arial Narrow", sans-serif'
+    fontSize: "32px"
+    fontWeight: 900
+    lineHeight: 1
+    letterSpacing: "0.16em"
+  article-section:
+    fontFamily: '"Big Shoulders", "Arial Narrow", sans-serif'
+    fontSize: "clamp(30px, 4vw, 42px)"
+    fontWeight: 700
+    lineHeight: 1.1
+    letterSpacing: "0.03em"
+  article-display:
+    fontFamily: '"Big Shoulders", "Arial Narrow", sans-serif'
+    fontSize: "clamp(3.5rem, 7vw, 6rem)"
+    fontWeight: 900
+    lineHeight: 0.82
+    letterSpacing: "0.08em"
+  article-display-mobile:
+    fontFamily: '"Big Shoulders", "Arial Narrow", sans-serif'
+    fontSize: "clamp(3.4rem, 17vw, 5rem)"
+    fontWeight: 900
+    lineHeight: 0.82
+    letterSpacing: "0.08em"
+  guide-display:
+    fontFamily: '"Big Shoulders", "Arial Narrow", sans-serif'
+    fontSize: "clamp(4.8rem, 10vw, 6rem)"
+    fontWeight: 900
+    lineHeight: 0.82
+    letterSpacing: "0.08em"
+  guide-display-mobile:
+    fontFamily: '"Big Shoulders", "Arial Narrow", sans-serif'
+    fontSize: "clamp(4.4rem, 22vw, 6rem)"
+    fontWeight: 900
+    lineHeight: 0.82
+    letterSpacing: "0.08em"
 rounded:
   square: "0"
 spacing:
@@ -153,6 +262,7 @@ The palette is a dark maritime field with warm stone text and two precise instru
 - **Faint Blue-Gray** (`colors.faint-blue-gray`): Metadata, captions, and low-priority labels.
 - **Survey Line** (`colors.survey-line`): Default dividers, borders, and grid construction.
 - **Strong Survey Line** (`colors.survey-line-strong`): Section boundaries and interactive strokes.
+- **Modal Backdrop** (`colors.modal-backdrop`): Focus-preserving dimmer behind the search plane.
 
 ### Named Rules
 
@@ -185,6 +295,10 @@ voice marks controls, coordinates, code, metadata, and system state.
   `72ch` reading measure where long-form text appears.
 - **Label** (400, `10px`, `0.1em`, uppercase): Terminal metadata, coordinates, taxonomy, control
   text, and diagram legends.
+- **Supporting Scale** (`9px`–`19px`): Named micro, control, navigation, caption, compact,
+  result, lead, and intro roles keep dense metadata distinct from readable supporting prose.
+- **Responsive Display Scale:** Statement, article, guide, and section roles own their fluid
+  clamps; mobile variants tighten only the two long-form page identities.
 
 ### Named Rules
 
