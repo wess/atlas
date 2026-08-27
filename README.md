@@ -2,6 +2,8 @@
 
 Composable Bun/TypeScript packages for building APIs, full-stack apps, and CLI tools.
 
+[Documentation](https://wess.github.io/atlas/) · [API reference](https://wess.github.io/atlas/docs/api/) · [Quick start](https://wess.github.io/atlas/docs/quickstart/)
+
 ## What is Atlas
 
 Atlas is an à la carte set of functional, minimal-dependency packages that snap together like Lego blocks. Pick what you need — config, database, HTTP server, auth, storage — and compose them into your app. Inspired by Elixir's ecosystem, idiomatic to TypeScript and Bun's native APIs.
@@ -92,25 +94,12 @@ Bump atlas with `bun update @wess/atlas`.
 Build a user API with authentication in 60 lines.
 
 ```bash
-curl -sL https://github.com/wess/atlas/archive/refs/heads/main.zip -o /tmp/atlas.zip
-unzip -q /tmp/atlas.zip -d /tmp/atlas-expand
-mv /tmp/atlas-expand/atlas-main ./atlas
-rm -rf /tmp/atlas.zip /tmp/atlas-expand
+mkdir myapp && cd myapp
+bun init -y
+bun add @wess/atlas
 ```
 
-Add to `package.json`:
-```json
-{
-  "workspaces": ["atlas/packages/*"],
-  "dependencies": {
-    "@atlas/config": "workspace:*",
-    "@atlas/db": "workspace:*",
-    "@atlas/migrate": "workspace:*",
-    "@atlas/server": "workspace:*",
-    "@atlas/auth": "workspace:*"
-  }
-}
-```
+The example below uses the `@atlas/<pkg>` aliases from the Install section.
 
 Create `.env`:
 ```
@@ -127,7 +116,7 @@ export const users = defineSchema("users", {
   id: column.serial().primaryKey(),
   email: column.text().unique(),
   passwordHash: column.text(),
-  createdAt: column.timestamp().default("now()"),
+  createdAt: column.timestamp().defaultRaw("CURRENT_TIMESTAMP"),
 })
 ```
 

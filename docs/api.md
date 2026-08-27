@@ -137,8 +137,8 @@ SseClient: { id, send, close }
 ```
 hash(password) → Promise<string>           Argon2id via Bun.password
 verify(password, hashed) → Promise<bool>
-token.sign(payload, secret, opts?) → jwt   opts: { expiresIn: seconds }
-token.verify(jwt, secret) → payload
+token.sign(payload, secret, opts?) → Promise<string>   opts: { expiresIn: seconds }
+token.verify(jwt, secret) → Promise<TokenPayload>
 createMemoryStore({ ttl? }) → SessionStore dev/testing session store; ttl seconds expires entries
 signup({ db, table, fields, onSuccess }) → PipeFn
 login({ db, table, identity, password, onSuccess }) → PipeFn

@@ -1,0 +1,366 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-27T14:49:05Z",
+  "title": "Design System: Atlas",
+  "extensions": {
+    "colorMeta": {
+      "aegean-ground": {
+        "role": "neutral",
+        "displayName": "Aegean Ground",
+        "tonalRamp": [
+          "oklch(15% 0.04 255)",
+          "oklch(26% 0.04 255)",
+          "oklch(37% 0.04 255)",
+          "oklch(48% 0.04 255)",
+          "oklch(59% 0.04 255)",
+          "oklch(71% 0.04 255)",
+          "oklch(83% 0.04 255)",
+          "oklch(95% 0.04 255)"
+        ]
+      },
+      "observatory-field": {
+        "role": "neutral",
+        "displayName": "Observatory Field",
+        "tonalRamp": [
+          "oklch(15% 0.05 250)",
+          "oklch(26% 0.05 250)",
+          "oklch(37% 0.05 250)",
+          "oklch(48% 0.05 250)",
+          "oklch(59% 0.05 250)",
+          "oklch(71% 0.05 250)",
+          "oklch(83% 0.05 250)",
+          "oklch(95% 0.05 250)"
+        ]
+      },
+      "limestone": {
+        "role": "neutral",
+        "displayName": "Limestone",
+        "tonalRamp": [
+          "oklch(15% 0.025 75)",
+          "oklch(26% 0.025 75)",
+          "oklch(37% 0.025 75)",
+          "oklch(48% 0.025 75)",
+          "oklch(59% 0.025 75)",
+          "oklch(71% 0.025 75)",
+          "oklch(83% 0.025 75)",
+          "oklch(95% 0.025 75)"
+        ]
+      },
+      "bright-limestone": {
+        "role": "neutral",
+        "displayName": "Bright Limestone",
+        "tonalRamp": [
+          "oklch(15% 0.02 80)",
+          "oklch(26% 0.02 80)",
+          "oklch(37% 0.02 80)",
+          "oklch(48% 0.02 80)",
+          "oklch(59% 0.02 80)",
+          "oklch(71% 0.02 80)",
+          "oklch(83% 0.02 80)",
+          "oklch(95% 0.02 80)"
+        ]
+      },
+      "ionian-cyan": {
+        "role": "primary",
+        "displayName": "Ionian Cyan",
+        "tonalRamp": [
+          "oklch(15% 0.13 220)",
+          "oklch(26% 0.13 220)",
+          "oklch(37% 0.13 220)",
+          "oklch(48% 0.13 220)",
+          "oklch(59% 0.13 220)",
+          "oklch(71% 0.13 220)",
+          "oklch(83% 0.13 220)",
+          "oklch(95% 0.13 220)"
+        ]
+      },
+      "survey-cyan": {
+        "role": "primary",
+        "displayName": "Survey Cyan",
+        "tonalRamp": [
+          "oklch(15% 0.08 225)",
+          "oklch(26% 0.08 225)",
+          "oklch(37% 0.08 225)",
+          "oklch(48% 0.08 225)",
+          "oklch(59% 0.08 225)",
+          "oklch(71% 0.08 225)",
+          "oklch(83% 0.08 225)",
+          "oklch(95% 0.08 225)"
+        ]
+      },
+      "registration-magenta": {
+        "role": "secondary",
+        "displayName": "Registration Magenta",
+        "tonalRamp": [
+          "oklch(15% 0.2 350)",
+          "oklch(26% 0.2 350)",
+          "oklch(37% 0.2 350)",
+          "oklch(48% 0.2 350)",
+          "oklch(59% 0.2 350)",
+          "oklch(71% 0.2 350)",
+          "oklch(83% 0.2 350)",
+          "oklch(95% 0.2 350)"
+        ]
+      },
+      "muted-blue-gray": {
+        "role": "neutral",
+        "displayName": "Muted Blue-Gray",
+        "tonalRamp": [
+          "oklch(15% 0.04 240)",
+          "oklch(26% 0.04 240)",
+          "oklch(37% 0.04 240)",
+          "oklch(48% 0.04 240)",
+          "oklch(59% 0.04 240)",
+          "oklch(71% 0.04 240)",
+          "oklch(83% 0.04 240)",
+          "oklch(95% 0.04 240)"
+        ]
+      },
+      "faint-blue-gray": {
+        "role": "neutral",
+        "displayName": "Faint Blue-Gray",
+        "tonalRamp": [
+          "oklch(15% 0.035 240)",
+          "oklch(26% 0.035 240)",
+          "oklch(37% 0.035 240)",
+          "oklch(48% 0.035 240)",
+          "oklch(59% 0.035 240)",
+          "oklch(71% 0.035 240)",
+          "oklch(83% 0.035 240)",
+          "oklch(95% 0.035 240)"
+        ]
+      },
+      "survey-line": {
+        "role": "neutral",
+        "displayName": "Survey Line",
+        "tonalRamp": [
+          "oklch(15% 0.13 220 / 28%)",
+          "oklch(26% 0.13 220 / 28%)",
+          "oklch(37% 0.13 220 / 28%)",
+          "oklch(48% 0.13 220 / 28%)",
+          "oklch(59% 0.13 220 / 28%)",
+          "oklch(71% 0.13 220 / 28%)",
+          "oklch(83% 0.13 220 / 28%)",
+          "oklch(95% 0.13 220 / 28%)"
+        ]
+      },
+      "survey-line-strong": {
+        "role": "neutral",
+        "displayName": "Strong Survey Line",
+        "tonalRamp": [
+          "oklch(15% 0.13 220 / 58%)",
+          "oklch(26% 0.13 220 / 58%)",
+          "oklch(37% 0.13 220 / 58%)",
+          "oklch(48% 0.13 220 / 58%)",
+          "oklch(59% 0.13 220 / 58%)",
+          "oklch(71% 0.13 220 / 58%)",
+          "oklch(83% 0.13 220 / 58%)",
+          "oklch(95% 0.13 220 / 58%)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Monumental Display",
+        "purpose": "Page identities and the ATLAS wordmark."
+      },
+      "headline": {
+        "displayName": "Field Headline",
+        "purpose": "Major field, guide, and article sections."
+      },
+      "title": {
+        "displayName": "Route Title",
+        "purpose": "Route cards, index rows, and compact panel headings."
+      },
+      "body": {
+        "displayName": "Reading Body",
+        "purpose": "Long-form documentation and supporting explanation."
+      },
+      "label": {
+        "displayName": "Terminal Label",
+        "purpose": "Controls, coordinates, taxonomy, code, and system state."
+      }
+    },
+    "shadows": [
+      {
+        "name": "display-phosphor",
+        "value": "0 12px 36px rgb(83 199 238 / 12%)",
+        "purpose": "Low cyan bloom behind the home wordmark."
+      },
+      {
+        "name": "node-instrument",
+        "value": "0 0 16px rgb(83 199 238 / 54%)",
+        "purpose": "Tight glow around constellation diamonds."
+      },
+      {
+        "name": "node-hover",
+        "value": "drop-shadow(0 6px 12px rgb(83 199 238 / 20%))",
+        "purpose": "Transient lift on an active constellation node."
+      },
+      {
+        "name": "modal-structural",
+        "value": "0 24px 70px rgb(0 0 0 / 62%)",
+        "purpose": "Structural separation for the modal search plane."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-field",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Shared easing for terminal state changes and celestial drift."
+      },
+      {
+        "name": "state-fast",
+        "value": "160ms",
+        "purpose": "Text, opacity, and constellation state response."
+      },
+      {
+        "name": "state-standard",
+        "value": "180ms",
+        "purpose": "Buttons, backgrounds, and filter state response."
+      },
+      {
+        "name": "nav-reveal",
+        "value": "220ms",
+        "purpose": "Primary-navigation survey-line reveal."
+      },
+      {
+        "name": "orbit-drift",
+        "value": "700ms",
+        "purpose": "Bounded constellation parallax and return."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "rail-collapse",
+        "value": "1180px"
+      },
+      {
+        "name": "shell-collapse",
+        "value": "900px"
+      },
+      {
+        "name": "manifest-collapse",
+        "value": "680px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The limestone action used for the preferred reading path.",
+      "html": "<a class=\"ds-button-primary\" href=\"#\">START HERE</a>",
+      "css": ".ds-button-primary { display: inline-flex; min-height: 44px; padding: 10px 18px; align-items: center; justify-content: center; border: 1px solid var(--limestone); border-radius: 0; background: var(--limestone); color: var(--ground); font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase; transition: background 180ms var(--ease), color 180ms var(--ease), border-color 180ms var(--ease); } .ds-button-primary:hover { border-color: var(--cyan); background: var(--cyan); } .ds-button-primary:focus-visible { outline: 2px solid var(--magenta); outline-offset: 4px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "The transparent companion action for alternate routes.",
+      "html": "<a class=\"ds-button-secondary\" href=\"#\">BROWSE PACKAGES</a>",
+      "css": ".ds-button-secondary { display: inline-flex; min-height: 44px; padding: 10px 18px; align-items: center; justify-content: center; border: 1px solid var(--line-strong); border-radius: 0; background: transparent; color: var(--cyan); font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase; transition: background 180ms var(--ease), color 180ms var(--ease), border-color 180ms var(--ease); } .ds-button-secondary:hover { border-color: var(--cyan); background: rgb(83 199 238 / 8%); color: var(--bright); } .ds-button-secondary:focus-visible { outline: 2px solid var(--magenta); outline-offset: 4px; }"
+    },
+    {
+      "name": "Icon Control",
+      "kind": "button",
+      "refersTo": "icon-control",
+      "description": "A square terminal control for search, menu, and close actions.",
+      "html": "<button class=\"ds-icon-control\" type=\"button\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"6\"></circle><path d=\"m16 16 4 4\"></path></svg></button>",
+      "css": ".ds-icon-control { display: grid; width: 36px; height: 36px; padding: 8px; place-items: center; border: 1px solid var(--line); border-radius: 0; background: transparent; color: var(--cyan); cursor: pointer; } .ds-icon-control svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; } .ds-icon-control:hover { border-color: var(--line-strong); color: var(--bright); } .ds-icon-control:focus-visible { outline: 2px solid var(--magenta); outline-offset: 4px; }"
+    },
+    {
+      "name": "Filter Field",
+      "kind": "input",
+      "refersTo": "filter-field",
+      "description": "The underlined mono search field used to filter packages and coordinates.",
+      "html": "<label class=\"ds-filter-label\" for=\"ds-filter\">FILTER <input class=\"ds-filter-field\" id=\"ds-filter\" type=\"search\" placeholder=\"auth…\"></label>",
+      "css": ".ds-filter-label { color: var(--faint); font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; } .ds-filter-field { width: 130px; margin-left: 8px; padding: 7px 8px; border: 0; border-bottom: 1px solid var(--line-strong); border-radius: 0; background: transparent; color: var(--bright); font-family: var(--mono); font-size: 12px; outline: 0; } .ds-filter-field:focus { border-color: var(--magenta); } .ds-filter-field:focus-visible { outline: 2px solid var(--magenta); outline-offset: 4px; }"
+    },
+    {
+      "name": "Primary Navigation",
+      "kind": "nav",
+      "refersTo": "navigation-link",
+      "description": "Uppercase terminal links with a cyan survey-line current state.",
+      "html": "<nav class=\"ds-primary-nav\" aria-label=\"Primary\"><a class=\"ds-nav-link\" href=\"#\" aria-current=\"page\">HOME</a><a class=\"ds-nav-link\" href=\"#\">GUIDES</a><a class=\"ds-nav-link\" href=\"#\">PACKAGES</a></nav>",
+      "css": ".ds-primary-nav { display: flex; align-items: center; gap: 24px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; } .ds-nav-link { position: relative; color: var(--muted); text-decoration: none; } .ds-nav-link::after { position: absolute; right: 0; bottom: -8px; left: 0; height: 1px; background: var(--cyan); content: \"\"; transform: scaleX(0); transform-origin: left; transition: transform 220ms var(--ease); } .ds-nav-link:hover, .ds-nav-link:focus-visible, .ds-nav-link[aria-current] { color: var(--bright); } .ds-nav-link:hover::after, .ds-nav-link:focus-visible::after, .ds-nav-link[aria-current]::after { transform: scaleX(1); } .ds-nav-link:focus-visible { outline: 2px solid var(--magenta); outline-offset: 4px; }"
+    },
+    {
+      "name": "Code Slab",
+      "kind": "card",
+      "refersTo": "code-slab",
+      "description": "A square Aegean code field with an inset copy control.",
+      "html": "<pre class=\"ds-code-slab\"><code class=\"ds-code\">bun add @wess/atlas</code><button class=\"ds-copy-code\" type=\"button\">COPY</button></pre>",
+      "css": ".ds-code-slab { position: relative; margin: 0; overflow: auto; border: 1px solid var(--line); border-radius: 0; background: var(--ground); color: var(--bright); } .ds-code { display: block; min-width: max-content; padding: 22px; font-family: var(--mono); font-size: 12px; line-height: 1.75; } .ds-copy-code { position: absolute; top: 8px; right: 8px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 0; background: var(--field); color: var(--muted); cursor: pointer; font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; } .ds-copy-code:hover { border-color: var(--cyan); color: var(--bright); } .ds-copy-code:focus-visible { outline: 2px solid var(--magenta); outline-offset: 4px; }"
+    },
+    {
+      "name": "Field Route",
+      "kind": "card",
+      "refersTo": "field-route",
+      "description": "A flat route card divided from its neighbors by survey rules.",
+      "html": "<a class=\"ds-field-route\" href=\"#\"><strong>QUICK START</strong><span>Build a working route from the field guide.</span></a>",
+      "css": ".ds-field-route { display: flex; min-height: 172px; padding: 26px; flex-direction: column; justify-content: space-between; border: 1px solid var(--line); border-radius: 0; background: transparent; text-decoration: none; transition: background 180ms var(--ease); } .ds-field-route strong { color: var(--cyan); font-family: var(--display); font-size: 24px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; } .ds-field-route span { color: var(--muted); font-family: var(--body); font-size: 13px; line-height: 1.5; } .ds-field-route:hover { background: rgb(83 199 238 / 6%); } .ds-field-route:focus-visible { outline: 2px solid var(--magenta); outline-offset: 4px; }"
+    },
+    {
+      "name": "Constellation Node",
+      "kind": "custom",
+      "refersTo": "constellation-node",
+      "description": "The luminous package link that gives the system its reusable signature.",
+      "html": "<a class=\"ds-star-node\" href=\"#\"><span aria-hidden=\"true\"></span>AUTH</a>",
+      "css": ".ds-star-node { display: inline-flex; align-items: center; gap: 8px; color: var(--cyan); font-family: var(--mono); font-size: 12px; letter-spacing: 0.07em; text-decoration: none; text-transform: uppercase; transition: color 160ms var(--ease), filter 180ms var(--ease); } .ds-star-node span { width: 8px; height: 8px; flex: 0 0 auto; border: 1px solid var(--bright); background: var(--cyan); box-shadow: 0 0 16px rgb(83 199 238 / 54%); transform: rotate(45deg); } .ds-star-node:hover, .ds-star-node:focus-visible { color: var(--bright); filter: drop-shadow(0 6px 12px rgb(83 199 238 / 20%)); } .ds-star-node:hover span, .ds-star-node:focus-visible span { border-color: var(--magenta); background: var(--magenta); } .ds-star-node:focus-visible { outline: 2px solid var(--magenta); outline-offset: 4px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Aegean Field Terminal 1986",
+    "overview": "Atlas inhabits a midnight Aegean observatory terminal: deep navy fields hold limestone type, cyan survey lines, and sparse magenta registration marks. The interface is dense but not cramped, with the discipline of a field dossier and the legibility of a technical reference. Condensed display type supplies the monumental scale; readable humanist text and monospaced labels keep the system useful beside an editor.\n\nGreek mythology appears through naming, measured geometry, the Atlas line figure, temple-like divisions, and the package constellation. The 1980s layer comes from restrained CRT bloom, terminal labels, and chromatic instrument marks. The system rejects faux-vaporwave kitsch, generic purple gradients, ornamental controls, and raster-heavy delivery.",
+    "keyCharacteristics": [
+      "Midnight navy fields separated by thin cyan survey rules.",
+      "Limestone display and reading type with cyan technical labels.",
+      "Square terminal controls and disciplined one-pixel construction.",
+      "Magenta used only for registration, focus, and exceptional state.",
+      "The package constellation as the reusable signature pattern."
+    ],
+    "rules": [
+      {
+        "name": "The Instrument Marks Rule",
+        "body": "Ionian cyan carries structure and action; registration magenta marks focus, selection, and exception. Neither becomes a broad decorative fill.",
+        "section": "colors"
+      },
+      {
+        "name": "The Night Field Rule",
+        "body": "Keep the Aegean ground dominant and build hierarchy with the two field tones before introducing glow or shadow.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three Voices Rule",
+        "body": "Display type names the terrain, body type explains it, and mono type operates it. Do not use condensed display type for paragraphs or body type for terminal state.",
+        "section": "typography"
+      },
+      {
+        "name": "The Field-First Depth Rule",
+        "body": "Establish separation with field tone and one-pixel rules; reserve shadow for the modal plane and glow for luminous instrument marks.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Instrument Geometry Rule",
+        "body": "Keep functional surfaces square; use circles and diamonds only when they communicate coordinates, nodes, or celestial measurement.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do preserve the deep field hierarchy before reaching for shadow.",
+      "Do use limestone for readable text and cyan for technical structure and action.",
+      "Do keep controls square, compact, keyboard-visible, and divided by one-pixel survey rules.",
+      "Do use the constellation, Atlas figure, and Greek geometry as structural signatures.",
+      "Do disable orbital motion and state transitions when reduced motion is requested."
+    ],
+    "donts": [
+      "Don't turn the palette into a generic purple gradient or broad neon wash.",
+      "Don't use magenta as a general surface color; it is a registration and exception mark.",
+      "Don't add soft rounded cards, ornamental controls, or decorative dashboard shells.",
+      "Don't set long-form documentation in the condensed display face or mono label face.",
+      "Don't rasterize interface text, diagrams, or package navigation."
+    ]
+  }
+}

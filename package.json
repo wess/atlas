@@ -1,13 +1,13 @@
 {
   "name": "@wess/atlas",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Composable Bun/TypeScript packages for building APIs, full-stack apps, and CLI tools",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wess/atlas.git"
   },
-  "homepage": "https://github.com/wess/atlas",
+  "homepage": "https://wess.github.io/atlas/",
   "bugs": "https://github.com/wess/atlas/issues",
   "keywords": [
     "bun",
@@ -29,6 +29,7 @@
   ],
   "files": [
     "packages",
+    "docs",
     "llms.txt"
   ],
   "exports": {
@@ -63,14 +64,16 @@
   },
   "scripts": {
     "test": "bun test",
-    "lint": "bunx biome lint packages/",
-    "format": "bunx biome format packages/",
-    "check": "bunx biome check packages/",
-    "lint:fix": "bunx biome lint --write packages/",
-    "format:fix": "bunx biome format --write packages/",
-    "check:fix": "bunx biome check --write packages/",
+    "lint": "bunx biome lint packages/ site/",
+    "format": "bunx biome format packages/ site/",
+    "check": "bunx biome check packages/ site/",
+    "lint:fix": "bunx biome lint --write packages/ site/",
+    "format:fix": "bunx biome format --write packages/ site/",
+    "check:fix": "bunx biome check --write packages/ site/",
     "tidy": "bun run check:fix",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bunx tsc --noEmit",
+    "site:build": "bun site/generator/index.ts",
+    "site:dev": "bun --hot site/serve.ts"
   },
   "dependencies": {
     "zod": "^3.23.0"

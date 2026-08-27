@@ -53,7 +53,7 @@ export const users = defineSchema("users", {
   email: column.text().unique(),
   name: column.text(),
   passwordHash: column.text(),
-  createdAt: column.timestamp().default("now()"),
+  createdAt: column.timestamp().defaultRaw("CURRENT_TIMESTAMP"),
 })
 
 export const uploads = defineSchema("uploads", {
@@ -63,7 +63,7 @@ export const uploads = defineSchema("uploads", {
   key: column.text(),
   size: column.integer(),
   contentType: column.text(),
-  createdAt: column.timestamp().default("now()"),
+  createdAt: column.timestamp().defaultRaw("CURRENT_TIMESTAMP"),
 })
 ```
 
@@ -122,7 +122,7 @@ CREATE TABLE users (
   email TEXT NOT NULL,
   name TEXT NOT NULL,
   passwordHash TEXT NOT NULL,
-  createdAt TIMESTAMP NOT NULL
+  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE uploads (
@@ -132,7 +132,7 @@ CREATE TABLE uploads (
   key TEXT NOT NULL,
   size INTEGER NOT NULL,
   contentType TEXT NOT NULL,
-  createdAt TIMESTAMP NOT NULL
+  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
 

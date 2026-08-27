@@ -25,10 +25,19 @@
     "indentWidth": 2,
     "lineWidth": 120
   },
+  "html": {
+    "parser": {
+      "interpolation": true
+    }
+  },
   "files": {
     "includes": [
       "packages/**/*.ts",
       "packages/**/*.tsx",
+      "site/**/*.ts",
+      "site/**/*.js",
+      "site/**/*.css",
+      "site/**/*.html",
       "!**/node_modules/**",
       "!**/dist/**",
       "!**/build/**",
