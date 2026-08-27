@@ -6,6 +6,7 @@ type PageOptions = {
   readonly title: string;
   readonly description: string;
   readonly path: string;
+  readonly markdownPath?: string;
   readonly version: string;
   readonly bodyClass?: string;
   readonly content: string;
@@ -28,6 +29,8 @@ const directionContract = `
     FORM: Aegean field terminal, grounded direction 4, seed c6104151.
     FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
     -->`;
+
+const siteOrigin = "https://wess.io/atlas";
 
 const icon = (name: "close" | "github" | "menu" | "search"): string => {
   if (name === "github") {
@@ -79,6 +82,7 @@ const footer = (base: string): string => `
     <nav aria-label="Footer navigation">
       <a href="${base}/docs/quickstart/">Quick start</a>
       <a href="${base}/docs/api/">API</a>
+      <a href="${base}/llms.txt">Agent index</a>
       <a href="https://github.com/wess/atlas">Source</a>
       <a href="https://github.com/sponsors/wess">Sponsor</a>
     </nav>
@@ -96,7 +100,12 @@ const search = (base: string): string => `
     <ol class="searchresults" data-search-results></ol>
   </dialog>`;
 
-export const page = (options: PageOptions): string => `<!doctype html>
+export const page = (options: PageOptions): string => {
+  const markdownPath = options.markdownPath ?? (options.path.endsWith("/") ? `${options.path}index.md` : undefined);
+  const alternate = markdownPath
+    ? `<link rel="alternate" type="text/markdown" href="${options.base}${markdownPath}" />`
+    : "";
+  return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -106,8 +115,10 @@ export const page = (options: PageOptions): string => `<!doctype html>
     <meta property="og:title" content="${escapeHtml(options.title)}" />
     <meta property="og:description" content="${escapeHtml(options.description)}" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://wess.github.io/atlas${options.path}" />
-    <link rel="canonical" href="https://wess.github.io/atlas${options.path}" />
+    <meta property="og:url" content="${siteOrigin}${options.path}" />
+    <link rel="canonical" href="${siteOrigin}${options.path}" />
+    ${alternate}
+    <link rel="describedby" type="text/plain" href="${options.base}/llms.txt" />
     <link rel="icon" href="${options.base}/assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="${options.base}/styles.css" />
     <title>${escapeHtml(options.title)}</title>
@@ -121,6 +132,7 @@ export const page = (options: PageOptions): string => `<!doctype html>
     <script src="${options.base}/app.js"></script>
   </body>
 </html>`;
+};
 
 const navLink = (base: string, doc: Guide, active: string): string =>
   `<a href="${base}/docs/${doc.slug}/"${doc.slug === active ? ' aria-current="page"' : ""}><span>${escapeHtml(doc.title)}</span></a>`;

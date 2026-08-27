@@ -1,4 +1,4 @@
-import { docs, packages } from "./content.ts";
+import { docs, guides, packages } from "./content.ts";
 import { packageLines, packageNodes } from "./home.ts";
 import { docPage, docsIndex, page } from "./layout.ts";
 import { renderMarkdown, searchText } from "./markdown.ts";
@@ -7,7 +7,7 @@ const projectRoot = new URL("../../", import.meta.url).pathname;
 const siteRoot = new URL("../", import.meta.url).pathname;
 const distRoot = `${projectRoot}dist`;
 const base = (Bun.env.SITE_BASE ?? "/atlas").replace(/\/$/, "") || "";
-const repo = "https://github.com/wess/atlas";
+const siteOrigin = "https://wess.io/atlas";
 
 const packageJson = (await Bun.file(`${projectRoot}package.json`).json()) as { version: string };
 const version = packageJson.version;
@@ -33,6 +33,10 @@ if (packageSources.length !== packages.length) {
   throw new Error(`site inventory has ${packages.length} packages; repository has ${packageSources.length}`);
 }
 
+const llms = await Bun.file(`${projectRoot}llms.txt`).text();
+const readme = await Bun.file(`${projectRoot}README.md`).text();
+const fullSources: { readonly path: string; readonly content: string }[] = [{ path: "llms.txt", content: llms }];
+
 const home = (await Bun.file(`${siteRoot}index.html`).text())
   .replaceAll("{{base}}", base)
   .replaceAll("{{version}}", version)
@@ -41,12 +45,28 @@ const home = (await Bun.file(`${siteRoot}index.html`).text())
   .replace("{{packageNodes}}", packageNodes(base));
 
 await write("index.html", home);
+await write("index.md", readme);
 await write("docs/index.html", docsIndex(base, version));
+
+const docsMarkdown = `# Atlas documentation
+
+> Canonical guides and package references for Atlas.
+
+## Guides
+
+${guides.map((doc) => `- [${doc.title}](${siteOrigin}/docs/${doc.slug}/index.md): ${doc.description}`).join("\n")}
+
+## Package references
+
+${packages.map((doc) => `- [${doc.title}](${siteOrigin}/docs/${doc.slug}/index.md): ${doc.description}`).join("\n")}
+`;
+await write("docs/index.md", docsMarkdown);
 
 const search: { title: string; description: string; url: string; kind: string; text: string }[] = [];
 
 for (const [index, doc] of docs.entries()) {
   const source = await Bun.file(`${projectRoot}${doc.source}`).text();
+  const markdownPath = `/docs/${doc.slug}/index.md`;
   const rendered = renderMarkdown(source, base);
   const html = docPage(
     {
@@ -55,9 +75,10 @@ for (const [index, doc] of docs.entries()) {
       title: `${doc.title} — Atlas`,
       description: doc.description,
       path: `/docs/${doc.slug}/`,
+      markdownPath,
       content: "",
       doc,
-      sourceUrl: `${repo}/blob/main/${doc.source}`,
+      sourceUrl: `${base}${markdownPath}`,
       headings: rendered.headings,
       previous: docs[index - 1],
       next: docs[index + 1],
@@ -65,6 +86,8 @@ for (const [index, doc] of docs.entries()) {
     rendered.html,
   );
   await write(`docs/${doc.slug}/index.html`, html);
+  await write(`docs/${doc.slug}/index.md`, source);
+  fullSources.push({ path: doc.source, content: source });
   search.push({
     title: doc.title,
     description: doc.description,
@@ -74,6 +97,13 @@ for (const [index, doc] of docs.entries()) {
   });
 }
 
+const full = `# Atlas full documentation
+
+> Complete canonical context for Atlas. Use llms.txt and individual Markdown alternates when a smaller context is sufficient.
+
+${fullSources.map(({ path, content }) => `<document path="${path}">\n${content.trim()}\n</document>`).join("\n\n")}
+`;
+
 await Promise.all([
   write("styles.css", Bun.file(`${siteRoot}styles.css`)),
   write("app.js", Bun.file(`${siteRoot}app.js`)),
@@ -81,7 +111,8 @@ await Promise.all([
   write("assets/favicon.svg", Bun.file(`${siteRoot}assets/favicon.svg`)),
   write("assets/bigshoulders.woff2", Bun.file(`${siteRoot}assets/bigshoulders.woff2`)),
   write("assets/fontlicense.txt", Bun.file(`${siteRoot}assets/fontlicense.txt`)),
-  write("llms.txt", Bun.file(`${projectRoot}llms.txt`)),
+  write("llms.txt", llms),
+  write("llms-full.txt", full),
   write("search.json", `${JSON.stringify(search)}\n`),
   write(".nojekyll", ""),
 ]);
@@ -89,10 +120,10 @@ await Promise.all([
 const paths = ["/", "/docs/", ...docs.map((doc) => `/docs/${doc.slug}/`)];
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${paths.map((path) => `  <url><loc>https://wess.github.io/atlas${path}</loc></url>`).join("\n")}
+${paths.map((path) => `  <url><loc>${siteOrigin}${path}</loc></url>`).join("\n")}
 </urlset>\n`;
 await write("sitemap.xml", sitemap);
-await write("robots.txt", "User-agent: *\nAllow: /\nSitemap: https://wess.github.io/atlas/sitemap.xml\n");
+await write("robots.txt", `User-agent: *\nAllow: /\nSitemap: ${siteOrigin}/sitemap.xml\n`);
 
 await write(
   "404.html",

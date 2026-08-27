@@ -14,8 +14,10 @@
       content="Nineteen Bun-native packages. Pick the modules you need and compose them with functions, immutable data, and pipes."
     />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://wess.github.io/atlas/" />
-    <link rel="canonical" href="https://wess.github.io/atlas/" />
+    <meta property="og:url" content="https://wess.io/atlas/" />
+    <link rel="canonical" href="https://wess.io/atlas/" />
+    <link rel="alternate" type="text/markdown" href="{{base}}/index.md" />
+    <link rel="describedby" type="text/plain" href="{{base}}/llms.txt" />
     <link rel="icon" href="{{base}}/assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="{{base}}/styles.css" />
     <title>Atlas — composable Bun/TypeScript building blocks</title>
@@ -147,6 +149,7 @@ serve({ port: config.port, routes: [get("/health", (c) =&gt; json(c, 200, { ok: 
       <nav aria-label="Footer navigation">
         <a href="{{base}}/docs/quickstart/">Quick start</a>
         <a href="{{base}}/docs/api/">API</a>
+        <a href="{{base}}/llms.txt">Agent index</a>
         <a href="https://github.com/wess/atlas">Source</a>
         <a href="https://github.com/sponsors/wess">Sponsor</a>
       </nav>

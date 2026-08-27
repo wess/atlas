@@ -1,71 +1,56 @@
 # Atlas
 
-> Composable, functional Bun/TypeScript building blocks for APIs, full-stack apps, and CLIs. No classes, no mutation, zero external runtime deps on the backend (except `zod` for `@atlas/db` changesets). Each package snaps together via shallow imports — pick what you need.
+> Composable, functional Bun/TypeScript building blocks for APIs, full-stack applications, command-line tools, runtime introspection, retrieval, and tool-using agents.
 
-Atlas is structured as a Bun workspace under `packages/<name>`. Every package ships an `AGENTS.md` (≤ 200 lines) that documents the canonical public API, types, and a working snippet. **Read the per-package AGENTS.md before reading source.**
+Atlas installs as `@wess/atlas`. Public imports use `@wess/atlas/<package>`. The shorter
+`@atlas/<package>` spelling requires the optional path aliases documented in the project README.
 
-If you are an AI session new to this codebase, start with [SOUL.md](SOUL.md) — it bootstraps your identity (Bun, TypeScript, React, Mantine, Atlas expert), reading order, hard conventions, and explicit "do not" list in one file.
+When generating Atlas code:
 
-## Reading order
+- Read the agent guide, then only the package references required by the task.
+- Use functions and immutable data; do not introduce classes or mutate inputs.
+- Prefer Bun and Web APIs over compatibility packages.
+- Treat an export as unavailable unless it appears in a canonical package reference or the API index.
+- Run `bun run check`, `bun run typecheck`, and `bun test` before declaring repository work complete.
 
-1. [SOUL.md](SOUL.md) — identity + conventions + idiomatic patterns (read first if fresh).
-2. `docs/api.md` — condensed cross-package API lookup (one screen).
-3. `packages/<name>/AGENTS.md` — per-package canonical reference. Only load the packages you need.
-4. `docs/cookbook.md` — patterns/recipes that don't justify a package.
-5. `docs/overview.md` — architecture deep-dive (skip unless explicitly needed).
+## Start here
 
-## Per-package canonical references
+- [Agent guide](https://wess.io/atlas/docs/agents/index.md): Grounding order, import rules, package selection, MCP safety, context budgets, and verification.
+- [Quick start](https://wess.io/atlas/docs/quickstart/index.md): Build an authenticated application with storage and administration.
+- [API reference](https://wess.io/atlas/docs/api/index.md): Condensed cross-package exports, types, and signatures.
+- [Documentation map](https://wess.io/atlas/docs/index.md): Every guide and package reference.
 
-- [packages/config/AGENTS.md](packages/config/AGENTS.md): typed env vars via `defineConfig`, `env`
-- [packages/db/AGENTS.md](packages/db/AGENTS.md): Ecto-style query builder, `defineSchema`, `RowOf`, changesets, Postgres + SQLite drivers
-- [packages/migrate/AGENTS.md](packages/migrate/AGENTS.md): timestamped SQL migrations + schema-diff (`migrate.diff`)
-- [packages/server/AGENTS.md](packages/server/AGENTS.md): `Bun.serve` + Plug-style pipes, typed `route()` with validation, `HttpError`
-- [packages/edge/AGENTS.md](packages/edge/AGENTS.md): TLS-terminating reverse proxy with built-in Let's Encrypt
-- [packages/auth/AGENTS.md](packages/auth/AGENTS.md): hash/verify, JWT, session store, `signup`/`login`/`requireAuth` pipes, and `@atlas/auth/social` (Google, GitHub, Apple, Microsoft, Facebook, X, TikTok)
-- [packages/security/AGENTS.md](packages/security/AGENTS.md): CSP/headers, rate limit, audit log, TOTP, revocable DB-backed sessions
-- [packages/oauth/AGENTS.md](packages/oauth/AGENTS.md): OAuth 2.1 server (PKCE, refresh rotation, device flow, RFC 8414 discovery)
-- [packages/sso/AGENTS.md](packages/sso/AGENTS.md): OIDC relying-party — `mountSso(cfg)` mounts `/login` + `/callback`, handles discovery, PKCE, state, code exchange, id_token verify, back-channel logout
-- [packages/email/AGENTS.md](packages/email/AGENTS.md): provider-agnostic email transport + invite/reset templates
-- [packages/share/AGENTS.md](packages/share/AGENTS.md): share-URL builders (Twitter/X, Facebook, LinkedIn, Reddit, WhatsApp, Telegram, SMS, mailto) + server-side share-by-email
-- [packages/storage/AGENTS.md](packages/storage/AGENTS.md): S3-compatible storage with presigned URLs (zero deps; SigV4 from scratch)
-- [packages/cache/AGENTS.md](packages/cache/AGENTS.md): Redis-backed caching via `Bun.redis`, cache-aside helper
-- [packages/request/AGENTS.md](packages/request/AGENTS.md): HTTP client (retries, interceptors, provider configs)
-- [packages/cli/AGENTS.md](packages/cli/AGENTS.md): CLI framework, Foreman, scaffolds, `atlas docs <pkg>`
-- [packages/ui/AGENTS.md](packages/ui/AGENTS.md): React + Mantine blocks (provider/forms/table/auth/storage/nav/cache/ai)
-- [packages/admin/AGENTS.md](packages/admin/AGENTS.md): auto-generated CRUD admin from `@atlas/db` schemas
-- [packages/mcp/AGENTS.md](packages/mcp/AGENTS.md): MCP server exposing `@atlas/*` services as tools (incl. `docs.read`/`docs.list` for Atlas itself)
-- [packages/ai/AGENTS.md](packages/ai/AGENTS.md): AI providers, chat, embeddings, RAG, agents, streaming
+## Package references
 
-## Conventions
+- [config](https://wess.io/atlas/docs/config/index.md): Typed environment variables through `defineConfig` and `env`.
+- [db](https://wess.io/atlas/docs/db/index.md): Query building, schemas, changesets, and database drivers.
+- [migrate](https://wess.io/atlas/docs/migrate/index.md): Timestamped migrations and schema diffing.
+- [server](https://wess.io/atlas/docs/server/index.md): Pipe-based HTTP, typed routes, WebSockets, and server-sent events.
+- [edge](https://wess.io/atlas/docs/edge/index.md): TLS-terminating reverse proxy.
+- [auth](https://wess.io/atlas/docs/auth/index.md): Passwords, tokens, sessions, authentication flows, and social sign-in.
+- [security](https://wess.io/atlas/docs/security/index.md): Headers, rate limits, audit logs, TOTP, and revocable sessions.
+- [oauth](https://wess.io/atlas/docs/oauth/index.md): OAuth 2.1 authorization server.
+- [sso](https://wess.io/atlas/docs/sso/index.md): OIDC relying party.
+- [email](https://wess.io/atlas/docs/email/index.md): Provider-neutral delivery and account templates.
+- [share](https://wess.io/atlas/docs/share/index.md): Share URLs and server-side share-by-email.
+- [storage](https://wess.io/atlas/docs/storage/index.md): S3-compatible object operations and presigned URLs.
+- [cache](https://wess.io/atlas/docs/cache/index.md): Redis caching and cache-aside helpers.
+- [request](https://wess.io/atlas/docs/request/index.md): Fetch client, retries, interceptors, and provider presets.
+- [cli](https://wess.io/atlas/docs/cli/index.md): Commands, scaffolding, documentation lookup, and process management.
+- [ui](https://wess.io/atlas/docs/ui/index.md): React application blocks.
+- [admin](https://wess.io/atlas/docs/admin/index.md): Schema-driven administration.
+- [mcp](https://wess.io/atlas/docs/mcp/index.md): Documentation access and runtime introspection over MCP.
+- [ai](https://wess.io/atlas/docs/ai/index.md): Chat, embeddings, retrieval, streaming, and tool-use loops.
 
-- All filenames lowercase. **No** dashes, underscores, or spaces. Hierarchy via subdirectories: `src/<feature>/index.ts`, never `src/<feature>-name.ts`.
-- Functional style only — no `class`. Immutable data; transforms return new objects.
-- `pipeline(...)(handler)` composes pipes; `halt(c, status, body?)` short-circuits.
-- Bun-only runtime: `Bun.serve`, `Bun.sql`, `Bun.redis`, `Bun.password`, `bun:sqlite`, `Bun.file`. No Node alternatives.
-- Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. Subpath exports: `@atlas/server/ws`, `@atlas/server/sse`, `@atlas/auth/social`, `@atlas/ui/*`.
-- Tests live in `packages/<name>/test/`. Run with `bun test`. Lint/format with `bun run check` / `bun run tidy` (Biome only — no Prettier or ESLint).
+## Machine-readable interfaces
 
-## How to ground generation
+- [Complete documentation context](https://wess.io/atlas/llms-full.txt): Combined canonical guides and package references for one-fetch indexing.
+- [Search index](https://wess.io/atlas/search.json): Titles, descriptions, source kind, routes, and searchable text.
+- [MCP reference](https://wess.io/atlas/docs/mcp/index.md): `docs.list`, `docs.read`, health, and conditional service tools.
+- [CLI reference](https://wess.io/atlas/docs/cli/index.md): Local documentation access with `atlas docs [name]`.
 
-When asked to write code against Atlas:
+## Optional
 
-1. Identify which packages are involved (`@atlas/db`, `@atlas/server`, etc.).
-2. Open *only* those packages' `AGENTS.md` files.
-3. Use schema-derived types: `defineSchema` + `RowOf` for typed rows, `getR/postR/route` for typed routes, `HttpError` factories (`notFound`, `unauthorized`, …) for status responses.
-4. Default to `pipeline()`-composed handlers, not middleware patterns.
-5. Don't import `node:*` when a `Bun.*` API exists.
-
-## Examples
-
-- `example/` — Chirp, a Twitter-like demo (auth, posts, follows, likes). `bun run dev`.
-- `templates/` — 10 scaffolds: `minimal`, `api`, `edge`, `admin`, `realtime`, `ai`, `fullstack`, `worker`, `socialnetwork`, `cms`.
-
-## Do not
-
-- Don't add classes.
-- Don't mutate input data; return new objects.
-- Don't reach for external packages when a `Bun.*` or Web API exists.
-- Don't use `_`, `-`, or space in filenames.
-- Don't wire `parseJson` manually when using typed `route()` with a `body` validator — it auto-parses.
-- Don't trust client-supplied `X-Forwarded-For`; use `clientIp(req, { trustedProxies })` from `@atlas/security`.
-- Don't read raw schema columns to type a row; use `RowOf<typeof schema>`.
+- [Architecture overview](https://wess.io/atlas/docs/overview/index.md): Package graph, design philosophy, and module boundaries.
+- [Cookbook](https://wess.io/atlas/docs/cookbook/index.md): Practical cross-package recipes.
+- [Project README](https://wess.io/atlas/docs/readme/index.md): Installation, templates, development, and package inventory.

@@ -2,7 +2,7 @@
 
 Composable Bun/TypeScript packages for building APIs, full-stack apps, and CLI tools.
 
-[Documentation](https://wess.github.io/atlas/) · [API reference](https://wess.github.io/atlas/docs/api/) · [Quick start](https://wess.github.io/atlas/docs/quickstart/)
+[Documentation](https://wess.io/atlas/) · [API reference](https://wess.io/atlas/docs/api/) · [Quick start](https://wess.io/atlas/docs/quickstart/)
 
 ## What is Atlas
 
@@ -197,17 +197,18 @@ bun test
 bun run lint
 ```
 
-## For AI/LLM sessions
+## For agents
 
-Atlas is structured so an AI session can ground itself with a small, predictable set of files:
+Atlas exposes one canonical documentation set through four transports:
 
-- [`SOUL.md`](SOUL.md) — identity, hard "do nots", reading order. Read first.
-- [`llms.txt`](llms.txt) — index of every doc and per-package `AGENTS.md`.
-- `packages/<name>/AGENTS.md` — canonical per-package API (≤ 200 lines each).
-- `docs/api.md`, `docs/cookbook.md`, `docs/overview.md`, `docs/quickstart.md`.
+- [`llms.txt`](https://wess.io/atlas/llms.txt) — concise, specification-shaped discovery index.
+- [`llms-full.txt`](https://wess.io/atlas/llms-full.txt) — the complete guide and package corpus.
+- [Agent guide](https://wess.io/atlas/docs/agents/) — grounding order, imports, package selection, MCP safety, and context budgets.
+- `packages/<name>/AGENTS.md` — canonical per-package APIs, also published as page-level Markdown.
 
-Reach them three ways: read the files directly, run `atlas docs <name>`, or
-connect to `atlas mcp` and call the `docs.list` / `docs.read` tools.
+Read them from the repository or installed package, run `atlas docs <name>`, or connect to
+`atlas mcp` and call `docs.list` / `docs.read`. Every documentation page advertises its
+Markdown alternate and the covering `llms.txt` index.
 
 ## Philosophy
 

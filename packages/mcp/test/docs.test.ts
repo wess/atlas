@@ -20,6 +20,7 @@ test("docs.list returns the package list and top-level docs", async () => {
   expect(result.packages).toContain("share");
   expect(result.packages).toContain("auth");
   expect(result.docs).toContain("api.md");
+  expect(result.docs).toContain("agents.md");
   expect(result.docs).toContain("cookbook.md");
 });
 
@@ -55,6 +56,15 @@ test("docs.read returns top-level doc files", async () => {
   const result = (await read.handler({ doc: "api" }, ctx)) as { source: string; content: string };
   expect(result.source).toBe("docs/api.md");
   expect(result.content).toContain("@atlas/db");
+});
+
+test("docs.read returns the agent grounding guide", async () => {
+  const ctx = createContext();
+  const read = docsTools.find((t) => t.name === "docs.read")!;
+  const result = (await read.handler({ doc: "agents" }, ctx)) as { source: string; content: string };
+  expect(result.source).toBe("docs/agents.md");
+  expect(result.content).toContain("## Generation Contract");
+  expect(result.content).toContain("## MCP Workflow");
 });
 
 test("docs.read errors on missing package", async () => {

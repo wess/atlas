@@ -1,13 +1,13 @@
 {
   "name": "@wess/atlas",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Composable Bun/TypeScript packages for building APIs, full-stack apps, and CLI tools",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wess/atlas.git"
   },
-  "homepage": "https://wess.github.io/atlas/",
+  "homepage": "https://wess.io/atlas/",
   "bugs": "https://github.com/wess/atlas/issues",
   "keywords": [
     "bun",
@@ -21,7 +21,10 @@
     "auth",
     "oauth",
     "database",
-    "cli"
+    "cli",
+    "agents",
+    "llm",
+    "mcp"
   ],
   "workspaces": [
     "packages/*",

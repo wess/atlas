@@ -43,7 +43,7 @@ export const docsTools: Tool[] = [
   defineTool({
     name: "docs.list",
     description:
-      "List Atlas documentation sources: every package with an AGENTS.md, top-level docs/* files (api, cookbook, overview, quickstart), and root AI/LLM entry points (llms.txt, SOUL.md, CLAUDE.md, README.md). Returns identifiers usable with docs.read.",
+      "List every Atlas package reference, top-level guide, and root documentation entry point. Returns identifiers usable with docs.read; start with docs/agents.md when grounding a new task.",
     inputSchema: { type: "object", properties: {} },
     handler: async () => {
       const packages = listPackages();
@@ -59,7 +59,7 @@ export const docsTools: Tool[] = [
   defineTool({
     name: "docs.read",
     description:
-      "Read an Atlas documentation source. Pass `package` to load packages/<name>/AGENTS.md, `doc` to load docs/<name>.md (e.g. 'api', 'cookbook', 'overview', 'quickstart'), or `root` to load a top-level AI/LLM file (llms.txt, SOUL.md, CLAUDE.md, README.md). Use docs.list to discover available identifiers.",
+      "Read one Atlas documentation source. Pass `package` for packages/<name>/AGENTS.md, `doc` for docs/<name>.md, or `root` for a listed root file. Use docs.list to discover identifiers.",
     inputSchema: {
       type: "object",
       properties: {

@@ -13,6 +13,12 @@ export type PackageDoc = Guide & {
 
 export const guides: readonly Guide[] = [
   {
+    slug: "agents",
+    title: "Agent guide",
+    description: "Grounding order, package selection, MCP safety, context budgets, and verification.",
+    source: "docs/agents.md",
+  },
+  {
     slug: "overview",
     title: "Architecture overview",
     description: "The package graph, design philosophy, and the boundaries between modules.",

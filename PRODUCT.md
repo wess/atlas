@@ -8,17 +8,18 @@ web
 
 ## Users
 
-Atlas serves two primary developer audiences equally:
+Atlas serves three primary audiences equally:
 
 - Bun and TypeScript developers evaluating whether Atlas fits a new project.
 - Existing Atlas users looking up package boundaries, exports, and working patterns while coding.
+- Coding and runtime agents loading only the package context required for a task.
 
 ## Product Purpose
 
 Atlas is a collection of composable, functional Bun/TypeScript building blocks for APIs,
 full-stack applications, and CLI tools. The documentation site must make the system legible,
 get a new user to a correct first import quickly, and turn the repository's canonical Markdown
-into a browsable reference without creating a second source of API truth.
+into both browsable and machine-readable references without creating a second source of API truth.
 
 ## Positioning
 
@@ -28,10 +29,11 @@ compatibility layers.
 
 ## Operating Context
 
-Readers arrive from the public GitHub repository, npm, search, or a package import. They may be
-evaluating Atlas from a phone, reading a guide beside an editor, or jumping directly to a package
-reference. Source lives in `README.md`, `docs/*.md`, `llms.txt`, and
-`packages/<name>/AGENTS.md`; GitHub Pages is the public delivery surface.
+Readers arrive from the public GitHub repository, npm, search, a package import, `llms.txt`, or an
+agent tool. They may be evaluating Atlas from a phone, reading a guide beside an editor, jumping
+directly to a package reference, or retrieving one canonical document through the CLI or MCP.
+Source lives in `README.md`, `docs/*.md`, `llms.txt`, and `packages/<name>/AGENTS.md`; GitHub Pages
+is the public delivery surface.
 
 ## Capabilities and Constraints
 
@@ -39,7 +41,10 @@ reference. Source lives in `README.md`, `docs/*.md`, `llms.txt`, and
 - Atlas is Bun-only and uses TypeScript strict mode.
 - The public site is static, dependency-light, responsive, and deployable by GitHub Actions.
 - Documentation pages are generated from canonical repository Markdown during the build.
-- Package reference pages link back to their exact source files on GitHub.
+- Every documentation page publishes its exact canonical source through a Markdown alternate.
+- `llms.txt`, `llms-full.txt`, and `search.json` expose concise, complete, and structured discovery.
+- HTML pages advertise their Markdown alternate and the agent index through link relations.
+- The CLI and MCP server retrieve the same canonical documents used by the public site.
 - The site supports keyboard navigation, reduced motion, and readable long-form code examples.
 
 ## Brand Commitments
@@ -65,6 +70,7 @@ be invented for the site.
 
 - Put a correct first success before architectural depth.
 - Preserve one canonical source for every API fact.
+- Give agents the smallest sufficient context before offering the complete corpus.
 - Make package boundaries visible at a glance.
 - Let the visual system create memory without taxing comprehension.
 - Keep every public example executable and Bun-native.

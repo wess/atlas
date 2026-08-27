@@ -38,7 +38,7 @@ const printIndex = (): void => {
   process.stdout.write("\nTop-level docs (atlas docs <name>):\n");
   for (const d of docs) process.stdout.write(`  ${d.replace(/\.md$/, "")}\n`);
   if (root.length > 0) {
-    process.stdout.write("\nRoot AI/LLM files (atlas docs <name>):\n");
+    process.stdout.write("\nRoot agent files (atlas docs <name>):\n");
     for (const r of root) process.stdout.write(`  ${r}\n`);
   }
 };
@@ -70,7 +70,7 @@ const printRootDoc = (name: string): boolean => {
 
 export const docsCommand = command("docs", {
   description:
-    "Print Atlas documentation. `atlas docs <package>` for AGENTS.md, `atlas docs <doc>` for docs/*, `atlas docs llms.txt|SOUL.md|CLAUDE.md|README.md` for root files",
+    "Print Atlas documentation. Use a package name for AGENTS.md, a guide name for docs/*, or a listed root filename.",
   run: async ({ args }) => {
     if (args.length === 0) {
       printIndex();

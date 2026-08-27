@@ -293,7 +293,7 @@ CLI surface:
   atlas add <pkg>...                   install @atlas/* packages
   atlas dev                             foreman → Procfile
   atlas mcp                             start MCP server
-  atlas docs [<pkg>|<doc>]             print AGENTS.md / docs to stdout
+  atlas docs [<pkg>|<doc>|<root>]      print canonical documentation to stdout
 ```
 
 ## @atlas/ui
@@ -324,8 +324,8 @@ defineTool({ name, description, inputSchema, handler }) → Tool
 McpServer: .start() .stop()
 
 Always-on tools (independent of context):
-  docs.list                              list packages with AGENTS.md, docs/*.md, and root llms.txt/SOUL.md/CLAUDE.md/README.md
-  docs.read({ package?, doc?, root? })   read packages/<pkg>/AGENTS.md, docs/<name>.md, or a root file
+  docs.list                              list package, guide, and root documentation sources
+  docs.read({ package?, doc?, root? })   read one canonical source; docs/agents.md is the grounding guide
 ```
 
 ## @atlas/ai

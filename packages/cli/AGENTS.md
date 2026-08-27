@@ -93,22 +93,22 @@ atlas dev
 
 Print Atlas documentation directly to stdout — `atlas docs` for the index,
 `atlas docs <package>` for a package's `AGENTS.md`, `atlas docs <doc>` for a
-top-level `docs/<name>.md` file, or `atlas docs <file>` for a root AI/LLM file
+top-level `docs/<name>.md` file, or `atlas docs <file>` for a root agent file
 (`llms.txt`, `SOUL.md`, `CLAUDE.md`, `README.md`).
 
 ```sh
-atlas docs              # list packages, top-level docs, and root AI/LLM files
+atlas docs              # list packages, top-level docs, and root agent files
 atlas docs db           # print packages/db/AGENTS.md
+atlas docs agents       # print the agent grounding guide
 atlas docs api          # print docs/api.md
 atlas docs cookbook     # print docs/cookbook.md
 atlas docs llms.txt     # print root llms.txt
-atlas docs SOUL.md      # print root SOUL.md (AI session bootstrap)
 ```
 
-Useful for terminal lookups and for piping into AI tools (`atlas docs db | ...`).
+Useful for terminal lookups and for piping into agent tools (`atlas docs db | ...`).
 The same content is exposed as the `docs.list` / `docs.read` tools by `atlas mcp`.
 
-## LLM/AI Programmatic Usage
+## Programmatic Usage
 
 The questions and templates are designed for programmatic access:
 
