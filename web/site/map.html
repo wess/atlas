@@ -6,23 +6,23 @@
     <meta name="theme-color" content="#000818" />
     <meta
       name="description"
-      content="Atlas is a collection of composable, functional Bun/TypeScript building blocks for APIs, apps, and CLI tools."
+      content="The whole chart: nineteen Bun packages, five desktop crates, and every station in the Atlas field survey."
     />
-    <meta property="og:title" content="Atlas — composable Bun/TypeScript building blocks" />
+    <meta property="og:title" content="The chart — Atlas" />
     <meta
       property="og:description"
-      content="Nineteen Bun-native packages. Pick the modules you need and compose them with functions, immutable data, and pipes."
+      content="Every module and every section on one page, for readers who already know what they want."
     />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://wess.io/atlas/" />
-    <link rel="canonical" href="https://wess.io/atlas/" />
-    <link rel="alternate" type="text/markdown" href="{{base}}/index.md" />
+    <meta property="og:url" content="https://wess.io/atlas/map/" />
+    <link rel="canonical" href="https://wess.io/atlas/map/" />
+    <link rel="alternate" type="text/markdown" href="{{base}}/map/index.md" />
     <link rel="describedby" type="text/plain" href="{{base}}/llms.txt" />
     <link rel="icon" href="{{base}}/assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="{{base}}/styles.css" />
-    <title>Atlas — composable Bun/TypeScript building blocks</title>
+    <title>The chart — Atlas</title>
   </head>
-  <body class="home">
+  <body class="home chart">
     <!--
     THESIS: Atlas is navigated as a constellation of composable modules, not a generic card catalog.
     OWN-WORLD: Deep Aegean fields, limestone type, cyan survey lines, magenta registration marks, square terminal controls.
@@ -35,7 +35,7 @@
     <div class="utility" aria-hidden="true">
       <span>Atlas docs terminal</span>
       <span>release {{version}}</span>
-      <span>mode: read</span>
+      <span>mode: chart</span>
       <span>coord: 37°58′ N · 23°43′ E</span>
     </div>
     <header class="siteheader">
@@ -51,10 +51,11 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
       </button>
       <nav class="primarynav" id="primarynav" aria-label="Primary navigation" data-primary-nav>
-        <a href="{{base}}/" aria-current="page">Home</a>
-        <a href="{{base}}/docs/quickstart/">Start</a>
+        <a href="{{base}}/">Begin</a>
+        <a href="{{base}}/map/" aria-current="page">Chart</a>
         <a href="{{base}}/docs/">Guides</a>
         <a href="{{base}}/docs/#packages">Packages</a>
+        <a href="{{base}}/docs/desktop/architecture/">Desktop</a>
         <a href="{{base}}/docs/api/">API</a>
         <button class="searchbutton" type="button" data-search-open>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="m16 16 4 4" /></svg>
@@ -71,15 +72,15 @@
       <section class="fieldhero" aria-labelledby="homeheading">
         <div class="dossier">
           <h1 id="homeheading">ATLAS</h1>
-          <p class="statement">Composable, functional Bun/TypeScript building blocks.</p>
+          <p class="statement">Everything at once, for readers who already know what they want.</p>
           <dl class="facts">
-            <div><dt>Packages</dt><dd>19</dd></div>
-            <div><dt>Runtime</dt><dd>Bun</dd></div>
-            <div><dt>Model</dt><dd>Functions</dd></div>
+            <div><dt>Web</dt><dd>19</dd></div>
+            <div><dt>Desktop</dt><dd>5</dd></div>
+            <div><dt>Stations</dt><dd>{{sectionCount}}</dd></div>
           </dl>
           <div class="homeactions">
-            <a class="button primary" href="{{base}}/docs/quickstart/">Start here</a>
-            <a class="button secondary" href="{{base}}/docs/#packages">Browse packages</a>
+            <a class="button primary" href="{{base}}/">Walk the survey</a>
+            <a class="button secondary" href="{{base}}/docs/">Field guide</a>
           </div>
           <div class="installblock">
             <span>Install</span>
@@ -114,6 +115,22 @@
         </div>
       </section>
 
+      <section class="cratefield" aria-labelledby="crateheading">
+        <div>
+          <h2 id="crateheading">Desktop crates</h2>
+          <p>The other half of Atlas: a Rust workspace on gpui and guise. Five layered crates behind one facade, and gpui confined to the top of the stack.</p>
+        </div>
+        <div class="cratelist">
+          <a href="{{base}}/docs/desktop/architecture/"><code>atlas-core</code><span>Load&lt;T&gt;, ids, formatting</span><i>no gpui</i></a>
+          <a href="{{base}}/docs/desktop/architecture/"><code>atlas-store</code><span>Atomic JSON, OS keychain</span><i>no gpui</i></a>
+          <a href="{{base}}/docs/desktop/architecture/"><code>atlas-bridge</code><span>The tokio ↔ gpui seam</span><i>gpui</i></a>
+          <a href="{{base}}/docs/desktop/architecture/"><code>atlas-shell</code><span>Theme, menus, overlays, update</span><i>gpui</i></a>
+          <a href="{{base}}/docs/desktop/packaging/"><code>atlas-build</code><span>The release stamp</span><i>no gpui</i></a>
+        </div>
+      </section>
+
+      {{sectionIndex}}
+
       <section class="homefold" aria-label="Start reading">
         <div class="quickcode">
           <div><h2>First route</h2><a href="{{base}}/docs/quickstart/">Open the full quick start</a></div>
@@ -147,6 +164,7 @@ serve({ port: config.port, routes: [get("/health", (c) =&gt; json(c, 200, { ok: 
     <footer class="sitefooter">
       <div><strong>ATLAS</strong><span>Composable Bun/TypeScript building blocks.</span></div>
       <nav aria-label="Footer navigation">
+        <a href="{{base}}/">Begin the survey</a>
         <a href="{{base}}/docs/quickstart/">Quick start</a>
         <a href="{{base}}/docs/api/">API</a>
         <a href="{{base}}/llms.txt">Agent index</a>

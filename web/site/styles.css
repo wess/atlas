@@ -198,6 +198,8 @@ svg {
   padding: 0 clamp(18px, 3vw, 46px);
   border-bottom: 1px solid var(--line-strong);
   background: rgb(0 8 24 / 96%);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .brand {
@@ -2023,6 +2025,699 @@ kbd {
   .chartlines,
   .starnode,
   .headinganchor {
+    transition: none;
+  }
+}
+
+/* ===========================================================================
+   The field survey
+   ---------------------------------------------------------------------------
+   Atlas as a gamebook. Each page is one numbered station: an instrument strip
+   across the top, a panel carrying the section number and the prose, and a
+   choice list set with dotted leaders the way a gamebook prints "turn to 47".
+
+   The two halves of Atlas get different accents — cyan for the web, magenta
+   for the desktop — so a reader can tell from the colour of a station which
+   world they are standing in without reading the label.
+   =========================================================================== */
+
+body.survey {
+  --station: var(--cyan);
+  --station-dim: var(--cyan-dim);
+  --station-line: var(--line);
+}
+
+body.survey.field-desktop {
+  --station: var(--magenta);
+  --station-dim: #8d2a55;
+  --station-line: rgb(240 68 143 / 26%);
+}
+
+body.survey.field-open,
+body.survey.field-both {
+  --station: var(--limestone);
+  --station-dim: #6d6055;
+  --station-line: rgb(195 181 167 / 24%);
+}
+
+/* `main`, not a bare class: the body carries `survey` too, for the accent
+   variables above, and an unqualified rule would centre the whole page in a
+   940px column — header, footer and all. */
+main.survey {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 0 24px 96px;
+}
+
+/* --- the instrument strip -------------------------------------------------- */
+
+.stationhead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+  align-items: center;
+  padding: 14px 0 12px;
+  border-bottom: 1px solid var(--station-line);
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--type-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.stationhead .field {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--station);
+}
+
+.stationhead .field::before {
+  width: 7px;
+  height: 7px;
+  background: var(--station);
+  content: "";
+  rotate: 45deg;
+}
+
+.stationhead .routetrail {
+  margin-left: auto;
+  overflow: hidden;
+  max-width: 46ch;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stationhead .routetrail i {
+  color: var(--faint);
+  font-style: normal;
+}
+
+.stationhead .routetrail b {
+  color: var(--station);
+  font-weight: 400;
+}
+
+/* --- the panel ------------------------------------------------------------- */
+
+.station {
+  position: relative;
+  margin-top: 40px;
+}
+
+/* Registration marks, the way a survey plate carries them: corner ticks that
+   say the sheet is aligned. Decorative, so they never reach the reader. */
+.station::before,
+.station::after {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  content: "";
+  pointer-events: none;
+}
+
+.station::before {
+  top: -14px;
+  left: -18px;
+  border-top: 1px solid var(--magenta);
+  border-left: 1px solid var(--magenta);
+}
+
+.station::after {
+  right: -18px;
+  bottom: -14px;
+  border-right: 1px solid var(--magenta);
+  border-bottom: 1px solid var(--magenta);
+}
+
+.station > header {
+  position: relative;
+  padding-bottom: 12px;
+}
+
+.stationkind {
+  display: block;
+  color: var(--station);
+  font-family: var(--mono);
+  font-size: var(--type-label);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* The section number, printed at plate scale. It is the page's anchor: you
+   should be able to tell which section you are on from across the room. */
+.stationnumber {
+  margin: 4px 0 -14px;
+  color: var(--station);
+  font-family: var(--display);
+  font-size: clamp(5.5rem, 15vw, 9.5rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 0.78;
+  opacity: 0.16;
+}
+
+.station h1 {
+  position: relative;
+  max-width: 20ch;
+  margin: 0;
+  color: var(--bright);
+  font-family: var(--display);
+  font-size: var(--type-article-section);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.station .lede {
+  max-width: 60ch;
+  margin: 20px 0 0;
+  color: var(--limestone);
+  font-size: var(--type-statement);
+  line-height: 1.4;
+}
+
+.stationbody {
+  max-width: 68ch;
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--station-line);
+}
+
+.stationbody p {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: var(--type-lead);
+}
+
+.stationbody p:last-child {
+  margin-bottom: 0;
+}
+
+.stationbody strong {
+  color: var(--bright);
+  font-weight: 600;
+}
+
+.stationbody code,
+.station .lede code {
+  padding: 1px 5px;
+  border: 1px solid var(--station-line);
+  color: var(--station);
+  font-family: var(--mono);
+  font-size: 0.86em;
+}
+
+/* --- the choices ----------------------------------------------------------- */
+
+.choices {
+  margin-top: 44px;
+}
+
+.choices h2 {
+  margin: 0 0 14px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--type-label);
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.choices ol {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--station-line);
+  list-style: none;
+}
+
+.choices li {
+  border-bottom: 1px solid var(--station-line);
+}
+
+.choices a {
+  display: grid;
+  grid-template-columns: 34px auto minmax(24px, 1fr) auto;
+  gap: 0 14px;
+  align-items: baseline;
+  padding: 16px 8px 16px 0;
+  color: var(--limestone);
+  text-decoration: none;
+  transition:
+    background 160ms var(--ease),
+    color 160ms var(--ease);
+}
+
+.choices a:hover,
+.choices a:focus-visible {
+  background: rgb(83 199 238 / 6%);
+  color: var(--bright);
+}
+
+body.survey.field-desktop .choices a:hover,
+body.survey.field-desktop .choices a:focus-visible {
+  background: rgb(240 68 143 / 7%);
+}
+
+/* The number is the keyboard shortcut, so it is drawn as a key, not a bullet. */
+.choices a b {
+  display: inline-flex;
+  min-width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--station-line);
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--type-control);
+  font-weight: 400;
+  transition:
+    border-color 160ms var(--ease),
+    color 160ms var(--ease);
+}
+
+.choices a:hover b,
+.choices a:focus-visible b {
+  border-color: var(--station);
+  color: var(--station);
+}
+
+.choices a > span {
+  font-size: var(--type-lead);
+  line-height: 1.35;
+}
+
+.choices a small {
+  display: block;
+  margin-top: 4px;
+  color: var(--faint);
+  font-size: var(--type-caption);
+  line-height: 1.4;
+}
+
+/* The leader. This is the detail that makes it read as a printed gamebook
+   rather than a list of links: the dots run from the end of the label to the
+   section number, however long the label happens to be. */
+.choices a i {
+  height: 1em;
+  border-bottom: 1px dotted var(--station-dim);
+  translate: 0 -0.25em;
+}
+
+.choices a em {
+  color: var(--station);
+  font-family: var(--mono);
+  font-size: var(--type-control);
+  font-style: normal;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+/* --- endings --------------------------------------------------------------- */
+
+.station.isending .stationnumber {
+  opacity: 0.22;
+}
+
+.stack,
+.command,
+.snippet,
+.reading {
+  margin-top: 44px;
+}
+
+.stack h2,
+.command h2,
+.snippet h2,
+.reading h2 {
+  margin: 0 0 14px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--type-label);
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.stackrow {
+  display: grid;
+  grid-template-columns: minmax(160px, 22ch) 1fr;
+  gap: 4px 20px;
+  padding: 12px 0;
+  border-top: 1px solid var(--station-line);
+}
+
+.stackrow:last-child {
+  border-bottom: 1px solid var(--station-line);
+}
+
+.stackrow code {
+  color: var(--station);
+  font-family: var(--mono);
+  font-size: var(--type-compact);
+}
+
+.stackrow a {
+  text-decoration-color: var(--station-dim);
+  text-underline-offset: 3px;
+}
+
+.stackrow a:hover code {
+  color: var(--bright);
+}
+
+.stackrow p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--type-compact);
+  line-height: 1.5;
+}
+
+.commandline {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  border: 1px solid var(--line-strong);
+  background: var(--ground);
+}
+
+.commandline code {
+  overflow-x: auto;
+  padding: 14px 16px;
+  color: var(--bright);
+  font-family: var(--mono);
+  font-size: var(--type-compact);
+  white-space: nowrap;
+}
+
+.commandline .button {
+  border: 0;
+  border-left: 1px solid var(--line-strong);
+}
+
+.button.ghost {
+  border-color: var(--station-line);
+  color: var(--faint);
+}
+
+.button.ghost:hover {
+  border-color: var(--station);
+  color: var(--station);
+}
+
+.snippet figure {
+  margin: 0;
+  border: 1px solid var(--station-line);
+  background: var(--ground);
+}
+
+.snippet figcaption {
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--station-line);
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--type-label);
+  letter-spacing: 0.1em;
+}
+
+.snippet figcaption i {
+  color: var(--station-dim);
+  font-style: normal;
+  text-transform: uppercase;
+}
+
+.snippet pre {
+  overflow-x: auto;
+  margin: 0;
+  padding: 18px;
+}
+
+.snippet code {
+  color: var(--limestone);
+  font-family: var(--mono);
+  font-size: var(--type-caption);
+  line-height: 1.7;
+  tab-size: 2;
+}
+
+.reading > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reading a {
+  padding: 9px 14px;
+  border: 1px solid var(--station-line);
+  color: var(--station);
+  font-family: var(--mono);
+  font-size: var(--type-control);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition:
+    background 160ms var(--ease),
+    border-color 160ms var(--ease);
+}
+
+.reading a:hover {
+  border-color: var(--station);
+  background: rgb(83 199 238 / 8%);
+  color: var(--bright);
+}
+
+.stationfoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  margin-top: 56px;
+  padding-top: 20px;
+  border-top: 1px solid var(--station-line);
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--type-control);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stationfoot a {
+  color: var(--faint);
+  text-decoration-color: var(--station-dim);
+  text-underline-offset: 4px;
+}
+
+.stationfoot a:hover {
+  color: var(--station);
+}
+
+.stationfoot .button {
+  min-height: 34px;
+  margin-left: auto;
+  padding: 6px 12px;
+}
+
+/* --- the chart page's extra blocks ---------------------------------------- */
+
+.cratefield,
+.sectionindex {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 56px 32px;
+  border-top: 1px solid var(--line);
+}
+
+.cratefield {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: minmax(240px, 26ch) 1fr;
+}
+
+.cratefield h2,
+.sectionindex h2 {
+  margin: 0 0 10px;
+  color: var(--bright);
+  font-family: var(--display);
+  font-size: var(--type-subheading);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.cratefield p,
+.sectionindex p {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--muted);
+  font-size: var(--type-compact);
+}
+
+.cratelist {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+}
+
+.cratelist a {
+  display: grid;
+  grid-template-columns: minmax(140px, 18ch) 1fr auto;
+  gap: 16px;
+  align-items: baseline;
+  padding: 13px 16px;
+  background: var(--ground);
+  color: var(--limestone);
+  text-decoration: none;
+}
+
+.cratelist a:hover {
+  background: var(--field);
+  color: var(--bright);
+}
+
+.cratelist code {
+  color: var(--magenta);
+  font-family: var(--mono);
+  font-size: var(--type-compact);
+}
+
+.cratelist span {
+  font-size: var(--type-compact);
+}
+
+.cratelist i {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--type-label);
+  font-style: normal;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sectionindex {
+  display: grid;
+  gap: 32px;
+  grid-template-columns: minmax(240px, 26ch) 1fr;
+}
+
+.sectionlist {
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  background: var(--line);
+}
+
+.sectionrow {
+  display: grid;
+  grid-template-columns: 3ch 1fr auto;
+  gap: 14px;
+  align-items: baseline;
+  padding: 11px 14px;
+  background: var(--ground);
+  color: var(--limestone);
+  font-size: var(--type-compact);
+  text-decoration: none;
+}
+
+.sectionrow:hover {
+  background: var(--field);
+  color: var(--bright);
+}
+
+.sectionrow b {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--type-control);
+  font-weight: 400;
+}
+
+.sectionrow:hover b {
+  color: var(--cyan);
+}
+
+.sectionrow i {
+  font-family: var(--mono);
+  font-size: var(--type-label);
+  font-style: normal;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sectionrow i.field-web {
+  color: var(--cyan-dim);
+}
+
+.sectionrow i.field-desktop {
+  color: #8d2a55;
+}
+
+.sectionrow i.field-open,
+.sectionrow i.field-both {
+  color: var(--faint);
+}
+
+@media (max-width: 860px) {
+  .cratefield,
+  .sectionindex {
+    grid-template-columns: 1fr;
+    padding: 40px 20px;
+  }
+
+  .cratelist a {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 640px) {
+  main.survey {
+    padding: 0 16px 72px;
+  }
+
+  .stationhead .routetrail {
+    width: 100%;
+    margin-left: 0;
+    padding-top: 6px;
+  }
+
+  .station::before,
+  .station::after {
+    display: none;
+  }
+
+  .stationnumber {
+    font-size: clamp(4.5rem, 26vw, 7rem);
+  }
+
+  .choices a {
+    grid-template-columns: 30px 1fr auto;
+  }
+
+  .choices a > span {
+    grid-column: 2 / span 1;
+  }
+
+  /* The leader needs room to read as a leader. Below this width it is a
+     smudge, so it goes and the section marker carries the line. */
+  .choices a i {
+    display: none;
+  }
+
+  .stackrow {
+    grid-template-columns: 1fr;
+  }
+
+  .stationfoot .button {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choices a,
+  .choices a b,
+  .reading a {
     transition: none;
   }
 }

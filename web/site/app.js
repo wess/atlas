@@ -198,3 +198,85 @@ if (tocSections.length && "IntersectionObserver" in window) {
   );
   for (const section of tocSections) observer.observe(section);
 }
+
+/* ---------------------------------------------------------------------------
+   The field survey
+   ---------------------------------------------------------------------------
+   Everything below is enhancement. Without it each choice is still a link and
+   each page still says everything it has to say — which is the reason the
+   survey is one HTML page per section rather than a single-page wizard.
+
+   The trail lives in sessionStorage, not the URL. A section's address has to
+   mean the same thing for everyone who opens it, or "turn to §47" stops being
+   a thing you can send someone.
+   --------------------------------------------------------------------------- */
+
+const TRAIL_KEY = "atlas.survey.route";
+
+// Storage throws in a private window and in some embedded contexts, and a
+// route trail is not worth a broken page.
+const readTrail = () => {
+  try {
+    const raw = window.sessionStorage.getItem(TRAIL_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((n) => Number.isInteger(n)) : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeTrail = (trail) => {
+  try {
+    window.sessionStorage.setItem(TRAIL_KEY, JSON.stringify(trail));
+  } catch {
+    /* nothing to do; the page renders the same either way */
+  }
+};
+
+const station = one("[data-section]");
+
+if (station) {
+  const section = Number(station.dataset.section);
+  let trail = readTrail();
+
+  if (section === 1) {
+    // §1 is the start. Landing on it again is a new walk, not a longer one.
+    trail = [1];
+  } else {
+    const seen = trail.indexOf(section);
+    // Walking back to a section you already visited truncates the route rather
+    // than appending — otherwise the back button grows the trail forever.
+    trail = seen === -1 ? [...trail, section] : trail.slice(0, seen + 1);
+  }
+  writeTrail(trail);
+
+  const list = one("[data-route-list]");
+  if (list) list.textContent = trail.map((n) => `§${n}`).join(" → ");
+
+  const clear = one("[data-route-clear]");
+  if (clear && trail.length > 1) {
+    clear.hidden = false;
+    clear.addEventListener("click", () => {
+      writeTrail([]);
+      if (list) list.textContent = `§${section}`;
+      clear.hidden = true;
+    });
+  }
+
+  // The numbers beside each choice are drawn as keys, so they should work as
+  // keys. Skipped while a field has focus, or typing in search picks a path.
+  const choices = all(".choices a");
+  document.addEventListener("keydown", (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    const target = event.target;
+    if (target instanceof HTMLElement && target.closest("input, textarea, select, dialog")) return;
+    const index = Number(event.key) - 1;
+    if (!Number.isInteger(index) || index < 0 || index >= choices.length) return;
+    event.preventDefault();
+    choices[index].click();
+  });
+}
+
+for (const button of all("[data-copy]")) {
+  button.addEventListener("click", () => copyText(button, button.dataset.copy ?? ""));
+}

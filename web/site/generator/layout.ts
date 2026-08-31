@@ -1,4 +1,4 @@
-import { type Guide, guides, packages } from "./content.ts";
+import { desktop, type Guide, guides, packages } from "./content.ts";
 import { escapeHtml, type Heading } from "./markdown.ts";
 
 type PageOptions = {
@@ -48,9 +48,12 @@ const icon = (name: "close" | "github" | "menu" | "search"): string => {
 const current = (active: boolean, value = "page"): string => (active ? ` aria-current="${value}"` : "");
 
 const header = (base: string, version: string, path: string): string => {
-  const slug = path.match(/^\/docs\/([^/]+)\/$/)?.[1];
+  const slug = path.match(/^\/docs\/(.+)\/$/)?.[1];
   const packagePage = packages.some((entry) => entry.slug === slug);
   const guidePage = guides.some((entry) => entry.slug === slug);
+  const desktopPage = desktop.some((entry) => entry.slug === slug);
+  // A numbered section, i.e. somewhere inside the survey.
+  const surveyPage = /^\/(\d+\/)?$/.test(path);
   return `
   <div class="utility" aria-hidden="true">
     <span>Atlas docs terminal</span>
@@ -64,10 +67,11 @@ const header = (base: string, version: string, path: string): string => {
       <span class="sr" data-menu-label>Open navigation</span>${icon("menu")}
     </button>
     <nav class="primarynav" id="primarynav" aria-label="Primary navigation" data-primary-nav>
-      <a href="${base}/"${current(path === "/")}>Home</a>
-      <a href="${base}/docs/quickstart/"${current(slug === "quickstart")}>Start</a>
-      <a href="${base}/docs/"${current(path === "/docs/")}${current(Boolean(guidePage && slug !== "quickstart" && slug !== "api"), "location")}>Guides</a>
+      <a href="${base}/"${current(surveyPage)}>Begin</a>
+      <a href="${base}/map/"${current(path === "/map/")}>Chart</a>
+      <a href="${base}/docs/"${current(path === "/docs/")}${current(Boolean(guidePage && slug !== "api"), "location")}>Guides</a>
       <a href="${base}/docs/#packages"${current(packagePage, "location")}>Packages</a>
+      <a href="${base}/docs/desktop/architecture/"${current(desktopPage, "location")}>Desktop</a>
       <a href="${base}/docs/api/"${current(slug === "api")}>API</a>
       <button class="searchbutton" type="button" data-search-open>${icon("search")}<span>Search</span><kbd>⌘K</kbd></button>
       <a class="iconlink" href="https://github.com/wess/atlas" aria-label="Atlas on GitHub">${icon("github")}</a>
@@ -80,6 +84,7 @@ const footer = (base: string): string => `
   <footer class="sitefooter">
     <div><strong>ATLAS</strong><span>Composable Bun/TypeScript building blocks.</span></div>
     <nav aria-label="Footer navigation">
+      <a href="${base}/">Begin the survey</a>
       <a href="${base}/docs/quickstart/">Quick start</a>
       <a href="${base}/docs/api/">API</a>
       <a href="${base}/llms.txt">Agent index</a>
@@ -142,6 +147,8 @@ const docNavigation = (base: string, active: string): string => `
     <a class="docnavhome" href="${base}/docs/">Field guide index</a>
     <strong>Guides</strong>
     ${guides.map((doc) => navLink(base, doc, active)).join("\n")}
+    <strong>Desktop</strong>
+    ${desktop.map((doc) => navLink(base, doc, active)).join("\n")}
     <strong>Packages</strong>
     ${packages.map((doc) => navLink(base, doc, active)).join("\n")}
   </aside>`;
@@ -188,6 +195,15 @@ const guideRows = (base: string): string =>
     )
     .join("\n");
 
+const desktopRows = (base: string): string =>
+  desktop
+    .map(
+      (guide) => `<a class="indexrow" href="${base}/docs/${guide.slug}/">
+        <span>${escapeHtml(guide.title)}</span><p>${escapeHtml(guide.description)}</p><i>Open guide</i>
+      </a>`,
+    )
+    .join("\n");
+
 const packageRows = (base: string): string =>
   packages
     .map(
@@ -209,15 +225,20 @@ export const docsIndex = (base: string, version: string): string =>
       <main class="fieldguide" id="content">
         <header class="guideintro">
           <h1>Field guide</h1>
-          <p>Start with a working route, inspect the architecture when it matters, then open the exact package reference beside your editor.</p>
+          <p>Atlas is two boilerplates: nineteen Bun packages for the web, and a Rust workspace for the desktop. Start with a working route, inspect the architecture when it matters, then open the exact reference beside your editor.</p>
           <div class="guideactions">
-            <a class="button primary" href="${base}/docs/quickstart/">Start building</a>
+            <a class="button primary" href="${base}/">Walk the survey</a>
+            <a class="button secondary" href="${base}/docs/quickstart/">Quick start</a>
             <button class="button secondary" type="button" data-search-open>Search all docs</button>
           </div>
         </header>
         <section class="guideindex" aria-labelledby="guideheading">
           <h2 id="guideheading">Guides</h2>
           ${guideRows(base)}
+        </section>
+        <section class="guideindex" id="desktop" aria-labelledby="desktopheading">
+          <h2 id="desktopheading">Desktop</h2>
+          ${desktopRows(base)}
         </section>
         <section class="packageindex" id="packages" aria-labelledby="packageheading">
           <div><h2 id="packageheading">Package manifest</h2><p>Nineteen root exports. Each reference is generated from its canonical <code>AGENTS.md</code>.</p></div>

@@ -1,6 +1,6 @@
 # Atlas
 
-> Composable, functional Bun/TypeScript building blocks for APIs, full-stack applications, command-line tools, runtime introspection, retrieval, and tool-using agents.
+> Two boilerplates: composable Bun/TypeScript packages for APIs, full-stack applications, command-line tools, retrieval, and tool-using agents; and a Rust workspace on gpui and guise for native desktop applications.
 
 Atlas installs as `@wess/atlas`. Public imports use `@wess/atlas/<package>`. The shorter
 `@atlas/<package>` spelling requires the optional path aliases documented in the project README.
@@ -19,6 +19,7 @@ When generating Atlas code:
 - [Quick start](https://wess.io/atlas/docs/quickstart/index.md): Build an authenticated application with storage and administration.
 - [API reference](https://wess.io/atlas/docs/api/index.md): Condensed cross-package exports, types, and signatures.
 - [Documentation map](https://wess.io/atlas/docs/index.md): Every guide and package reference.
+- [Field survey](https://wess.io/atlas/index.md): The site's branching entry point; each numbered section ends in a concrete stack, command, and code.
 
 ## Package references
 
@@ -41,6 +42,14 @@ When generating Atlas code:
 - [admin](https://wess.io/atlas/docs/admin/index.md): Schema-driven administration.
 - [mcp](https://wess.io/atlas/docs/mcp/index.md): Documentation access and runtime introspection over MCP.
 - [ai](https://wess.io/atlas/docs/ai/index.md): Chat, embeddings, retrieval, streaming, and tool-use loops.
+
+## Desktop
+
+- [Desktop architecture](https://wess.io/atlas/docs/desktop/architecture/index.md): Crate layering, the tokio bridge, state scopes, and the store.
+- [Desktop scaffolding](https://wess.io/atlas/docs/desktop/scaffolding/index.md): The scaffolding script, the three templates, and renaming an application.
+- [Desktop packaging](https://wess.io/atlas/docs/desktop/packaging/index.md): macOS, Linux, and Windows artifacts and where each comes from.
+- [Desktop releases](https://wess.io/atlas/docs/desktop/release/index.md): Signing, notarization, release cutting, and in-place self-update.
+- [Desktop gotchas](https://wess.io/atlas/docs/desktop/gotchas/index.md): gpui and guise traps, each with the symptom that led to it.
 
 ## Machine-readable interfaces
 

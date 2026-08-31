@@ -1,6 +1,6 @@
 ---
 name: Atlas
-description: A midnight Aegean field terminal for composable Bun and TypeScript reference.
+description: A midnight Aegean field terminal for composable Bun, TypeScript, and Rust reference.
 colors:
   aegean-ground: "#000818"
   observatory-field: "#071426"
@@ -414,6 +414,31 @@ the node to Registration Magenta. Pointer motion is bounded to twelve pixels and
 drift. Below `680px`, the celestial plot becomes a semantic two-column manifest and sheds the
 decorative lines, crosshair, legend, and drift.
 
+### Survey Stations
+
+The field survey is the site's front door: one numbered station per page, at `/<n>/`. The station is
+the second signature component after the constellation, and it carries one rule the rest of the
+system does not — **the accent identifies which half of Atlas you are standing in.** Web stations
+resolve `--station` to Ionian Cyan; desktop stations resolve it to Registration Magenta, which is the
+single sanctioned exception to magenta-as-registration-mark-only. The opening and the both-fields
+station fall back to Limestone.
+
+- **Instrument strip:** a mono label row above the station carrying the field, the kind and number,
+  and the reader's accumulated route, divided from the station by one survey rule.
+- **Station number:** the section number set in the display face at `clamp(5.5rem, 15vw, 9.5rem)`
+  and sixteen-to-twenty-two-percent opacity, so the page is identifiable across a room without
+  competing with the headline that overlaps it.
+- **Registration marks:** fourteen-pixel magenta corner ticks at the station's top-left and
+  bottom-right, decorative and hidden below `640px`.
+- **Choice rows:** a square mono key, the label, a dotted leader in the station's dim accent, and the
+  destination as `§n`. The leader takes the slack between label and destination the way a printed
+  contents page sets it, and is dropped below `640px` where it reads as a smudge.
+- **Plate blocks:** endings add the carried stack, a copyable command, one code slab, and reading
+  chips — the chips keep package names in their own case, because they are names, not labels.
+
+The keys beside each choice are the keyboard shortcuts. Any station renders and navigates with
+JavaScript disabled; the route trail and the number keys are enhancement only.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -421,13 +446,15 @@ decorative lines, crosshair, legend, and drift.
 - Do preserve the deep field hierarchy before reaching for shadow.
 - Do use limestone for readable text and cyan for technical structure and action.
 - Do keep controls square, compact, keyboard-visible, and divided by one-pixel survey rules.
-- Do use the constellation, Atlas figure, and Greek geometry as structural signatures.
+- Do use the constellation, survey stations, Atlas figure, and Greek geometry as structural signatures.
+- Do let the station accent say which half of Atlas a page belongs to, and nothing else.
 - Do disable orbital motion and state transitions when reduced motion is requested.
 
 ### Don't:
 
 - Don't turn the palette into a generic purple gradient or broad neon wash.
-- Don't use magenta as a general surface color; it is a registration and exception mark.
+- Don't use magenta as a general surface color; it is a registration and exception mark, plus the
+  desktop station accent.
 - Don't add soft rounded cards, ornamental controls, or decorative dashboard shells.
 - Don't set long-form documentation in the condensed display face or mono label face.
 - Don't rasterize interface text, diagrams, or package navigation.

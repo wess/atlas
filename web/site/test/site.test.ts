@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { docs, packages } from "../generator/content.ts";
+import { onward, passages } from "../generator/passages.ts";
 
 const root = new URL("../../", import.meta.url).pathname;
 const dist = `${root}dist`;
@@ -20,10 +21,42 @@ describe("documentation site", () => {
   });
 
   test("emits the design contract without template placeholders", async () => {
+    // The constellation lives on the chart now; the front door is §1.
+    const chart = await Bun.file(`${dist}/map/index.html`).text();
+    expect(chart).toContain("seed c6104151");
+    expect(chart).not.toContain("{{");
+    expect(chart.match(/class="starnode"/g)).toHaveLength(packages.length);
+
     const home = await Bun.file(`${dist}/index.html`).text();
-    expect(home).toContain("seed c6104151");
     expect(home).not.toContain("{{");
-    expect(home.match(/class="starnode"/g)).toHaveLength(packages.length);
+  });
+
+  test("builds every survey station, and opens on the first one", async () => {
+    for (const passage of passages) {
+      expect(await Bun.file(`${dist}/${passage.n}/index.html`).exists(), `§${passage.n}`).toBe(true);
+      expect(await Bun.file(`${dist}/${passage.n}/index.md`).exists(), `§${passage.n}.md`).toBe(true);
+    }
+
+    // `/` and `/1/` are the same section, so a link that says "turn to §1"
+    // and the front door agree.
+    const front = await Bun.file(`${dist}/index.html`).text();
+    expect(front).toContain('data-section="1"');
+    expect(front).toContain("You are about to build something");
+  });
+
+  test("gives every station somewhere to go", async () => {
+    // `validate()` proves this over the data at build time; this proves it
+    // survived into the HTML, which is what a reader actually gets.
+    for (const passage of passages) {
+      const html = await Bun.file(`${dist}/${passage.n}/index.html`).text();
+      const links = [...html.matchAll(/class="choices"[\s\S]*?<\/nav>/g)].join("");
+      const outgoing = [...(passage.choices ?? []), ...onward(passage)];
+      expect(outgoing.length, `§${passage.n} has no exits`).toBeGreaterThan(0);
+      for (const choice of outgoing) {
+        const target = typeof choice.to === "number" ? `/atlas/${choice.to}/` : `/atlas${choice.to}`;
+        expect(links, `§${passage.n} → ${choice.to}`).toContain(`href="${target}"`);
+      }
+    }
   });
 
   test("keeps internal page and asset links resolvable", async () => {
@@ -35,9 +68,10 @@ describe("documentation site", () => {
     }
   });
 
-  test("indexes every generated documentation page", async () => {
-    const search = (await Bun.file(`${dist}/search.json`).json()) as unknown[];
-    expect(search).toHaveLength(docs.length);
+  test("indexes every documentation page and every station", async () => {
+    const search = (await Bun.file(`${dist}/search.json`).json()) as { kind: string }[];
+    expect(search).toHaveLength(docs.length + passages.length);
+    expect(search.filter((entry) => entry.kind === "station")).toHaveLength(passages.length);
   });
 
   test("publishes Markdown alternates and the complete agent context", async () => {

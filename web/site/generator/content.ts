@@ -50,6 +50,44 @@ export const guides: readonly Guide[] = [
   },
 ];
 
+/**
+ * The desktop half. The sources live outside this workspace — Atlas is two
+ * boilerplates in one repository and the site documents both — so these paths
+ * climb out of `web/`.
+ */
+export const desktop: readonly Guide[] = [
+  {
+    slug: "desktop/architecture",
+    title: "Desktop architecture",
+    description: "The crate layering, the tokio bridge, state scopes, and the store.",
+    source: "../desktop/docs/architecture.md",
+  },
+  {
+    slug: "desktop/scaffolding",
+    title: "Desktop scaffolding",
+    description: "new.sh, the three templates, renaming an app, and developing Atlas alongside one.",
+    source: "../desktop/docs/scaffolding.md",
+  },
+  {
+    slug: "desktop/packaging",
+    title: "Desktop packaging",
+    description: "Every artifact an app ships on macOS, Linux, and Windows, and where it comes from.",
+    source: "../desktop/docs/packaging.md",
+  },
+  {
+    slug: "desktop/release",
+    title: "Desktop releases",
+    description: "Signing, notarization, cutting a release, and in-place self-update.",
+    source: "../desktop/docs/release.md",
+  },
+  {
+    slug: "desktop/gotchas",
+    title: "Desktop gotchas",
+    description: "The gpui and guise traps, each with the symptom that led to it.",
+    source: "../desktop/docs/gotchas.md",
+  },
+];
+
 export const packages: readonly PackageDoc[] = [
   {
     slug: "config",
@@ -224,4 +262,4 @@ export const packages: readonly PackageDoc[] = [
   },
 ];
 
-export const docs = [...guides, ...packages] as const;
+export const docs = [...guides, ...desktop, ...packages] as const;
