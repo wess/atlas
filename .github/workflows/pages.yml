@@ -5,13 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/pages.yml"
-      - "docs/**"
-      - "packages/*/AGENTS.md"
-      - "site/**"
-      - "README.md"
-      - "llms.txt"
-      - "package.json"
-      - "bun.lock"
+      - "web/**"
   workflow_dispatch: {}
 
 permissions:
@@ -22,6 +16,10 @@ permissions:
 concurrency:
   group: pages
   cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: web
 
 jobs:
   build:
@@ -37,7 +35,7 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: web/dist
 
   deploy:
     environment:

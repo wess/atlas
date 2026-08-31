@@ -7,7 +7,7 @@ name: Release
 on:
   push:
     branches: [main]
-    paths: ["package.json"]
+    paths: ["web/package.json"]
   workflow_dispatch: {}
 
 permissions:
@@ -16,6 +16,12 @@ permissions:
 concurrency:
   group: release
   cancel-in-progress: false
+
+# The npm package is the web half. `desktop/` releases through its own
+# scaffolded apps, not from here.
+defaults:
+  run:
+    working-directory: web
 
 jobs:
   check-version:
