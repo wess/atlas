@@ -1,0 +1,19 @@
+[package]
+name = "atlas-store"
+description = "Atlas Desktop: JSON documents under the app's home directory, plus the OS keychain."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+name = "atlasstore"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+dirs = { workspace = true }
+keyring = { workspace = true }
+tracing = { workspace = true }

@@ -1,0 +1,16 @@
+[package]
+name = "atlas-shell"
+description = "Atlas Desktop: the chrome every gpui app rebuilds — theme, menus, overlays, toasts, About, self-update."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+name = "atlasshell"
+path = "src/lib.rs"
+
+[dependencies]
+gpui = { workspace = true }
+guise-ui = { workspace = true }

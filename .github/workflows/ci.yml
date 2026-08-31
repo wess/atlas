@@ -22,5 +22,38 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: bun run typecheck
+      # The site build validates the survey graph: a choice pointing at a
+      # section that does not exist fails here rather than in a reader's face.
       - run: bun run site:build
       - run: bun test
+
+  desktop:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop
+      - run: cargo test --workspace
+      - run: cargo clippy --all-targets -- -D warnings
+
+      # The templates depend on crates/ by relative path and are compiled in
+      # place, which is how a breaking change to the library is caught here
+      # rather than the next time someone scaffolds an app. One shared target
+      # directory, or gpui is built three more times.
+      - name: Check every template
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/desktop/target
+        run: |
+          for template in minimal sidebar workspace; do
+            echo "::group::$template"
+            (cd "templates/$template" && cargo check --workspace --all-targets)
+            echo "::endgroup::"
+          done

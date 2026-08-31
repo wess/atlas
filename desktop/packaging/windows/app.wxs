@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The MSI (WiX v4): the executable plus the license and readme into Program
+  Files, with a Start-menu shortcut. Files come from the staging tree
+  scripts/windows.ps1 assembles (StageDir); the name and version are injected
+  the same way, so this file needs no editing per release.
+
+  The UpgradeCode is generated once, when the app is scaffolded, and must never
+  change: it is what tells Windows that version 2 replaces version 1 rather
+  than installing beside it.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+      Name="$(AppName)"
+      Manufacturer="__APPVENDOR__"
+      Version="$(Version)"
+      UpgradeCode="__APPUPGRADECODE__"
+      Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of $(AppName) is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="$(AppName)" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppShortcutDir" Name="$(AppName)" />
+    </StandardDirectory>
+
+    <ComponentGroup Id="AppFiles">
+      <Component Directory="INSTALLFOLDER">
+        <File Id="AppExe" Source="$(StageDir)\$(AppSlug).exe" KeyPath="yes" />
+      </Component>
+      <Component Directory="INSTALLFOLDER">
+        <File Source="$(StageDir)\LICENSE" />
+      </Component>
+      <Component Directory="INSTALLFOLDER">
+        <File Source="$(StageDir)\README.md" />
+      </Component>
+    </ComponentGroup>
+
+    <Component Id="AppShortcut" Directory="AppShortcutDir">
+      <Shortcut Id="AppStartMenu"
+                Name="$(AppName)"
+                Target="[INSTALLFOLDER]$(AppSlug).exe"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RemoveFolder Id="RemoveAppShortcutDir" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\$(AppName)" Name="installed"
+                     Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Feature Id="Main" Title="$(AppName)" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="AppShortcut" />
+    </Feature>
+  </Package>
+</Wix>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>__APPSLUG__</id>
+    <version>0.0.0</version>
+    <title>__APPNAME__</title>
+    <authors>__APPVENDOR__</authors>
+    <owners>__APPVENDOR__</owners>
+    <projectUrl>https://github.com/__APPREPO__</projectUrl>
+    <projectSourceUrl>https://github.com/__APPREPO__</projectSourceUrl>
+    <packageSourceUrl>https://github.com/__APPREPO__/tree/main/packaging/chocolatey</packageSourceUrl>
+    <licenseUrl>https://github.com/__APPREPO__/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>__APPDESC__ Windows builds are currently unsigned.</description>
+    <summary>__APPDESC__</summary>
+    <tags>__APPSLUG__ desktop gui</tags>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

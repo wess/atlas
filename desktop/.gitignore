@@ -1,0 +1,32 @@
+# ---------------------------------------------------------------------------
+# Rust / Cargo
+# ---------------------------------------------------------------------------
+/target/
+**/target/
+**/*.rs.bk
+*.profraw
+*.profdata
+
+# The templates are compiled in place to keep them honest, and each build
+# writes a lockfile full of paths that only resolve inside this checkout.
+templates/*/Cargo.lock
+
+# ---------------------------------------------------------------------------
+# Build artifacts
+# ---------------------------------------------------------------------------
+dist/
+*.app/
+*.dmg
+*.msi
+*.AppImage
+*.deb
+
+# ---------------------------------------------------------------------------
+# macOS / editors
+# ---------------------------------------------------------------------------
+.DS_Store
+._*
+.idea/
+.vscode/
+.zed/
+*.swp

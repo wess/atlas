@@ -1,0 +1,47 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/model",
+    "crates/store",
+    "crates/host",
+    "crates/app",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["__APPAUTHOR__"]
+repository = "https://github.com/__APPREPO__"
+
+[workspace.dependencies]
+# Atlas Desktop. `atlas-desktop` is the facade (`atlas::core`, `atlas::store`,
+# `atlas::bridge`, `atlas::shell`); `atlas-build` is the build-script stamp.
+atlas-desktop = { path = "../../crates/desktop" }
+atlas-build = { path = "../../crates/build" }
+
+# UI. Plain crates.io gpui with a released guise — no `[patch.crates-io]`, no
+# vendored crates, so a release can be rebuilt from its lockfile.
+# `default-features = false` drops guise's `webview` feature and its `wry`
+# dependency; turn it back on if the app embeds web content.
+gpui = "0.2.2"
+guise-ui = { version = "=1.5.3", default-features = false }
+
+# Async. One runtime, reached through `atlas::bridge`.
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+futures = "0.3"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+anyhow = "1"
+
+# Internal crates, layered bottom-up.
+model = { path = "crates/model" }
+store = { path = "crates/store" }
+host = { path = "crates/host" }
+
+[profile.dev]
+debug = "limited"
+
+[profile.release]
+lto = "thin"

@@ -1,0 +1,30 @@
+[workspace]
+resolver = "2"
+members = ["crates/model", "crates/store", "crates/app"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["__APPAUTHOR__"]
+repository = "https://github.com/__APPREPO__"
+
+[workspace.dependencies]
+# Atlas Desktop: the facade (`atlas::core`, `atlas::store`, `atlas::bridge`,
+# `atlas::shell`) and the build-script stamp.
+atlas-desktop = { path = "../../crates/desktop" }
+atlas-build = { path = "../../crates/build" }
+
+gpui = "0.2.2"
+guise-ui = { version = "=1.5.3", default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+
+model = { path = "crates/model" }
+store = { path = "crates/store" }
+
+[profile.dev]
+debug = "limited"
+
+[profile.release]
+lto = "thin"

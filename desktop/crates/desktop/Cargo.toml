@@ -1,0 +1,28 @@
+[package]
+name = "atlas-desktop"
+description = "Atlas Desktop: a boilerplate for native gpui + guise apps. The facade over the layer crates."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["gpui", "guise", "desktop", "boilerplate", "gui"]
+categories = ["gui"]
+
+[lib]
+name = "atlas"
+path = "src/lib.rs"
+
+[dependencies]
+atlas-core = { workspace = true }
+atlas-store = { workspace = true }
+atlas-bridge = { workspace = true }
+atlas-shell = { workspace = true }
+
+# The crate-level example is what an app's `main` looks like, and an app has
+# gpui and guise as direct dependencies. Compiling it against them is what
+# keeps the example from drifting out of date.
+[dev-dependencies]
+gpui = { workspace = true }
+guise-ui = { workspace = true }

@@ -1,0 +1,16 @@
+[package]
+name = "atlas-core"
+description = "Atlas Desktop: gpui-free primitives shared by every layer of an app."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+name = "atlascore"
+path = "src/lib.rs"
+
+[dependencies]
+chrono = { workspace = true }
+uuid = { workspace = true }

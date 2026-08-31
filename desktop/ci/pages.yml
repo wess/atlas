@@ -1,0 +1,42 @@
+name: Pages
+
+# Publishes site/ to GitHub Pages. The site is plain static files, so there is
+# nothing to build unless the app adds a generator — swap the "Build" step for
+# whatever writes into site/dist and point the artifact at it.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "docs/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Jekyll would otherwise swallow any path starting with an underscore.
+      - name: Disable Jekyll
+        run: touch site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

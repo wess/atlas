@@ -1,0 +1,85 @@
+# Build for Windows and produce a portable .zip and an MSI installer under
+# dist/windows. Mirrors scripts/linux.sh. Intended for the windows-latest
+# runner; run locally with PowerShell 7+ (pwsh).
+#
+# The MSI is built with the WiX v4 toolset, installed on demand as a dotnet
+# global tool. An MSI failure is non-fatal: the portable .zip is always
+# produced, because a release that ships nothing is worse than one that ships
+# only the portable build.
+#
+# Usage: pwsh scripts/windows.ps1 [-Arch x86_64]
+param(
+    [ValidateSet("x86_64", "aarch64")]
+    [string]$Arch = "x86_64"
+)
+
+$ErrorActionPreference = "Stop"
+$root = Split-Path -Parent $PSScriptRoot
+Set-Location $root
+
+# packaging/app.env is bash syntax, but it is deliberately plain enough to read
+# from here too — one source of naming truth for both platforms.
+$app = @{}
+Get-Content "packaging/app.env" | ForEach-Object {
+    if ($_ -match '^\s*([A-Z_]+)="(.*)"\s*$') { $app[$Matches[1]] = $Matches[2] }
+}
+$name = $app["APP_NAME"]
+$slug = $app["APP_SLUG"]
+$devBin = "${slug}dev"
+
+$triple = switch ($Arch) {
+    "x86_64" { "x86_64-pc-windows-msvc" }
+    "aarch64" { "aarch64-pc-windows-msvc" }
+}
+$wixArch = if ($Arch -eq "aarch64") { "arm64" } else { "x64" }
+
+$version = (Select-String -Path Cargo.toml -Pattern '^version = "([0-9][^"]*)"' |
+    Select-Object -First 1).Matches.Groups[1].Value
+if (-not $version) { throw "could not read version from Cargo.toml" }
+Write-Host "[windows] $name $version for $triple"
+
+$out = Join-Path $root "dist\windows"
+Remove-Item -Recurse -Force $out -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $out | Out-Null
+
+# --- build ----------------------------------------------------------------
+rustup target add $triple 2>&1 | Out-Null
+cargo build --release -p app --target $triple
+$bin = "target\$triple\release\$devBin.exe"
+
+# --- staging tree, shared by the zip and the MSI harvest -------------------
+$stem = "$slug-$version-windows-$Arch"
+$stage = Join-Path $out $stem
+New-Item -ItemType Directory -Force -Path $stage | Out-Null
+Copy-Item $bin (Join-Path $stage "$slug.exe")
+Copy-Item LICENSE, README.md $stage -ErrorAction SilentlyContinue
+
+# --- .zip ------------------------------------------------------------------
+$zip = Join-Path $out "$stem.zip"
+Compress-Archive -Path $stage -DestinationPath $zip -Force
+Write-Host "[windows] -> $stem.zip"
+
+# --- .msi (WiX v4) ---------------------------------------------------------
+try {
+    dotnet tool install --global wix --version 4.* 2>&1 | Out-Null
+    $env:PATH = "$env:PATH;$env:USERPROFILE\.dotnet\tools"
+    wix build "packaging\windows\app.wxs" `
+        -define "Version=$version" `
+        -define "StageDir=$stage" `
+        -define "AppName=$name" `
+        -define "AppSlug=$slug" `
+        -arch $wixArch `
+        -out (Join-Path $out "$stem.msi")
+    Write-Host "[windows] -> $stem.msi"
+} catch {
+    Write-Warning "[windows] MSI build failed (zip still produced): $_"
+}
+
+# --- leave only shippable artifacts ----------------------------------------
+Remove-Item -Recurse -Force $stage -ErrorAction SilentlyContinue
+Write-Host "[windows] artifacts in dist/windows:"
+Get-ChildItem $out | Select-Object -ExpandProperty Name
+
+# Getting here means the build and the zip succeeded — a cargo failure would
+# have thrown. A best-effort MSI failure must not fail the job.
+exit 0

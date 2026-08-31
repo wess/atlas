@@ -1,0 +1,14 @@
+[package]
+name = "atlas-build"
+description = "Atlas Desktop: the build-script stamp that tells a release apart from a checkout."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+name = "atlasbuild"
+path = "src/lib.rs"
+
+[dependencies]

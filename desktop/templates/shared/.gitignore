@@ -1,0 +1,63 @@
+# ---------------------------------------------------------------------------
+# Rust / Cargo
+# ---------------------------------------------------------------------------
+/target/
+**/target/
+# Cargo.lock IS committed — this workspace ships binaries, and a release has to
+# be rebuildable from the versions it was cut with.
+**/*.rs.bk
+*.pdb
+*.profraw
+*.profdata
+/coverage/
+.sccache/
+
+# ---------------------------------------------------------------------------
+# Build artifacts & packaging
+# ---------------------------------------------------------------------------
+dist/
+build/
+*.app/
+*.dmg
+*.pkg
+*.msi
+*.AppImage
+*.deb
+*.tar.gz
+*.zip
+
+# ---------------------------------------------------------------------------
+# macOS / Linux / Windows
+# ---------------------------------------------------------------------------
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+*~
+.fuse_hidden*
+.nfs*
+Thumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# ---------------------------------------------------------------------------
+# Editors
+# ---------------------------------------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+.idea/
+*.iml
+.zed/
+*.swp
+*.swo
+
+# ---------------------------------------------------------------------------
+# Secrets & local config
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.p12
+*.pem
+*.key

@@ -1,0 +1,43 @@
+[package]
+name = "app"
+description = "__APPDESC__"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+# The dev binary is `__APPSLUG__dev` so a dev build never collides with an
+# installed `__APPSLUG__`. Release packaging installs this same binary under
+# the real name.
+[[bin]]
+name = "__APPSLUG__dev"
+path = "src/main.rs"
+
+# Debian packaging (`cargo deb`, driven by scripts/linux.sh). The explicit
+# asset list disables cargo-deb's automatic binary inclusion and installs the
+# dev-named build under the real name; cargo-deb remaps the `target/release/`
+# prefix to the actual `--target` output path.
+[package.metadata.deb]
+name = "__APPSLUG__"
+maintainer = "__APPAUTHOR__"
+license-file = ["../../LICENSE", "0"]
+section = "utils"
+priority = "optional"
+extended-description = "__APPDESC__"
+assets = [
+    ["target/release/__APPSLUG__dev", "usr/bin/__APPSLUG__", "755"],
+    ["../../assets/app.desktop", "usr/share/applications/__APPSLUG__.desktop", "644"],
+    ["../../assets/icon512.png", "usr/share/pixmaps/__APPSLUG__.png", "644"],
+]
+
+[dependencies]
+atlas-desktop = { workspace = true }
+model = { workspace = true }
+host = { workspace = true }
+
+gpui = { workspace = true }
+guise-ui = { workspace = true }
+futures = { workspace = true }
+
+[build-dependencies]
+atlas-build = { workspace = true }

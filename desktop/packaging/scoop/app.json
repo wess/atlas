@@ -1,0 +1,30 @@
+{
+    "version": "0.0.0",
+    "description": "__APPDESC__",
+    "homepage": "https://github.com/__APPREPO__",
+    "license": "MIT",
+    "notes": "Windows builds are unsigned; SmartScreen may warn about an unknown publisher.",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/__APPREPO__/releases/download/v0.0.0/__APPSLUG__-0.0.0-windows-x86_64.zip",
+            "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+            "extract_dir": "__APPSLUG__-0.0.0-windows-x86_64"
+        }
+    },
+    "bin": "__APPSLUG__.exe",
+    "shortcuts": [
+        [
+            "__APPSLUG__.exe",
+            "__APPNAME__"
+        ]
+    ],
+    "checkver": "github",
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/__APPREPO__/releases/download/v$version/__APPSLUG__-$version-windows-x86_64.zip",
+                "extract_dir": "__APPSLUG__-$version-windows-x86_64"
+            }
+        }
+    }
+}

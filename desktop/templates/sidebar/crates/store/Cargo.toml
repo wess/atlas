@@ -1,0 +1,11 @@
+[package]
+name = "store"
+description = "Local persistence: JSON documents under the app's home directory."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+atlas-desktop = { workspace = true }
+model = { workspace = true }

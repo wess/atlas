@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=__APPNAME__
+Comment=__APPDESC__
+Exec=__APPSLUG__
+Icon=__APPSLUG__
+Terminal=false
+Categories=Development;Utility;
+StartupWMClass=__APPSLUG__

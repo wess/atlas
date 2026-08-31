@@ -1,0 +1,57 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/core",
+    "crates/store",
+    "crates/bridge",
+    "crates/shell",
+    "crates/build",
+    "crates/desktop",
+]
+# The templates are standalone workspaces — they are what a scaffolded app
+# becomes, not crates this one builds.
+exclude = ["templates"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Wess Cope <opensource@wess.io>"]
+repository = "https://github.com/wess/atlas"
+homepage = "https://wess.io/atlas/"
+
+[workspace.dependencies]
+# UI. The setup guise 1.5 targets: plain crates.io gpui, a released guise
+# rather than a git ref, no `[patch.crates-io]` and no vendored crates.
+# `default-features = false` drops the `webview` feature and its `wry`
+# dependency — an app that wants an embedded browser turns it back on.
+gpui = "0.2.2"
+guise-ui = { version = "=1.5.3", default-features = false }
+
+# Async. One multi-thread runtime per process, reached through the bridge.
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "process", "time"] }
+futures = "0.3"
+
+# Shared support crates, pinned once.
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+anyhow = "1"
+thiserror = "2"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+dirs = "6"
+tracing = "0.1"
+keyring = { version = "3", features = ["apple-native", "linux-native", "windows-native"] }
+
+# The Atlas crates themselves.
+atlas-core = { version = "0.1.0", path = "crates/core" }
+atlas-store = { version = "0.1.0", path = "crates/store" }
+atlas-bridge = { version = "0.1.0", path = "crates/bridge" }
+atlas-shell = { version = "0.1.0", path = "crates/shell" }
+atlas-build = { version = "0.1.0", path = "crates/build" }
+
+[profile.dev]
+debug = "limited"
+
+[profile.release]
+lto = "thin"
