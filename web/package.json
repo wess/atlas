@@ -40,6 +40,7 @@
     "./ai": "./packages/ai/index.ts",
     "./auth": "./packages/auth/index.ts",
     "./auth/social": "./packages/auth/social/index.ts",
+    "./billing": "./packages/billing/index.ts",
     "./cache": "./packages/cache/index.ts",
     "./cli": "./packages/cli/index.ts",
     "./config": "./packages/config/index.ts",

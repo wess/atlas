@@ -2069,7 +2069,7 @@ main.survey {
   padding: 0 24px 96px;
 }
 
-/* --- the instrument strip -------------------------------------------------- */
+/* the instrument strip */
 
 .stationhead {
   display: flex;
@@ -2119,7 +2119,7 @@ main.survey {
   font-weight: 400;
 }
 
-/* --- the panel ------------------------------------------------------------- */
+/* the panel */
 
 .station {
   position: relative;
@@ -2230,7 +2230,7 @@ main.survey {
   font-size: 0.86em;
 }
 
-/* --- the choices ----------------------------------------------------------- */
+/* the choices */
 
 .choices {
   margin-top: 44px;
@@ -2335,7 +2335,7 @@ body.survey.field-desktop .choices a:focus-visible {
   white-space: nowrap;
 }
 
-/* --- endings --------------------------------------------------------------- */
+/* endings */
 
 .station.isending .stationnumber {
   opacity: 0.22;
@@ -2520,7 +2520,7 @@ body.survey.field-desktop .choices a:focus-visible {
   padding: 6px 12px;
 }
 
-/* --- the chart page's extra blocks ---------------------------------------- */
+/* the chart page's extra blocks */
 
 .cratefield,
 .sectionindex {

@@ -17,7 +17,7 @@ import { Bot, Search, Send, Sparkles, User } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// --- MessageBubble ---
+// MessageBubble
 
 export type MessageBubbleProps = {
   role: "user" | "assistant";
@@ -76,7 +76,7 @@ export const MessageBubble = ({ role, content, timestamp }: MessageBubbleProps) 
   </Group>
 );
 
-// --- PromptInput ---
+// PromptInput
 
 export type PromptInputProps = {
   onSend: (message: string) => void;
@@ -136,7 +136,7 @@ export const PromptInput = ({
   );
 };
 
-// --- ChatWindow ---
+// ChatWindow
 
 export type ChatWindowProps = {
   messages: { role: "user" | "assistant"; content: string }[];
@@ -189,7 +189,7 @@ export const ChatWindow = ({
   );
 };
 
-// --- AiSearch ---
+// AiSearch
 
 export type AiSearchProps = {
   onSearch: (query: string) => Promise<{ id: string; text: string; score: number }[]>;
@@ -257,7 +257,7 @@ export const AiSearch = ({ onSearch, placeholder = "Search with AI...", debounce
   );
 };
 
-// --- GenerateButton ---
+// GenerateButton
 
 export type GenerateButtonProps = {
   onGenerate: () => Promise<string>;

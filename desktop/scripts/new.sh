@@ -87,7 +87,7 @@ upgrade_code="$(uuidgen | tr '[:lower:]' '[:upper:]')"
 echo "[new] $name ($slug) from the $template template"
 mkdir -p "$target"
 
-# --- assemble --------------------------------------------------------------
+# assemble
 cp -R "$root/templates/$template/." "$target/"
 cp -R "$root/templates/shared/." "$target/"
 # The templates are compiled in place to keep them honest, so a checkout can be
@@ -113,7 +113,7 @@ cp "$root/ci/release.yml" "$target/.github/workflows/release.yml"
 cp "$root/ci/ci.yml" "$target/.github/workflows/ci.yml"
 cp "$root/ci/pages.yml" "$target/.github/workflows/pages.yml"
 
-# --- rewrite ---------------------------------------------------------------
+# rewrite
 # Every placeholder, in every text file. Binary files are skipped by `file`,
 # so an icon or a screenshot dropped into a template survives intact.
 echo "[new] rewriting names"
@@ -146,7 +146,7 @@ done
 # set after the rewrite pass.
 perl -0pi -e 's/^APP_ACCENT=.*$/APP_ACCENT="'"$accent"'"/m' "$target/packaging/app.env"
 
-# --- point the Atlas dependency somewhere real -----------------------------
+# point the Atlas dependency somewhere real
 # In the template it is a relative path, which only resolves inside this repo.
 case "$atlas" in
   git)
@@ -166,7 +166,7 @@ case "$atlas" in
   *) echo "error: --atlas wants 'git' or 'path', got '$atlas'" >&2; exit 1 ;;
 esac
 
-# --- the icon --------------------------------------------------------------
+# the icon
 if [ "$(uname -s)" = "Darwin" ]; then
   echo "[new] generating a placeholder icon"
   (cd "$target" && scripts/icon.sh >/dev/null) || echo "[new] icon generation failed — run scripts/icon.sh later"
@@ -174,7 +174,7 @@ else
   echo "[new] skipping the icon (needs macOS); run scripts/icon.sh on a Mac"
 fi
 
-# --- git -------------------------------------------------------------------
+# git
 if command -v git >/dev/null 2>&1; then
   git -C "$target" init -q
   git -C "$target" add -A

@@ -243,6 +243,15 @@ export const packages: readonly PackageDoc[] = [
     y: 85,
   },
   {
+    slug: "billing",
+    title: "@wess/atlas/billing",
+    description: "Stripe checkout, subscriptions, customer portal, and verified webhooks.",
+    source: "packages/billing/AGENTS.md",
+    group: "service",
+    x: 91,
+    y: 87,
+  },
+  {
     slug: "sso",
     title: "@wess/atlas/sso",
     description: "An OIDC relying party for signing in with an identity provider.",

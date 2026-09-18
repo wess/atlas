@@ -53,6 +53,7 @@ tsconfig paths reaching in. Bump with `bun update @wess/atlas`.
 | `@atlas/oauth` | OAuth 2.1 server (PKCE, refresh rotation, device flow, discovery) |
 | `@atlas/sso` | OIDC relying-party (Sign in with $IdP): discovery, PKCE, state, code exchange, id_token verify |
 | `@atlas/email` | Provider-agnostic email transport + invite/reset templates |
+| `@atlas/billing` | Stripe checkout, customer portal, subscription state, verified webhooks |
 | `@atlas/share` | Share-URL builders (Twitter/X, FB, LinkedIn, Reddit, WhatsApp, Telegram, SMS, mailto) + server-side share-by-email |
 | `@atlas/storage` | S3-compatible storage, presigned URLs |
 | `@atlas/cache` | Redis caching with TTL, cache-aside |

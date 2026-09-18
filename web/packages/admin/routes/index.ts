@@ -49,7 +49,7 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
     const table = modelCfg.schema.table;
     const prefix = `${base}/api/${table}`;
 
-    // LIST
+    // List
     routes.push(
       get(
         prefix,
@@ -107,7 +107,7 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
       ),
     );
 
-    // GET ONE
+    // Get one
     routes.push(
       get(
         `${prefix}/:id`,
@@ -122,7 +122,7 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
     );
 
     if (!modelCfg.readOnly) {
-      // CREATE
+      // Create
       routes.push(
         post(
           prefix,
@@ -138,7 +138,7 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
         ),
       );
 
-      // UPDATE
+      // Update
       routes.push(
         put(
           `${prefix}/:id`,
@@ -160,7 +160,7 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
         ),
       );
 
-      // DELETE
+      // Delete
       routes.push(
         del(
           `${prefix}/:id`,
@@ -177,7 +177,7 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
         ),
       );
 
-      // BULK
+      // Bulk
       routes.push(
         post(
           `${prefix}/bulk`,
@@ -193,7 +193,7 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
       );
     }
 
-    // CUSTOM ACTIONS
+    // Custom actions
     if (modelCfg.actions?.length) {
       routes.push(
         post(
@@ -213,7 +213,7 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
       );
     }
 
-    // RELATIONS
+    // Relations
     if (modelCfg.relations?.length) {
       for (const rel of modelCfg.relations) {
         routes.push(

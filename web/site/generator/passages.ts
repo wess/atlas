@@ -58,9 +58,7 @@ export type Passage = {
   readonly reading?: readonly Reading[];
 };
 
-// ---------------------------------------------------------------------------
 // The opening
-// ---------------------------------------------------------------------------
 
 const opening: readonly Passage[] = [
   {
@@ -110,9 +108,7 @@ const opening: readonly Passage[] = [
   },
 ];
 
-// ---------------------------------------------------------------------------
 // The web branch
-// ---------------------------------------------------------------------------
 
 const webForks: readonly Passage[] = [
   {
@@ -179,9 +175,7 @@ const webForks: readonly Passage[] = [
   },
 ];
 
-// ---------------------------------------------------------------------------
 // The desktop branch
-// ---------------------------------------------------------------------------
 
 const desktopForks: readonly Passage[] = [
   {
@@ -237,9 +231,7 @@ const desktopForks: readonly Passage[] = [
   },
 ];
 
-// ---------------------------------------------------------------------------
 // Endings — the web half
-// ---------------------------------------------------------------------------
 
 const webEndings: readonly Passage[] = [
   {
@@ -743,9 +735,7 @@ createMcpServer(collectTools(ctx), ctx).start()`,
   },
 ];
 
-// ---------------------------------------------------------------------------
 // Endings — the desktop half
-// ---------------------------------------------------------------------------
 
 const desktopEndings: readonly Passage[] = [
   {
@@ -1001,9 +991,7 @@ div().track_focus(&self.focus).flex().child(nav).child(content)`,
   },
 ];
 
-// ---------------------------------------------------------------------------
 // Appendices — reachable from every ending
-// ---------------------------------------------------------------------------
 
 const appendices: readonly Passage[] = [
   {

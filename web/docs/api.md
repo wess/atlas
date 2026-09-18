@@ -1,5 +1,22 @@
 # Atlas API Reference
 
+## @atlas/billing
+```
+createBilling({ secretKey, webhookSecret, prices, store, accountMetadataKey?, apiVersion? }) → Billing
+  .checkout({ accountId, plan, successUrl, cancelUrl }) → Promise<{ url }>
+  .portal(accountId, returnUrl) → Promise<{ url }>
+  .subscription(accountId) → Promise<Subscription | null>  persisted state
+  .sync(accountId) → Promise<Subscription | null>          fetch current Stripe state and persist
+  .webhook(rawBody, signature) → Promise<{ received: true, duplicate?, ignored? }>
+verifySignature(rawBody, signature, secret, { now?, tolerance? }) → Promise<boolean>
+isBillingError(error) → error is BillingError
+BillingStore: get(id), findByCustomer(id), save(next, expectedRevision), hasEvent(id), recordEvent(id)
+```
+App-owned authorization and storage. `save` must atomically compare revisions, persist the
+complete next account and any entitlement projection, and return false on conflict.
+Persist checkout attempts and idempotent event receipts. Each account owns a dedicated
+customer with at most one nonterminal subscription. See `packages/billing/AGENTS.md`.
+
 ## @atlas/config
 ```
 env(name, opts?) → EnvRef<T>          opts: { parse: (s)=>T, default: string }

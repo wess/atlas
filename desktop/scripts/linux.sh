@@ -28,13 +28,13 @@ out="$root/dist/linux"
 rm -rf "$out"
 mkdir -p "$out"
 
-# --- build ----------------------------------------------------------------
+# build
 rustup target add "$triple" >/dev/null 2>&1 || true
 cargo build --release -p app --target "$triple"
 bin="target/$triple/release/$dev_bin"
 strip "$bin" 2>/dev/null || true
 
-# --- staging tree, shared by the tarball and the AppImage AppDir -----------
+# staging tree, shared by the tarball and the AppImage AppDir
 appdir="$out/AppDir"
 mkdir -p "$appdir/usr/bin" "$appdir/usr/share/applications" "$appdir/usr/share/pixmaps"
 cp "$bin" "$appdir/usr/bin/$APP_SLUG"
@@ -43,7 +43,7 @@ cp assets/app.desktop "$appdir/usr/share/applications/$APP_SLUG.desktop"
 # master cannot be used directly.
 cp assets/icon512.png "$appdir/usr/share/pixmaps/$APP_SLUG.png"
 
-# --- .tar.gz ---------------------------------------------------------------
+# .tar.gz
 stem="$APP_SLUG-$version-linux-$arch"
 stage="$out/$stem"
 mkdir -p "$stage"
@@ -53,13 +53,13 @@ tar -C "$out" -czf "$out/$stem.tar.gz" "$stem"
 rm -rf "$stage"
 echo "[linux] -> $stem.tar.gz"
 
-# --- .deb ------------------------------------------------------------------
+# .deb
 command -v cargo-deb >/dev/null 2>&1 || cargo install cargo-deb --locked
 cargo deb -p app --no-build --target "$triple" \
   --output "$out/${APP_SLUG}_${version}_${debarch}.deb"
 echo "[linux] -> ${APP_SLUG}_${version}_${debarch}.deb"
 
-# --- AppImage --------------------------------------------------------------
+# AppImage
 # CI runners often lack FUSE, so the helper AppImages are extracted and run.
 export APPIMAGE_EXTRACT_AND_RUN=1
 tools="$out/tools"
@@ -76,7 +76,7 @@ chmod +x "$ld" "$ait"
 ARCH="$arch" "$ait" "$appdir" "$out/$APP_NAME-$version-$arch.AppImage"
 echo "[linux] -> $APP_NAME-$version-$arch.AppImage"
 
-# --- leave only shippable artifacts ----------------------------------------
+# leave only shippable artifacts
 rm -rf "$appdir" "$tools"
 echo "[linux] artifacts in dist/linux:"
 ls -1 "$out"

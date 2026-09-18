@@ -87,6 +87,13 @@
         "typescript": "^5",
       },
     },
+    "packages/billing": {
+      "name": "@atlas/billing",
+      "version": "0.0.1",
+      "peerDependencies": {
+        "typescript": "^5",
+      },
+    },
     "packages/cache": {
       "name": "@atlas/cache",
       "version": "0.0.1",
@@ -244,6 +251,8 @@
     "@atlas/ai": ["@atlas/ai@workspace:packages/ai"],
 
     "@atlas/auth": ["@atlas/auth@workspace:packages/auth"],
+
+    "@atlas/billing": ["@atlas/billing@workspace:packages/billing"],
 
     "@atlas/cache": ["@atlas/cache@workspace:packages/cache"],
 
