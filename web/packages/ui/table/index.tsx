@@ -1,15 +1,34 @@
 import { Group, Pagination, Table, TextInput } from "@mantine/core";
 import {
   type ColumnDef,
+  columnFilteringFeature,
+  createFilteredRowModel,
+  createPaginatedRowModel,
+  createSortedRowModel,
+  filterFns,
   flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  globalFilteringFeature,
+  type RowData,
+  rowPaginationFeature,
+  rowSortingFeature,
+  sortFns,
+  tableFeatures,
+  useTable,
 } from "@tanstack/react-table";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import React from "react";
+
+const features = tableFeatures({
+  columnFilteringFeature,
+  globalFilteringFeature,
+  rowSortingFeature,
+  rowPaginationFeature,
+  filteredRowModel: createFilteredRowModel(),
+  sortedRowModel: createSortedRowModel(),
+  paginatedRowModel: createPaginatedRowModel(),
+  filterFns,
+  sortFns,
+});
 
 export type ColumnConfig<T> = {
   key: keyof T & string;
@@ -18,7 +37,7 @@ export type ColumnConfig<T> = {
   render?: (value: unknown, row: T) => React.ReactNode;
 };
 
-export const TextColumn = <T,>(config: ColumnConfig<T>): ColumnDef<T> => ({
+export const TextColumn = <T extends RowData>(config: ColumnConfig<T>): ColumnDef<typeof features, T> => ({
   accessorKey: config.key,
   header: config.label,
   enableSorting: config.sortable ?? false,
@@ -27,7 +46,7 @@ export const TextColumn = <T,>(config: ColumnConfig<T>): ColumnDef<T> => ({
     : (info) => String(info.getValue() ?? ""),
 });
 
-export const DateColumn = <T,>(config: ColumnConfig<T>): ColumnDef<T> => ({
+export const DateColumn = <T extends RowData>(config: ColumnConfig<T>): ColumnDef<typeof features, T> => ({
   accessorKey: config.key,
   header: config.label,
   enableSorting: config.sortable ?? false,
@@ -38,7 +57,10 @@ export const DateColumn = <T,>(config: ColumnConfig<T>): ColumnDef<T> => ({
   },
 });
 
-export const ActionColumn = <T,>(config: { onEdit?: (row: T) => void; onDelete?: (row: T) => void }): ColumnDef<T> => ({
+export const ActionColumn = <T extends RowData>(config: {
+  onEdit?: (row: T) => void;
+  onDelete?: (row: T) => void;
+}): ColumnDef<typeof features, T> => ({
   id: "actions",
   header: "Actions",
   cell: (info) => (
@@ -57,29 +79,28 @@ export const ActionColumn = <T,>(config: { onEdit?: (row: T) => void; onDelete?:
   ),
 });
 
-export type TableConfig<T> = {
+export type TableConfig<T extends RowData> = {
   data: T[];
-  columns: ColumnDef<T>[];
+  columns: ColumnDef<typeof features, T>[];
   pagination?: boolean;
   search?: boolean;
   pageSize?: number;
 };
 
-export const createTable = <T,>(config: TableConfig<T>) => {
+export const createTable = <T extends RowData>(config: TableConfig<T>) => {
   return () => {
     const [globalFilter, setGlobalFilter] = React.useState("");
 
-    const table = useReactTable({
+    const table = useTable({
+      features,
       data: config.data,
       columns: config.columns,
-      getCoreRowModel: getCoreRowModel(),
-      getSortedRowModel: getSortedRowModel(),
-      ...(config.pagination ? { getPaginationRowModel: getPaginationRowModel() } : {}),
-      ...(config.search
-        ? { getFilteredRowModel: getFilteredRowModel(), state: { globalFilter }, onGlobalFilterChange: setGlobalFilter }
-        : {}),
+      manualPagination: !config.pagination,
+      manualFiltering: !config.search,
+      state: { globalFilter },
+      onGlobalFilterChange: setGlobalFilter,
       initialState: {
-        pagination: { pageSize: config.pageSize ?? 10 },
+        pagination: { pageIndex: 0, pageSize: config.pageSize ?? 10 },
       },
     });
 
@@ -117,7 +138,7 @@ export const createTable = <T,>(config: TableConfig<T>) => {
           <Table.Tbody>
             {table.getRowModel().rows.map((row) => (
               <Table.Tr key={row.id}>
-                {row.getVisibleCells().map((cell) => (
+                {row.getAllCells().map((cell) => (
                   <Table.Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Table.Td>
                 ))}
               </Table.Tr>
@@ -127,7 +148,7 @@ export const createTable = <T,>(config: TableConfig<T>) => {
         {config.pagination && (
           <Pagination
             total={table.getPageCount()}
-            value={table.getState().pagination.pageIndex + 1}
+            value={table.state.pagination.pageIndex + 1}
             onChange={(p) => table.setPageIndex(p - 1)}
             mt="md"
           />

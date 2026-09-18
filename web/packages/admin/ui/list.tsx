@@ -11,11 +11,13 @@ import {
   Title,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { type ColumnDef, columnSizingFeature, flexRender, tableFeatures, useTable } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, Filter, Plus, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BulkBar } from "./components/bulkbar.tsx";
 import { FilterBuilder, type FilterRow } from "./components/filter.tsx";
+
+const features = tableFeatures({ columnSizingFeature });
 
 type SchemaModel = {
   table: string;
@@ -114,8 +116,8 @@ export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProp
     fetchData(meta.page);
   };
 
-  const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(() => {
-    const cols: ColumnDef<Record<string, unknown>>[] = [
+  const columns = useMemo<ColumnDef<typeof features, Record<string, unknown>>[]>(() => {
+    const cols: ColumnDef<typeof features, Record<string, unknown>>[] = [
       {
         id: "select",
         header: () => (
@@ -149,10 +151,10 @@ export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProp
     return cols;
   }, [schema.columns, selectedIds, data.length, sort, toggleSort, toggleSelect, toggleAll]);
 
-  const reactTable = useReactTable({
+  const reactTable = useTable({
+    features,
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
   });
 
   const filterFields = schema.filterFields ?? schema.columns.map((c) => c.name);
@@ -183,7 +185,7 @@ export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProp
         </ActionIcon>
       </Group>
 
-      <Collapse in={filterOpen}>
+      <Collapse expanded={filterOpen}>
         <Paper p="sm" mb="md" withBorder>
           <FilterBuilder filters={filters} fields={filterFields} onChange={setFilters} />
         </Paper>
@@ -220,7 +222,7 @@ export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProp
                   onNavigate(`detail/${table}/${row.original.id}`);
                 }}
               >
-                {row.getVisibleCells().map((cell) => (
+                {row.getAllCells().map((cell) => (
                   <Table.Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Table.Td>
                 ))}
               </Table.Tr>

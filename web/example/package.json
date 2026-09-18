@@ -7,12 +7,12 @@
     "start": "bun src/server.ts"
   },
   "devDependencies": {
-    "@types/react": "latest",
-    "@types/react-dom": "latest"
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0"
   },
   "dependencies": {
-    "react": "^19",
-    "react-dom": "^19",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "@atlas/config": "workspace:*",
     "@atlas/db": "workspace:*",
     "@atlas/migrate": "workspace:*",

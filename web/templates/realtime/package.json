@@ -13,8 +13,8 @@
     "@atlas/cli": "latest"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "@biomejs/biome": "latest",
-    "typescript": "^5"
+    "@types/bun": "^1.4.2",
+    "@biomejs/biome": "2.5.14",
+    "typescript": "^7.0.2"
   }
 }

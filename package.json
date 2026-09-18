@@ -1,0 +1,102 @@
+{
+  "name": "@wess/atlas",
+  "version": "0.3.0",
+  "description": "Composable Bun/TypeScript packages for building APIs, full-stack apps, and CLI tools",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wess/atlas.git"
+  },
+  "homepage": "https://wess.io/atlas/",
+  "bugs": "https://github.com/wess/atlas/issues",
+  "keywords": [
+    "bun",
+    "typescript",
+    "framework",
+    "api",
+    "fullstack",
+    "functional",
+    "http-server",
+    "websocket",
+    "auth",
+    "oauth",
+    "database",
+    "cli",
+    "agents",
+    "llm",
+    "mcp"
+  ],
+  "files": [
+    "web/packages",
+    "web/docs",
+    "web/llms.txt"
+  ],
+  "exports": {
+    "./admin": "./web/packages/admin/index.ts",
+    "./ai": "./web/packages/ai/index.ts",
+    "./auth": "./web/packages/auth/index.ts",
+    "./auth/social": "./web/packages/auth/social/index.ts",
+    "./billing": "./web/packages/billing/index.ts",
+    "./cache": "./web/packages/cache/index.ts",
+    "./cli": "./web/packages/cli/index.ts",
+    "./config": "./web/packages/config/index.ts",
+    "./db": "./web/packages/db/index.ts",
+    "./edge": "./web/packages/edge/index.ts",
+    "./email": "./web/packages/email/index.ts",
+    "./mcp": "./web/packages/mcp/index.ts",
+    "./migrate": "./web/packages/migrate/index.ts",
+    "./oauth": "./web/packages/oauth/index.ts",
+    "./request": "./web/packages/request/index.ts",
+    "./request/providers": "./web/packages/request/providers/index.ts",
+    "./security": "./web/packages/security/index.ts",
+    "./server": "./web/packages/server/index.ts",
+    "./server/sse": "./web/packages/server/sse/index.ts",
+    "./server/ws": "./web/packages/server/ws/index.ts",
+    "./share": "./web/packages/share/index.ts",
+    "./sso": "./web/packages/sso/index.ts",
+    "./storage": "./web/packages/storage/index.ts",
+    "./ui": "./web/packages/ui/index.ts",
+    "./ui/*": "./web/packages/ui/*/index.tsx",
+    "./packages/*": "./web/packages/*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.9",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "lucide-react": "^1.47.0",
+    "@mantine/core": "^9.6.1",
+    "@mantine/hooks": "^9.6.1",
+    "@mantine/form": "^9.6.1",
+    "@tanstack/react-table": "^9.2.4"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "lucide-react": {
+      "optional": true
+    },
+    "@mantine/core": {
+      "optional": true
+    },
+    "@mantine/hooks": {
+      "optional": true
+    },
+    "@mantine/form": {
+      "optional": true
+    },
+    "@tanstack/react-table": {
+      "optional": true
+    }
+  },
+  "type": "module"
+}

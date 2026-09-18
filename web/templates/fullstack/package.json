@@ -18,16 +18,16 @@
     "@atlas/migrate": "latest",
     "@atlas/ui": "latest",
     "@atlas/cli": "latest",
-    "@mantine/core": "^7",
-    "@mantine/hooks": "^7",
-    "react": "^19",
-    "react-dom": "^19"
+    "@mantine/core": "^9.6.1",
+    "@mantine/hooks": "^9.6.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@biomejs/biome": "latest",
-    "typescript": "^5"
+    "@types/bun": "^1.4.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@biomejs/biome": "2.5.14",
+    "typescript": "^7.0.2"
   }
 }

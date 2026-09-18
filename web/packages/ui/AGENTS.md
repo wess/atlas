@@ -81,7 +81,7 @@ When adding new blocks, prefer Lucide icons over unicode symbols or custom SVGs.
 
 ## Dependencies
 
-- `@mantine/core`, `@mantine/hooks`, `@mantine/form` (v7)
-- `@tanstack/react-table` (v8)
+- `@mantine/core`, `@mantine/hooks`, `@mantine/form` (v9)
+- `@tanstack/react-table` (v9)
 - `lucide-react`
 - `react`, `react-dom` (v19)

@@ -367,3 +367,9 @@ query(rag, question) → { answer, sources }
 runAgent({ ai, system?, tools, maxIterations? }, prompt) → { response, messages, iterations }
 withAi(provider) → PipeFn                  adds ai to conn.assigns
 ```
+
+## Dependency baseline
+
+Atlas 0.3 uses Zod 4, React 19.3, Mantine 9, and TanStack Table 9.
+Table column helpers return TanStack v9 column definitions. Pass object or array
+rows to `createTable`; its search, sorting, and pagination options are unchanged.

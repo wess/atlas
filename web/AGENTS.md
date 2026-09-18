@@ -4,11 +4,10 @@ Composable, functional Bun/TypeScript building blocks. No classes, no mutation, 
 
 ## Usage
 
-Atlas is published as a single package, `@wess/atlas` (npm), and also installs
-straight from [github.com/wess/atlas](https://github.com/wess/atlas):
+Atlas installs as a single package, `@wess/atlas`, straight from [github.com/wess/atlas](https://github.com/wess/atlas):
 
 ```bash
-bun add @wess/atlas        # or: bun add github:wess/atlas
+bun add github:wess/atlas
 ```
 
 Every package is a subpath export (`@wess/atlas/config`, `@wess/atlas/db`, …).
@@ -20,9 +19,9 @@ README.md):
 {
   "compilerOptions": {
     "paths": {
-      "@atlas/config": ["./node_modules/@wess/atlas/packages/config/index.ts"],
-      "@atlas/db":     ["./node_modules/@wess/atlas/packages/db/index.ts"],
-      "@atlas/server": ["./node_modules/@wess/atlas/packages/server/index.ts"]
+      "@atlas/config": ["./node_modules/@wess/atlas/web/packages/config/index.ts"],
+      "@atlas/db":     ["./node_modules/@wess/atlas/web/packages/db/index.ts"],
+      "@atlas/server": ["./node_modules/@wess/atlas/web/packages/server/index.ts"]
     }
   }
 }

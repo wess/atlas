@@ -13,7 +13,7 @@ No framework lock-in. No classes. Just functions and immutable data flowing thro
 ## Install
 
 ```bash
-bun add @wess/atlas
+bun add github:wess/atlas
 ```
 
 Every package is a subpath export, so you can import directly:
@@ -31,37 +31,39 @@ Prefer the `@atlas/<pkg>` spelling used throughout these docs? Map it via
 {
   "compilerOptions": {
     "paths": {
-      "@atlas/auth":        ["./node_modules/@wess/atlas/packages/auth/index.ts"],
-      "@atlas/auth/social": ["./node_modules/@wess/atlas/packages/auth/social/index.ts"],
-      "@atlas/cache":       ["./node_modules/@wess/atlas/packages/cache/index.ts"],
-      "@atlas/cli":         ["./node_modules/@wess/atlas/packages/cli/index.ts"],
-      "@atlas/config":      ["./node_modules/@wess/atlas/packages/config/index.ts"],
-      "@atlas/db":          ["./node_modules/@wess/atlas/packages/db/index.ts"],
-      "@atlas/edge":        ["./node_modules/@wess/atlas/packages/edge/index.ts"],
-      "@atlas/email":       ["./node_modules/@wess/atlas/packages/email/index.ts"],
-      "@atlas/mcp":         ["./node_modules/@wess/atlas/packages/mcp/index.ts"],
-      "@atlas/migrate":     ["./node_modules/@wess/atlas/packages/migrate/index.ts"],
-      "@atlas/oauth":       ["./node_modules/@wess/atlas/packages/oauth/index.ts"],
-      "@atlas/request":     ["./node_modules/@wess/atlas/packages/request/index.ts"],
-      "@atlas/request/providers": ["./node_modules/@wess/atlas/packages/request/providers/index.ts"],
-      "@atlas/security":    ["./node_modules/@wess/atlas/packages/security/index.ts"],
-      "@atlas/server":      ["./node_modules/@wess/atlas/packages/server/index.ts"],
-      "@atlas/server/ws":   ["./node_modules/@wess/atlas/packages/server/ws/index.ts"],
-      "@atlas/server/sse":  ["./node_modules/@wess/atlas/packages/server/sse/index.ts"],
-      "@atlas/share":       ["./node_modules/@wess/atlas/packages/share/index.ts"],
-      "@atlas/sso":         ["./node_modules/@wess/atlas/packages/sso/index.ts"],
-      "@atlas/storage":     ["./node_modules/@wess/atlas/packages/storage/index.ts"],
-      "@atlas/ai":          ["./node_modules/@wess/atlas/packages/ai/index.ts"],
-      "@atlas/admin":       ["./node_modules/@wess/atlas/packages/admin/index.ts"],
-      "@atlas/ui":          ["./node_modules/@wess/atlas/packages/ui/index.ts"],
-      "@atlas/ui/*":        ["./node_modules/@wess/atlas/packages/ui/*/index.tsx"]
+      "@atlas/auth":        ["./node_modules/@wess/atlas/web/packages/auth/index.ts"],
+      "@atlas/auth/social": ["./node_modules/@wess/atlas/web/packages/auth/social/index.ts"],
+      "@atlas/cache":       ["./node_modules/@wess/atlas/web/packages/cache/index.ts"],
+      "@atlas/cli":         ["./node_modules/@wess/atlas/web/packages/cli/index.ts"],
+      "@atlas/config":      ["./node_modules/@wess/atlas/web/packages/config/index.ts"],
+      "@atlas/db":          ["./node_modules/@wess/atlas/web/packages/db/index.ts"],
+      "@atlas/edge":        ["./node_modules/@wess/atlas/web/packages/edge/index.ts"],
+      "@atlas/email":       ["./node_modules/@wess/atlas/web/packages/email/index.ts"],
+      "@atlas/mcp":         ["./node_modules/@wess/atlas/web/packages/mcp/index.ts"],
+      "@atlas/migrate":     ["./node_modules/@wess/atlas/web/packages/migrate/index.ts"],
+      "@atlas/oauth":       ["./node_modules/@wess/atlas/web/packages/oauth/index.ts"],
+      "@atlas/request":     ["./node_modules/@wess/atlas/web/packages/request/index.ts"],
+      "@atlas/request/providers": ["./node_modules/@wess/atlas/web/packages/request/providers/index.ts"],
+      "@atlas/security":    ["./node_modules/@wess/atlas/web/packages/security/index.ts"],
+      "@atlas/server":      ["./node_modules/@wess/atlas/web/packages/server/index.ts"],
+      "@atlas/server/ws":   ["./node_modules/@wess/atlas/web/packages/server/ws/index.ts"],
+      "@atlas/server/sse":  ["./node_modules/@wess/atlas/web/packages/server/sse/index.ts"],
+      "@atlas/share":       ["./node_modules/@wess/atlas/web/packages/share/index.ts"],
+      "@atlas/sso":         ["./node_modules/@wess/atlas/web/packages/sso/index.ts"],
+      "@atlas/storage":     ["./node_modules/@wess/atlas/web/packages/storage/index.ts"],
+      "@atlas/ai":          ["./node_modules/@wess/atlas/web/packages/ai/index.ts"],
+      "@atlas/admin":       ["./node_modules/@wess/atlas/web/packages/admin/index.ts"],
+      "@atlas/ui":          ["./node_modules/@wess/atlas/web/packages/ui/index.ts"],
+      "@atlas/ui/*":        ["./node_modules/@wess/atlas/web/packages/ui/*/index.tsx"]
     }
   }
 }
 ```
 
-Installing straight from the repo also works (`bun add github:wess/atlas`) and
-lands in the same `node_modules/@wess/atlas/` location.
+GitHub installs use the root manifest, which exports the web workspace. The npm
+package is packed from `web/`; it has the same subpath exports but no `web/` prefix
+on internal filesystem paths. Prefer subpath imports so the install layout stays
+an implementation detail.
 
 Bump atlas with `bun update @wess/atlas`.
 
@@ -96,7 +98,7 @@ Build a user API with authentication in 60 lines.
 ```bash
 mkdir myapp && cd myapp
 bun init -y
-bun add @wess/atlas
+bun add github:wess/atlas
 ```
 
 The example below uses the `@atlas/<pkg>` aliases from the Install section.
