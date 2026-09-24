@@ -26,7 +26,7 @@ homepage = "https://wess.io/atlas/"
 # `default-features = false` drops the `webview` feature and its `wry`
 # dependency — an app that wants an embedded browser turns it back on.
 gpui = "0.2.2"
-guise-ui = { version = "=1.5.3", default-features = false }
+guise-ui = { version = "=1.7.0", default-features = false }
 
 # Async. One multi-thread runtime per process, reached through the bridge.
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "process", "time"] }
