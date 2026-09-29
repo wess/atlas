@@ -25,7 +25,7 @@ atlas-build = { path = "../../crates/build" }
 # `default-features = false` drops guise's `webview` feature and its `wry`
 # dependency; turn it back on if the app embeds web content.
 gpui = "0.2.2"
-guise-ui = { version = "=1.7.0", default-features = false }
+guise-ui = { version = "=1.9.1", default-features = false }
 
 # Async. One runtime, reached through `atlas::bridge`.
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }

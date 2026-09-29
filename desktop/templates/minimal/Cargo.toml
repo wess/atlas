@@ -16,7 +16,7 @@ atlas-desktop = { path = "../../crates/desktop" }
 atlas-build = { path = "../../crates/build" }
 
 gpui = "0.2.2"
-guise-ui = { version = "=1.7.0", default-features = false }
+guise-ui = { version = "=1.9.1", default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 
