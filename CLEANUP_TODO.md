@@ -18,19 +18,47 @@ original dependency declarations; it is not a claim about deployed versions.
 
 ## Current validation and release status
 
-The modular **0.4.4 release is published** with all 22 library artifacts and its
-integrity catalog. All 11 direct applications use it in their local working trees,
-with frozen GitHub installs, typechecks, and the shipped CLI guard passing.
-Isolated 0.4.3 application suites passed; 0.4.4 changes dependency closure and the
-CLI guard, with a new isolated production UI render gate. Inkling's actual 0.4.4
-PostgreSQL suite also passes all 397 cases.
-Original files and lockfiles are retained in the private migration backup recorded
-by the local migration receipt. The 0.4.7 candidate preserves native credential
-backends and Linux entry names after the keyring upgrade. Old/new macOS credential
-interoperability passed with a disposable test entry; Linux and Windows checks
-must pass before this candidate is released or native clients advance to it.
+The modular **[0.4.7 release](https://github.com/wess/atlas/releases/tag/v0.4.7) is
+published** with all 22 library artifacts and its integrity catalog. Downloaded
+release bytes match the catalog. The 11 direct web applications were migrated to it locally; frozen installs,
+typechecks, and the shipped CLI guard passed. Atlas 0.4.8 was subsequently
+released with image inputs, and Lacey has independently advanced to that release.
+The remaining consumers will advance after the updated release checks.
+Fresh isolated suites pass 2,198 unique application cases, including the additional
+provider-enabled Corsair cases and StandingHere's six social/privacy cases.
+
+[Inkling 1.23.3](https://github.com/wess/inkling/releases/tag/v1.23.3) is tagged and
+its checks pass on GitHub. All six active local client sites use that tag, with
+frozen installs, typechecks, audits, and library guards passing. The same checks
+pass against copies of the currently deployed source. Available site suites pass
+Schorror 5, Apothecary 16, and Warren 48 cases. These copies keep unfinished local
+client work out of the rollout.
+
+Native Bypath and Pluck are pinned to Atlas's `v0.4.7` Git tag. Both compile across
+all workspace targets on macOS. Bypath passes 67 native tests, including bounded UI
+handoff and interleaved reconnect-frame regressions; Pluck passes 75. Atlas preserves
+existing credential backends and Linux key identities. Linux interoperability,
+Windows concurrent settings replacement, macOS tests, and all three native template
+builds pass in CI. Old/new macOS credential interoperability also passed using one
+disposable test entry, which was removed. Native GUI/device login canaries remain.
+
+Original source and lockfiles remain in the private migration backup and receipts.
 Distribution stays in `wess/atlas`; no npm token or local Atlas checkout is required.
-Production has only been inspected read-only; no application deployment has changed.
+This cleanup has not deployed a live application. Lacey and StandingHere were
+independently redeployed during validation and are healthy with zero restarts;
+Lacey reports Atlas 0.4.8 and StandingHere reports 0.4.4. A separate Linux School
+image boots on a private disposable database, and its admin sign-in/dashboard have
+been verified in Chrome. All 11 application suites also pass in independent Linux
+containers without an Atlas source checkout. Pluck's actual Alpine production
+image passes its video cases; its external-network case passes in a separate
+network-enabled run. The one-site-at-a-time production rollout remains pending.
+
+The 0.4.9 candidate fixes stale CLI scaffold versions and adds a direct Windows
+Credential Manager interoperability gate. All ten scaffolds now select the CLI's
+coordinated release; the source catalog is checked against the source version.
+Candidate checks pass 684 source cases, 14 packed-install cases, all 15 generated
+fixtures, and the private S3 service gate. Windows cross-compilation passes; actual
+Windows credential execution still requires the CI runner.
 
 - Atlas emits 22 coordinated artifacts: the public facade and 21 backing libraries.
   Server-only packed installs work with an unreachable npm registry and without React
@@ -80,28 +108,28 @@ Production has only been inspected read-only; no application deployment has chan
   downloads, and multipart upload/download integrity. Anonymous access and invalid
   signatures are rejected. The native server archive is SHA-256 checked; CI and
   release workflows now require this gate without depending on Docker.
-- Atlas's full suite passes 672 tests; its five S3 integration cases are additionally
+- Atlas's 0.4.9 candidate suite passes 684 tests; its five S3 integration cases are additionally
   run by the service gate above. Source typechecks, formatting checks, and workflow
   lint pass. Existing lint warnings remain and are not represented as resolved.
 - Cubeplane, Bypath, Pluck, and StandingHere's browser builds pass with the upgraded
   dependencies. This does not establish production browser behavior or performance.
-- All six available Inkling client sites install, typecheck, and audit cleanly
-  against a packed Inkling candidate using the new Atlas libraries. Available site
-  suites pass: Schorror 5, Apothecary 16, Warren 48. These are staged migrations;
-  actual sites retain their existing pins pending release and rollout validation.
+- All six active Inkling client sites install, typecheck, and audit cleanly against
+  the tagged Inkling release and published Atlas libraries. Their actual working
+  trees are migrated. Deployed-source candidates pass the available site suites;
+  live rollout is pending the remaining container and backup checks.
 
 | Candidate application | Passing tests | Skipped tests |
 | --- | ---: | ---: |
 | Cubeplane | 49 | 0 |
 | OpenVendor | 22 | 0 |
 | Billing | 6 | 0 |
-| Lacey Recipes | 4 | 0 |
-| Klatch | 59 | 0 |
+| Lacey Recipes | 9 | 0 |
+| Klatch | 61 | 0 |
 | Bypath | 129 | 0 |
 | Pluck | 268 | 0 |
-| StandingHere | 144 | 0 |
+| StandingHere | 144 + 6 social/privacy cases | complementary isolated database run |
 | Stohr | 489 | 0 |
-| Inkling | 397 | 0 |
+| Inkling | 398 | 0 |
 | Corsair | 614 + 3 provider-enabled cases | complementary cases in each provider mode |
 
 Reproduce local Atlas release checks from `web/`:
@@ -127,9 +155,9 @@ at application or production databases.
 
 Downstream candidate validation is available through
 `bun validation/fleet.ts out/distribution /tmp/atlaslatest/inkling ~/Desktop/clients /tmp/atlasfleet`.
-It prepares a next-release Inkling migration; its proposed `v1.24.0` tag is not
-published. Both the disposable PostgreSQL cluster and RustFS process were stopped
-after verification.
+It derives the Inkling tag from the candidate's manifest. The local disposable
+PostgreSQL cluster and RustFS process were stopped after verification. A separate
+private Linux test database remains active while container validation continues.
 
 ## Consumer inventory
 
@@ -176,10 +204,10 @@ applications' APIs need compatibility checks even without direct Atlas imports.
   On 2026-10-22 its live URL returned HTTP 301 to `https://wess.dev/`, and no AAA
   container was running on gohan. Retained databases and archives are not rollout targets.
 
-## Proposed public module layout
+## Public module layout
 
-Existing entry points remain canonical; narrower entry points below are proposed
-where needed to isolate dependencies. Validate the boundaries before implementation.
+Existing entry points remain canonical; narrower public entry points isolate
+dependencies and are included in the coordinated release.
 
 | Area | Public imports |
 | --- | --- |
@@ -200,6 +228,33 @@ reduce memory usage. Installation size, loaded code, browser bundles, startup co
 and sustained memory consumption must be measured separately.
 
 ## 1. Baselines and release checkpoints
+
+Fresh production dependency sizes below use Bun 1.4.4 with `--production
+--omit=peer --frozen-lockfile --ignore-scripts`. The comparison includes stable
+dependency upgrades as well as Atlas packaging. Runtime library source is unchanged
+between the measured 0.4.4 web artifacts and 0.4.7, apart from CLI metadata and the
+migration planner; native changes are separate. Development install sizes are not
+used to claim savings. Original Cubeplane and OpenVendor file/link dependencies
+have no standalone baseline.
+
+| App | Original MiB | Migrated MiB | Change |
+| --- | ---: | ---: | ---: |
+| cubeplane | local file/link | 88.82 | no standalone baseline |
+| openvendor | local file/link | 81.45 | no standalone baseline |
+| billing | 18.28 | 8.70 | -52.4% |
+| lacey | 62.69 | 62.66 | -0.1% |
+| klatch | 18.28 | 1.17 | -93.6% |
+| bypath | 121.46 | 114.80 | -5.5% |
+| pluck | 295.54 | 289.16 | -2.2% |
+| standinghere | 160.91 | 174.35 | +8.3% |
+| stohr | 103.69 | 89.02 | -14.1% |
+| inkling | 81.55 | 88.46 | +8.5% |
+| corsair | 30.75 | 17.00 | -44.7% |
+
+StandingHere grows mainly through the barcode library, and Inkling through newer
+icons and the provider SDK. These are disk measurements, not browser bundle sizes
+or process memory. Atlas libraries occupy approximately 0.3–1.9 MiB per app.
+
 
 - [ ] Record each app's resolved Atlas commit, lockfile, runtime/toolchain versions,
   selected modules, checks, and current deployment artifact.
@@ -278,7 +333,7 @@ and sustained memory consumption must be measured separately.
 - [ ] Update runtime image install commands to use `--production --omit=peer` after
   recording the complete selected dependency closure. Build frontend assets with
   development tooling before creating the clean production dependency tree.
-- [ ] Add a CI check that rejects local Atlas dependency paths and source-checkout
+- [x] Add a CI check that rejects local Atlas dependency paths and source-checkout
   aliases so applications cannot silently revert to filesystem dependencies.
 - [ ] Run each application's typechecks, builds, and relevant isolated tests.
   Inspect test setup first: several suites wipe and recreate test databases.
@@ -301,7 +356,7 @@ and sustained memory consumption must be measured separately.
 - [ ] Verify native-client login and API behavior alongside browser flows.
 - [ ] Compare startup, memory, bundles, latency, and throughput against baselines;
   report measured savings separately and investigate regressions before rollout.
-- [ ] Run Atlas's own suite, example, documentation build, generated templates, and
+- [x] Run Atlas's own suite, example, documentation build, generated templates, and
   clean minimal/server/UI consumer checks as release gates.
 - [ ] Retain an exact previous application artifact and lockfile for rollback;
   account for any database changes before claiming rollback is safe.
@@ -345,7 +400,7 @@ using any app as a production pilot.
   conflicts and duplicate frontend runtimes rather than forcing incompatible versions.
 - [ ] Validate dependency upgrades as a distinct step from the Atlas packaging switch
   so failures have an identifiable cause.
-- [ ] Remove obsolete vendored archives, install patches, aliases, and unused
+- [x] Remove obsolete vendored archives, install patches, aliases, and unused
   dependencies after replacements pass their checks.
 - [ ] Record each app's selected modules, exact release, validation results,
   deployment outcome, rollback artifact, and measured resource/performance changes.

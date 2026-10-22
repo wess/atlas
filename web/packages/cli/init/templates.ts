@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { moduleDependencies } from "../modules/index.ts";
+import { moduleDependencies, version } from "../modules/index.ts";
+import { releaseUrl } from "../modules/source.ts";
 import type { Answers } from "./questions.ts";
 
 // Template scaffolding
@@ -67,6 +68,15 @@ export const scaffoldFromTemplate = async (
 
     let content = await Bun.file(file.abs).text();
     content = content.replaceAll("{{name}}", projectName);
+    if (file.rel === "package.json") {
+      const manifest = JSON.parse(content);
+      for (const section of ["dependencies", "devDependencies", "optionalDependencies"]) {
+        for (const name of Object.keys(manifest[section] ?? {})) {
+          if (/^@wess\/atlas(?:-|$)/.test(name)) manifest[section][name] = releaseUrl(name, version);
+        }
+      }
+      content = `${JSON.stringify(manifest, null, 2)}\n`;
+    }
 
     await Bun.write(destPath, content);
     console.log(`  created ${file.rel}`);

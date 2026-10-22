@@ -6,7 +6,7 @@ Composable, functional Bun/TypeScript building blocks. No classes, no mutation, 
 
 Consumers import public `@wess/atlas/<module>` entry points. The modular release
 uses a thin facade and separately distributed implementation libraries. After the
-release is published, use `bunx --package https://github.com/wess/atlas/releases/download/v0.4.8/wess-atlas-cli-0.4.8.tgz atlas add server db/postgres db/query`
+release is published, use `bunx --package https://github.com/wess/atlas/releases/download/v0.4.9/wess-atlas-cli-0.4.9.tgz atlas add server db/postgres db/query`
 to record only selected modules and their dependencies. See README.md for release
 status and installation commands. Do not configure aliases into node_modules or
 require a neighboring Atlas checkout.
@@ -15,6 +15,9 @@ Source development retains internal workspace aliases and relative imports.
 `bun run distribution:build` emits the facade, rewrites implementation imports,
 and packs all libraries under `out/distribution/`. `bun run distribution:verify`
 checks packed installs with unrelated optional peers absent.
+
+After bumping versions, run `bun run distribution:build` before tests and committing.
+The source catalog and template dependencies must match the current package version.
 
 ## Bun Only
 
