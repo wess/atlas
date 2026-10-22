@@ -72,11 +72,11 @@ test("applyDefaults accepts partial overrides", () => {
 test("generated projects select versioned Atlas libraries", () => {
   const answers = applyDefaults({ template: "custom", features: ["auth", "storage", "admin"] });
   const pkg = JSON.parse(generatePackageJson(answers));
-  expect(pkg.dependencies["@wess/atlas"]).toBe(releaseUrl("@wess/atlas", "0.4.4"));
-  expect(pkg.dependencies["@wess/atlas-server"]).toBe(releaseUrl("@wess/atlas-server", "0.4.4"));
-  expect(pkg.dependencies["@wess/atlas-auth"]).toBe(releaseUrl("@wess/atlas-auth", "0.4.4"));
-  expect(pkg.dependencies["@wess/atlas-admin"]).toBe(releaseUrl("@wess/atlas-admin", "0.4.4"));
-  expect(pkg.dependencies["@wess/atlas-storage"]).toBe(releaseUrl("@wess/atlas-storage", "0.4.4"));
+  expect(pkg.dependencies["@wess/atlas"]).toBe(releaseUrl("@wess/atlas", "0.4.7"));
+  expect(pkg.dependencies["@wess/atlas-server"]).toBe(releaseUrl("@wess/atlas-server", "0.4.7"));
+  expect(pkg.dependencies["@wess/atlas-auth"]).toBe(releaseUrl("@wess/atlas-auth", "0.4.7"));
+  expect(pkg.dependencies["@wess/atlas-admin"]).toBe(releaseUrl("@wess/atlas-admin", "0.4.7"));
+  expect(pkg.dependencies["@wess/atlas-storage"]).toBe(releaseUrl("@wess/atlas-storage", "0.4.7"));
   expect(Object.values(pkg.dependencies).some((value) => /^(file:|link:|workspace:|github:)/.test(String(value)))).toBe(
     false,
   );
@@ -107,8 +107,8 @@ test("frontend scaffolds declare the UI peer dependencies", () => {
   const pkg = JSON.parse(generatePackageJson(applyDefaults({ template: "custom", frontend: true })));
   expect(pkg.dependencies.react).toBeDefined();
   expect(pkg.dependencies["@mantine/core"]).toBeDefined();
-  expect(pkg.dependencies["@wess/atlas"]).toBe(releaseUrl("@wess/atlas", "0.4.4"));
-  expect(pkg.dependencies["@wess/atlas-ui"]).toBe(releaseUrl("@wess/atlas-ui", "0.4.4"));
+  expect(pkg.dependencies["@wess/atlas"]).toBe(releaseUrl("@wess/atlas", "0.4.7"));
+  expect(pkg.dependencies["@wess/atlas-ui"]).toBe(releaseUrl("@wess/atlas-ui", "0.4.7"));
   expect(pkg.dependencies["@tanstack/react-table"]).toBeUndefined();
 });
 
