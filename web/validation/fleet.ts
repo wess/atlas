@@ -73,7 +73,7 @@ export async function validateFleet(
     }
     const intended = structuredClone(app);
     // the next Inkling tag must be released with GitHub-backed Atlas dependencies
-    intended.dependencies.inkling = "github:wess/inkling#v1.24.0";
+    intended.dependencies.inkling = `github:wess/inkling#v${manifest.version}`;
     intended.engines = { ...intended.engines, bun: ">=1.4.4" };
     await Bun.write(join(directory, "migration.json"), JSON.stringify(intended, null, 2));
     app.dependencies.inkling = tarball;

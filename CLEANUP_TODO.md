@@ -25,7 +25,7 @@ Isolated 0.4.3 application suites passed; 0.4.4 changes dependency closure and t
 CLI guard, with a new isolated production UI render gate. Inkling's actual 0.4.4
 PostgreSQL suite also passes all 397 cases.
 Original files and lockfiles are retained in the private migration backup recorded
-by the local migration receipt. The 0.4.6 candidate preserves native credential
+by the local migration receipt. The 0.4.7 candidate preserves native credential
 backends and Linux entry names after the keyring upgrade. Old/new macOS credential
 interoperability passed with a disposable test entry; Linux and Windows checks
 must pass before this candidate is released or native clients advance to it.
@@ -48,8 +48,8 @@ Production has only been inspected read-only; no application deployment has chan
   signup/login/post persistence, and admin API access for anonymous/user/admin roles.
   The fixture verifier is now required in CI and release workflows.
 - Pluck's Sharp security update is applied to its working tree and lockfile. Other
-  compatibility fixes are applied where they remain compatible with pinned Atlas;
-  the full Atlas dependency migrations remain pending publication.
+  compatibility fixes and modular library migrations are applied to the 11 direct
+  app working trees; downstream site and native-client updates remain in progress.
 - Web dependency audit reports no vulnerabilities or outdated packages. Desktop
   `cargo audit` reports zero vulnerabilities but 13 unmaintained dependency warnings
   (including duplicate versions). These are unresolved maintenance risks, not a
@@ -65,6 +65,11 @@ Production has only been inspected read-only; no application deployment has chan
   bytes RSS; the packed candidate peaked at 110,706,688 bytes (about 90% less).
   Total time was 582 ms versus 495 ms. These local results include the receiver
   in the same process and do not replace production latency or capacity testing.
+- A three-trial local HTTP comparison (32 concurrent clients, 20,000 measured
+  requests after warmup per trial) produced median throughput of 57,709 versus
+  57,688 requests/sec and p95 latency of 0.809 versus 0.841 ms. Median startup
+  was 12.62 versus 12.89 ms. This small server fixture shows similar performance;
+  it does not establish fleet-wide resource or latency changes.
 - Clean production installs use `bun install --production --omit=peer --frozen-lockfile`.
   Selected module closures and external peers are explicit application dependencies.
   The plain `--production` test retained the development CLI through optional peers;
