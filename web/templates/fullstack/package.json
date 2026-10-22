@@ -15,11 +15,11 @@
     "@mantine/hooks": "^9.7.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "@wess/atlas": "https://github.com/wess/atlas/releases/download/v0.4.7/wess-atlas-0.4.7.tgz",
-    "@wess/atlas-server": "https://github.com/wess/atlas/releases/download/v0.4.7/wess-atlas-server-0.4.7.tgz",
-    "@wess/atlas-db": "https://github.com/wess/atlas/releases/download/v0.4.7/wess-atlas-db-0.4.7.tgz",
-    "@wess/atlas-config": "https://github.com/wess/atlas/releases/download/v0.4.7/wess-atlas-config-0.4.7.tgz",
-    "@wess/atlas-ui": "https://github.com/wess/atlas/releases/download/v0.4.7/wess-atlas-ui-0.4.7.tgz"
+    "@wess/atlas": "https://github.com/wess/atlas/releases/download/v0.4.9/wess-atlas-0.4.9.tgz",
+    "@wess/atlas-server": "https://github.com/wess/atlas/releases/download/v0.4.9/wess-atlas-server-0.4.9.tgz",
+    "@wess/atlas-db": "https://github.com/wess/atlas/releases/download/v0.4.9/wess-atlas-db-0.4.9.tgz",
+    "@wess/atlas-config": "https://github.com/wess/atlas/releases/download/v0.4.9/wess-atlas-config-0.4.9.tgz",
+    "@wess/atlas-ui": "https://github.com/wess/atlas/releases/download/v0.4.9/wess-atlas-ui-0.4.9.tgz"
   },
   "devDependencies": {
     "@types/bun": "^1.4.3",
@@ -27,6 +27,6 @@
     "@types/react-dom": "^19.3.0",
     "@biomejs/biome": "2.6.2",
     "typescript": "^7.0.2",
-    "@wess/atlas-cli": "https://github.com/wess/atlas/releases/download/v0.4.7/wess-atlas-cli-0.4.7.tgz"
+    "@wess/atlas-cli": "https://github.com/wess/atlas/releases/download/v0.4.9/wess-atlas-cli-0.4.9.tgz"
   }
 }

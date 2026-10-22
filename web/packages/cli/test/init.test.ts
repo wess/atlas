@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+import source from "../../../package.json";
 import { applyDefaults, getQuestionSpec, questions } from "../init/questions.ts";
 import {
   generateEnv,
@@ -9,7 +11,27 @@ import {
   listTemplates,
   scaffoldFromTemplate,
 } from "../init/templates.ts";
+import { version } from "../modules/index.ts";
 import { releaseUrl } from "../modules/source.ts";
+
+test("the source catalog matches the current release", () => {
+  expect(version).toBe(source.version);
+});
+
+test.each(listTemplates())("the %s scaffold uses the CLI release", async (template) => {
+  const directory = mkdtempSync(join(tmpdir(), "atlasscaffold"));
+  try {
+    await scaffoldFromTemplate(template, directory, "fixture");
+    const manifest = await Bun.file(join(directory, "package.json")).json();
+    for (const section of ["dependencies", "devDependencies"]) {
+      for (const [name, value] of Object.entries(manifest[section] ?? {})) {
+        if (/^@wess\/atlas(?:-|$)/.test(name)) expect(value).toBe(releaseUrl(name, source.version));
+      }
+    }
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
 
 test("questions are well-formed", () => {
   expect(questions.length).toBeGreaterThan(0);
@@ -72,11 +94,11 @@ test("applyDefaults accepts partial overrides", () => {
 test("generated projects select versioned Atlas libraries", () => {
   const answers = applyDefaults({ template: "custom", features: ["auth", "storage", "admin"] });
   const pkg = JSON.parse(generatePackageJson(answers));
-  expect(pkg.dependencies["@wess/atlas"]).toBe(releaseUrl("@wess/atlas", "0.4.7"));
-  expect(pkg.dependencies["@wess/atlas-server"]).toBe(releaseUrl("@wess/atlas-server", "0.4.7"));
-  expect(pkg.dependencies["@wess/atlas-auth"]).toBe(releaseUrl("@wess/atlas-auth", "0.4.7"));
-  expect(pkg.dependencies["@wess/atlas-admin"]).toBe(releaseUrl("@wess/atlas-admin", "0.4.7"));
-  expect(pkg.dependencies["@wess/atlas-storage"]).toBe(releaseUrl("@wess/atlas-storage", "0.4.7"));
+  expect(pkg.dependencies["@wess/atlas"]).toBe(releaseUrl("@wess/atlas", source.version));
+  expect(pkg.dependencies["@wess/atlas-server"]).toBe(releaseUrl("@wess/atlas-server", source.version));
+  expect(pkg.dependencies["@wess/atlas-auth"]).toBe(releaseUrl("@wess/atlas-auth", source.version));
+  expect(pkg.dependencies["@wess/atlas-admin"]).toBe(releaseUrl("@wess/atlas-admin", source.version));
+  expect(pkg.dependencies["@wess/atlas-storage"]).toBe(releaseUrl("@wess/atlas-storage", source.version));
   expect(Object.values(pkg.dependencies).some((value) => /^(file:|link:|workspace:|github:)/.test(String(value)))).toBe(
     false,
   );
@@ -107,8 +129,8 @@ test("frontend scaffolds declare the UI peer dependencies", () => {
   const pkg = JSON.parse(generatePackageJson(applyDefaults({ template: "custom", frontend: true })));
   expect(pkg.dependencies.react).toBeDefined();
   expect(pkg.dependencies["@mantine/core"]).toBeDefined();
-  expect(pkg.dependencies["@wess/atlas"]).toBe(releaseUrl("@wess/atlas", "0.4.7"));
-  expect(pkg.dependencies["@wess/atlas-ui"]).toBe(releaseUrl("@wess/atlas-ui", "0.4.7"));
+  expect(pkg.dependencies["@wess/atlas"]).toBe(releaseUrl("@wess/atlas", source.version));
+  expect(pkg.dependencies["@wess/atlas-ui"]).toBe(releaseUrl("@wess/atlas-ui", source.version));
   expect(pkg.dependencies["@tanstack/react-table"]).toBeUndefined();
 });
 
