@@ -96,7 +96,6 @@ export const generatePackageJson = (answers: Answers): string => {
   const deps = moduleDependencies(modules);
   const cliVersion = deps["@wess/atlas-cli"]!;
   delete deps["@wess/atlas-cli"];
-  if (answers.frontend) deps["react-dom"] = "^19.3.1";
 
   return JSON.stringify(
     {

@@ -18,13 +18,16 @@ original dependency declarations; it is not a claim about deployed versions.
 
 ## Current validation and release status
 
-The modular **0.4.3 candidate is not published**. Distribution uses versioned
-GitHub release artifacts from `wess/atlas`, per the repository-only requirement.
-Each selected library is installed from its release asset URL; imports remain
-`@wess/atlas/<package>`. Consumer release manifests are prepared in isolated candidates;
-their tarball-based validation lockfiles must never become deployment lockfiles.
-Keep current app dependencies until the tested libraries are uploaded and clean
-GitHub release installs pass. No production deployment or rollback has been verified.
+The modular **0.4.3 release is published** with all 22 library artifacts and its
+integrity catalog. All 11 direct applications have been migrated in their local
+working trees to GitHub release URLs and canonical imports after isolated
+0.4.3 installs, typechecks, audits, CLI checks, and application tests passed.
+Original files and lockfiles are retained in the private migration backup recorded
+by the local migration receipt. The 0.4.4 candidate adds explicit required external
+peers for production UI installs and excludes hidden checkouts from source checks;
+it must pass release verification before applications advance to it.
+Distribution stays in `wess/atlas`; no npm token or local Atlas checkout is required.
+Production has only been inspected read-only; no application deployment has changed.
 
 - Atlas emits 22 coordinated artifacts: the public facade and 21 backing libraries.
   Server-only packed installs work with an unreachable npm registry and without React
@@ -69,7 +72,7 @@ GitHub release installs pass. No production deployment or rollback has been veri
   downloads, and multipart upload/download integrity. Anonymous access and invalid
   signatures are rejected. The native server archive is SHA-256 checked; CI and
   release workflows now require this gate without depending on Docker.
-- Atlas's full suite passes 670 tests; its five S3 integration cases are additionally
+- Atlas's full suite passes 672 tests; its five S3 integration cases are additionally
   run by the service gate above. Source typechecks, formatting checks, and workflow
   lint pass. Existing lint warnings remain and are not represented as resolved.
 - Cubeplane, Bypath, Pluck, and StandingHere's browser builds pass with the upgraded
@@ -212,13 +215,15 @@ and sustained memory consumption must be measured separately.
 - [x] Install only selected modules and their required dependency closure. Validate
   Bun's peer dependency behavior rather than assuming optional peers save installs.
 - [x] Test real packed artifacts in a clean consumer outside the Atlas workspace.
-- [ ] Ensure unused or missing optional modules do not break unrelated imports.
+- [x] Ensure unused or missing optional modules do not break unrelated imports.
 - [x] Keep password hashing, tokens, and session primitives independent of database
   flows and unused social providers.
 - [x] Separate query/schema code, database drivers, and changeset validation so
   consumers do not load unused drivers or Zod unnecessarily.
 - [x] Keep server modules independent of React, Mantine, and browser-only code.
-- [ ] Keep individual UI blocks independent of unrelated blocks and table/form peers.
+- [x] Keep individual UI blocks independent of unrelated blocks and table/form peers.
+  An isolated production provider render verifies required Mantine/React peers are
+  explicit and form, table, database, and Zod packages remain absent.
 - [x] Preserve `/admin` and `/admin/ui` separation in both imports and dependencies.
 - [x] Separate CLI argument parsing and process management from scaffolding and docs.
   Stohr uses CLI functionality at runtime, so those APIs must remain available.
@@ -227,37 +232,37 @@ and sustained memory consumption must be measured separately.
 
 ## 3. Remove consumer-specific workarounds
 
-- [ ] Migrate every Atlas-based app to released, versioned library dependencies.
+- [x] Migrate every direct Atlas-based app to released, versioned library dependencies.
   Remove Atlas `file:`, `link:`, cross-repository `workspace:` references, local
   tarballs, symlinks, and relative or absolute imports into an Atlas checkout.
   Atlas's own internal workspace dependencies remain an implementation detail.
-- [ ] Convert legacy `atlas/*` and `@atlas/*` imports to `@wess/atlas/*`.
-- [ ] Remove TypeScript aliases into `node_modules/atlas/web/packages` and other
+- [x] Convert legacy `atlas/*` and `@atlas/*` imports to `@wess/atlas/*`.
+- [x] Remove TypeScript aliases into `node_modules/atlas/web/packages` and other
   installation-layout assumptions after public export resolution passes.
-- [ ] Replace Klatch's private MCP imports with public exports for `createContext`,
+- [x] Replace Klatch's private MCP imports with public exports for `createContext`,
   `createMcpServer`, and `defineTool`.
 - [x] Provide a public storage-signing export for Stohr's multipart uploads and
   Inkling's storage adapter before removing their private imports.
 - [x] Add supported per-object upload ACL options for Inkling's public media uploads;
   preserve private defaults and avoid exposing a shared bucket through bucket policy.
-- [ ] Move Pluck's subscription-cancellation behavior into Atlas, including Stripe's
+- [x] Move Pluck's subscription-cancellation behavior into Atlas, including Stripe's
   `cancel_at` matching a subscription or item period end. Verify equivalence before
   deleting `web/scripts/patchbilling.ts` and its postinstall hook.
-- [ ] Replace Lacey Recipes' vendored social tarball with the released social module
+- [x] Replace Lacey Recipes' vendored social tarball with the released social module
   after access-rule and privacy checks pass.
-- [ ] Replace OpenVendor's global link and Cubeplane's local file dependency with
+- [x] Replace OpenVendor's global link and Cubeplane's local file dependency with
   reproducible release dependencies.
-- [ ] Regenerate each migrated app's lockfile against the versioned GitHub library release;
+- [x] Regenerate each migrated app's lockfile against the versioned GitHub library release;
   remove local Atlas paths from manifests, lockfiles, build scripts, and deployment
   configuration. Install only the Atlas modules that app needs.
-- [ ] Replace unversioned GitHub refs with explicit release versions or immutable
+- [x] Replace unversioned GitHub refs with explicit release versions or immutable
   refs, and retain lockfiles for every app.
 - [ ] Remove unused Atlas aliases and dependencies based on source usage and the
   verified transitive graph, not merely what appears in old configuration.
 
 ## 4. Compatibility, security, and performance gates
 
-- [ ] Install each application against actual packed release artifacts; do not rely
+- [x] Install each application against actual packed release artifacts; do not rely
   on workspace resolution or local links masking missing exports or dependencies.
 - [ ] Verify each migrated app with a clean, lockfile-based install of its released
   Atlas libraries in CI or a container without the Atlas source checkout mounted.

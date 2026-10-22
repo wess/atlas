@@ -9,7 +9,8 @@ const ignored = new Set(["node_modules", "dist", "build", "coverage", "vendor", 
 
 async function* sources(directory: string, prefix = ""): AsyncGenerator<string> {
   for (const entry of await readdir(join(directory, prefix), { withFileTypes: true })) {
-    if (ignored.has(entry.name) || entry.isSymbolicLink()) continue;
+    if (ignored.has(entry.name) || entry.isSymbolicLink() || (entry.isDirectory() && entry.name.startsWith(".")))
+      continue;
     const path = join(prefix, entry.name);
     if (entry.isDirectory()) yield* sources(directory, path);
     else if (/(?:^|\/)tsconfig[^/]*\.json$|\.[cm]?[jt]sx?$/.test(path)) yield path;

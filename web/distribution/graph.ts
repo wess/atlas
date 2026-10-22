@@ -3,6 +3,7 @@ import { builtinModules } from "node:module";
 import { dirname, extname, join, relative, resolve } from "node:path";
 import { moduleOf, packageImport, packageName, type SourceConfig } from "./config.ts";
 import { type ParsedSource, parseSources, type Reference } from "./parse.ts";
+import { externalClosure } from "./peers.ts";
 
 export type Edge = Reference & { target?: string; external?: string };
 export type SourceNode = ParsedSource & { edges: Edge[] };
@@ -96,7 +97,7 @@ export const selectEntrypoints = (config: SourceConfig, graph: Graph, entries: s
   for (const entry of entries) visit(entry);
   return {
     packages: [...packages].sort(),
-    externals: Object.fromEntries(Object.entries(externals).sort(([a], [b]) => a.localeCompare(b))),
+    externals: externalClosure(config.externals, Object.keys(externals)),
   };
 };
 
@@ -124,6 +125,14 @@ export const modulePeers = (config: SourceConfig, graph: Graph, module: string):
       if (target && target !== module) peers[packageName(target)] = config.manifest.version;
       if (edge.external) peers[edge.external] = config.versions[edge.external]!;
     }
+  }
+  for (const name of Object.keys(
+    externalClosure(
+      config.externals,
+      Object.keys(peers).filter((name) => !name.startsWith("@wess/atlas-")),
+    ),
+  )) {
+    peers[name] = config.versions[name]!;
   }
   return Object.fromEntries(Object.entries(peers).sort(([a], [b]) => a.localeCompare(b)));
 };

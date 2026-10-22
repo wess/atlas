@@ -34,6 +34,8 @@ async function fixture(): Promise<string> {
         paths: { "@atlas/db": ["./packages/db/index.ts"] },
       },
     }),
+    "node_modules/react/package.json": JSON.stringify({ name: "react", version: "19.0.0" }),
+    "node_modules/zod/package.json": JSON.stringify({ name: "zod", version: "4.0.0" }),
     "packages/server/index.ts": [
       'export type { Row } from "../db";',
       'export { local } from "./local";',
@@ -63,7 +65,7 @@ test("type imports, reexports, aliases, dynamic imports and extensionless indexe
   const graph = await createGraph(config);
   expect(selectEntrypoints(config, graph, [config.entries["./server"]!])).toEqual({
     packages: ["@wess/atlas-db", "@wess/atlas-server"],
-    externals: { zod: "^4.0.0" },
+    externals: { zod: "4.0.0" },
   });
   const file = config.entries["./server"]!;
   const rewritten = rewriteSource(config, file, graph.get(file)!);
@@ -79,7 +81,7 @@ test("build expands real block exports and produces source-only packages with op
   const { catalog, mapping, outdir } = await build({ root, pack: false });
   expect(mapping).toBe(catalog.exports);
   expect(Object.keys(mapping)).toEqual(["./db", "./server", "./ui/block"]);
-  expect(mapping["./ui/block"]!.externals).toEqual({ react: "^19.0.0" });
+  expect(mapping["./ui/block"]!.externals).toEqual({ react: "19.0.0" });
   const backing = await Bun.file(join(outdir, "atlas-server/package.json")).json();
   expect(backing.version).toBe("1.2.3");
   expect(backing.exports).toEqual({ ".": "./packages/server/index.ts", "./*": "./packages/server/*" });
@@ -113,4 +115,40 @@ test("undeclared type-only external and unresolved local imports fail the build"
     failure = error;
   }
   expect(String(failure)).toContain("Unresolved source import ./missing");
+});
+
+test("required external peers are explicit, compatible, and pinned to tested versions", async () => {
+  const root = await fixture();
+  const manifest = await Bun.file(join(root, "package.json")).json();
+  Object.assign(manifest.peerDependencies, {
+    "@mantine/core": "^9.0.0",
+    "@mantine/hooks": "^9.0.0",
+    "react-dom": "^19.0.0",
+  });
+  await Bun.write(join(root, "package.json"), JSON.stringify(manifest));
+  const core = {
+    name: "@mantine/core",
+    version: "9.0.0",
+    peerDependencies: { "@mantine/hooks": "9.0.0", react: "^19.0.0", "react-dom": "^19.0.0", unused: "*" },
+    peerDependenciesMeta: { unused: { optional: true } },
+  };
+  await Bun.write(join(root, "node_modules/@mantine/core/package.json"), JSON.stringify(core));
+  for (const [name, version] of [
+    ["@mantine/hooks", "9.0.0"],
+    ["react-dom", "19.0.0"],
+  ])
+    await Bun.write(join(root, "node_modules", name!, "package.json"), JSON.stringify({ name, version }));
+  await Bun.write(join(root, "packages/ui/block/index.tsx"), 'export { MantineProvider } from "@mantine/core";');
+  const config = await readConfig(root);
+  const graph = await createGraph(config);
+  expect(selectEntrypoints(config, graph, [config.entries["./ui/block"]!]).externals).toEqual({
+    "@mantine/core": "9.0.0",
+    "@mantine/hooks": "9.0.0",
+    react: "19.0.0",
+    "react-dom": "19.0.0",
+  });
+  core.peerDependencies.react = "^18.0.0";
+  await Bun.write(join(root, "node_modules/@mantine/core/package.json"), JSON.stringify(core));
+  const incompatible = await readConfig(root);
+  expect(() => selectEntrypoints(incompatible, graph, [config.entries["./ui/block"]!])).toThrow("requires react");
 });

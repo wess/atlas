@@ -1,5 +1,5 @@
 {
-  "version": "0.4.3",
+  "version": "0.4.4",
   "exports": {
     "./admin": {
       "entry": "packages/admin/index.ts",
@@ -12,7 +12,7 @@
         "@wess/atlas-server"
       ],
       "externals": {
-        "zod": "^4.6.7"
+        "zod": "4.6.7"
       }
     },
     "./admin/ui": {
@@ -23,11 +23,12 @@
         "@wess/atlas-admin"
       ],
       "externals": {
-        "@mantine/core": "^9.7.3",
-        "@mantine/hooks": "^9.7.3",
-        "@tanstack/react-table": "^9.3.1",
-        "lucide-react": "^1.61.0",
-        "react": "^19.3.1"
+        "@mantine/core": "9.7.3",
+        "@mantine/hooks": "9.7.3",
+        "@tanstack/react-table": "9.3.1",
+        "lucide-react": "1.61.0",
+        "react": "19.3.1",
+        "react-dom": "19.3.1"
       }
     },
     "./ai": {
@@ -407,13 +408,14 @@
         "@wess/atlas-ui"
       ],
       "externals": {
-        "@mantine/core": "^9.7.3",
-        "@mantine/form": "^9.7.3",
-        "@mantine/hooks": "^9.7.3",
-        "@tanstack/react-table": "^9.3.1",
-        "lucide-react": "^1.61.0",
-        "react": "^19.3.1",
-        "zod": "^4.6.7"
+        "@mantine/core": "9.7.3",
+        "@mantine/form": "9.7.3",
+        "@mantine/hooks": "9.7.3",
+        "@tanstack/react-table": "9.3.1",
+        "lucide-react": "1.61.0",
+        "react": "19.3.1",
+        "react-dom": "19.3.1",
+        "zod": "4.6.7"
       }
     },
     "./ui/ai": {
@@ -424,10 +426,11 @@
         "@wess/atlas-ui"
       ],
       "externals": {
-        "@mantine/core": "^9.7.3",
-        "@mantine/hooks": "^9.7.3",
-        "lucide-react": "^1.61.0",
-        "react": "^19.3.1"
+        "@mantine/core": "9.7.3",
+        "@mantine/hooks": "9.7.3",
+        "lucide-react": "1.61.0",
+        "react": "19.3.1",
+        "react-dom": "19.3.1"
       }
     },
     "./ui/auth": {
@@ -438,9 +441,11 @@
         "@wess/atlas-ui"
       ],
       "externals": {
-        "@mantine/core": "^9.7.3",
-        "lucide-react": "^1.61.0",
-        "react": "^19.3.1"
+        "@mantine/core": "9.7.3",
+        "@mantine/hooks": "9.7.3",
+        "lucide-react": "1.61.0",
+        "react": "19.3.1",
+        "react-dom": "19.3.1"
       }
     },
     "./ui/cache": {
@@ -451,9 +456,11 @@
         "@wess/atlas-ui"
       ],
       "externals": {
-        "@mantine/core": "^9.7.3",
-        "lucide-react": "^1.61.0",
-        "react": "^19.3.1"
+        "@mantine/core": "9.7.3",
+        "@mantine/hooks": "9.7.3",
+        "lucide-react": "1.61.0",
+        "react": "19.3.1",
+        "react-dom": "19.3.1"
       }
     },
     "./ui/forms": {
@@ -464,10 +471,12 @@
         "@wess/atlas-ui"
       ],
       "externals": {
-        "@mantine/core": "^9.7.3",
-        "@mantine/form": "^9.7.3",
-        "react": "^19.3.1",
-        "zod": "^4.6.7"
+        "@mantine/core": "9.7.3",
+        "@mantine/form": "9.7.3",
+        "@mantine/hooks": "9.7.3",
+        "react": "19.3.1",
+        "react-dom": "19.3.1",
+        "zod": "4.6.7"
       }
     },
     "./ui/nav": {
@@ -478,9 +487,11 @@
         "@wess/atlas-ui"
       ],
       "externals": {
-        "@mantine/core": "^9.7.3",
-        "lucide-react": "^1.61.0",
-        "react": "^19.3.1"
+        "@mantine/core": "9.7.3",
+        "@mantine/hooks": "9.7.3",
+        "lucide-react": "1.61.0",
+        "react": "19.3.1",
+        "react-dom": "19.3.1"
       }
     },
     "./ui/provider": {
@@ -491,8 +502,10 @@
         "@wess/atlas-ui"
       ],
       "externals": {
-        "@mantine/core": "^9.7.3",
-        "react": "^19.3.1"
+        "@mantine/core": "9.7.3",
+        "@mantine/hooks": "9.7.3",
+        "react": "19.3.1",
+        "react-dom": "19.3.1"
       }
     },
     "./ui/storage": {
@@ -503,9 +516,11 @@
         "@wess/atlas-ui"
       ],
       "externals": {
-        "@mantine/core": "^9.7.3",
-        "lucide-react": "^1.61.0",
-        "react": "^19.3.1"
+        "@mantine/core": "9.7.3",
+        "@mantine/hooks": "9.7.3",
+        "lucide-react": "1.61.0",
+        "react": "19.3.1",
+        "react-dom": "19.3.1"
       }
     },
     "./ui/table": {
@@ -516,10 +531,12 @@
         "@wess/atlas-ui"
       ],
       "externals": {
-        "@mantine/core": "^9.7.3",
-        "@tanstack/react-table": "^9.3.1",
-        "lucide-react": "^1.61.0",
-        "react": "^19.3.1"
+        "@mantine/core": "9.7.3",
+        "@mantine/hooks": "9.7.3",
+        "@tanstack/react-table": "9.3.1",
+        "lucide-react": "1.61.0",
+        "react": "19.3.1",
+        "react-dom": "19.3.1"
       }
     }
   }

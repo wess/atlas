@@ -30,6 +30,7 @@ test("library checks accept pinned GitHub releases and reject local paths, alias
       }),
     );
     await Bun.write(join(root, "src/server.ts"), 'import { serve } from "@wess/atlas/server";');
+    await Bun.write(join(root, ".cache/checkouts/old/server.ts"), 'import { serve } from "atlas/server";');
     expect(await checkLibraries(root)).toEqual([]);
     await Bun.write(join(root, "bun.lock"), '{"packages":{"atlas":["atlas@github:wess/atlas#v0.3.0", {}]}}');
     expect((await checkLibraries(root)).some((value) => value.includes("legacy Atlas dependency"))).toBe(true);

@@ -1,6 +1,7 @@
 // source layout and public entrypoints
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
+import { type External, readExternals } from "./peers.ts";
 
 export type Manifest = {
   name: string;
@@ -23,6 +24,7 @@ export type SourceConfig = {
   aliases: Record<string, string[]>;
   versions: Record<string, string>;
   manifests: Record<string, Manifest>;
+  externals: Record<string, External>;
 };
 
 const ignored = new Set(["test", "tests", "__tests__", "node_modules", "dist", "build", "coverage", ".git"]);
@@ -101,7 +103,8 @@ export async function readConfig(root: string): Promise<SourceConfig> {
       if (!name.startsWith("@atlas/") && !name.startsWith("@wess/atlas")) versions[name] ??= version;
     }
   }
-  return { root, manifest, modules, files, entries, aliases, versions, manifests };
+  const externals = await readExternals(root, versions);
+  return { root, manifest, modules, files, entries, aliases, versions, manifests, externals };
 }
 
 export const sourceRoot = resolve(dirname(import.meta.path), "..");
