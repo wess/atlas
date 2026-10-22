@@ -39,6 +39,8 @@ jobs:
       - run: cargo install cargo-audit --locked --version 0.22.2
       - name: Audit library and template lockfiles
         run: |
-          for lock in desktop/Cargo.lock desktop/templates/*/Cargo.lock; do
-            cargo audit --file "$lock"
+          cargo audit --file desktop/Cargo.lock
+          for template in minimal sidebar workspace; do
+            cargo generate-lockfile --manifest-path "desktop/templates/$template/Cargo.toml"
+            cargo audit --file "desktop/templates/$template/Cargo.lock"
           done

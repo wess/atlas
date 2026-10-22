@@ -11,15 +11,22 @@ const digest = async (path: string): Promise<string> =>
   new Bun.CryptoHasher("sha512").update(await Bun.file(path).arrayBuffer()).digest("hex");
 
 const gh: Gh = async (args) => {
-  const child = Bun.spawn(["gh", ...args], { stdout: "pipe", stderr: "pipe" });
-  const [code, stdout, stderr] = await Promise.all([
-    child.exited,
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text(),
-  ]);
-  if (code === 0) return stdout;
-  if (/HTTP 404/.test(stderr)) return undefined;
-  throw new Error(`GitHub release command failed: ${stderr}`);
+  for (let attempt = 0; ; attempt++) {
+    const child = Bun.spawn(["gh", ...args], { stdout: "pipe", stderr: "pipe" });
+    const [code, stdout, stderr] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ]);
+    if (code === 0) return stdout;
+    if (/HTTP 404/.test(stderr)) return undefined;
+    // the release API can lag behind a successfully created tag reference
+    if (attempt < 4 && args[0] === "release" && args[1] === "create" && stderr.includes("--verify-tag")) {
+      await Bun.sleep(1000 * 2 ** attempt);
+      continue;
+    }
+    throw new Error(`GitHub release command failed: ${stderr}`);
+  }
 };
 
 export async function tagRevision(tag: string, command: Gh = gh): Promise<string | undefined> {
