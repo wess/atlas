@@ -1,3 +1,4 @@
+import { messageImages } from "./images.ts";
 import type {
   AiProvider,
   ChatOptions,
@@ -28,7 +29,15 @@ type OllamaEmbedResponse = {
   embedding: number[];
 };
 
-const formatMessages = (messages: Message[]) => messages.map((m) => ({ role: m.role, content: m.content }));
+const formatMessages = (messages: Message[]) =>
+  messages.map((m) => {
+    const images = messageImages(m);
+    return {
+      role: m.role,
+      content: m.content,
+      ...(images.length ? { images: images.map((image) => image.data) } : {}),
+    };
+  });
 
 const formatTools = (tools: ToolDef[]) =>
   tools.map((t) => ({

@@ -26,6 +26,7 @@ export type {
   ChatResponse,
   EmbedOptions,
   EmbedResponse,
+  ImageAttachment,
   Message,
   ProviderConfig,
   StreamChunk,

@@ -1,3 +1,4 @@
+import { messageImages } from "./images.ts";
 import type {
   AiProvider,
   ChatOptions,
@@ -31,6 +32,20 @@ const formatTools = (tools: ToolDef[]) =>
 const formatMessages = (messages: Message[]) => {
   const formatted: any[] = [];
   for (const m of messages) {
+    const images = messageImages(m);
+    if (images.length) {
+      formatted.push({
+        role: m.role,
+        content: [
+          ...images.map((image) => ({
+            type: "image",
+            source: { type: "base64", media_type: image.mediaType, data: image.data },
+          })),
+          { type: "text", text: m.content },
+        ],
+      });
+      continue;
+    }
     if (m.role === "system") continue;
     if (m.role === "tool") {
       formatted.push({

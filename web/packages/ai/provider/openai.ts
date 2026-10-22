@@ -1,4 +1,5 @@
 import { parseSSE } from "../stream/index.ts";
+import { messageImages } from "./images.ts";
 import type {
   AiProvider,
   ChatOptions,
@@ -39,6 +40,18 @@ const formatTools = (tools: ToolDef[]) =>
 
 const formatMessages = (messages: Message[]) =>
   messages.map((m) => {
+    const images = messageImages(m);
+    if (images.length)
+      return {
+        role: m.role,
+        content: [
+          { type: "text", text: m.content },
+          ...images.map((image) => ({
+            type: "image_url",
+            image_url: { url: `data:${image.mediaType};base64,${image.data}` },
+          })),
+        ],
+      };
     if (m.role === "tool") {
       return { role: "tool" as const, content: m.content, tool_call_id: m.toolCallId };
     }

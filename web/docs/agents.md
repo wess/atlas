@@ -33,7 +33,7 @@ the document head.
 Select released library modules with the Atlas installer:
 
 ```sh
-bunx --package https://github.com/wess/atlas/releases/download/v0.4.7/wess-atlas-cli-0.4.7.tgz atlas add server config db/postgres db/query
+bunx --package https://github.com/wess/atlas/releases/download/v0.4.8/wess-atlas-cli-0.4.8.tgz atlas add server config db/postgres db/query
 ```
 
 See README.md for the release candidate's publication status. Import public

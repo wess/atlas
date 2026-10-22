@@ -5,9 +5,15 @@ import { createOpenAi } from "./openai.ts";
 export type Message = {
   readonly role: "system" | "user" | "assistant" | "tool";
   readonly content: string;
+  readonly images?: readonly ImageAttachment[];
   readonly name?: string;
   readonly toolCallId?: string;
   readonly toolCalls?: ToolCall[];
+};
+
+export type ImageAttachment = {
+  readonly mediaType: "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+  readonly data: string;
 };
 
 export type ToolCall = {

@@ -40,7 +40,7 @@ Server pipe:
 
 ## Types
 
-- `ProviderConfig`, `Message`, `ChatOptions`, `ChatResponse`, `StreamChunk`
+- `ProviderConfig`, `ImageAttachment`, `Message`, `ChatOptions`, `ChatResponse`, `StreamChunk`
 - `EmbedOptions`, `EmbedResponse`, `ToolDef`, `ToolCall`
 - `Conversation`, `VectorStore`, `VectorEntry`, `RagOptions`
 - `AgentTool`, `AgentOptions`
@@ -64,6 +64,15 @@ const conv = createConversation("You are a helpful assistant")
 const { conversation, response } = await send(openai, conv, "Hello!")
 // conversation tracks full message history immutably
 ```
+
+## Image input
+
+User messages can include `images: [{ mediaType: "image/jpeg", data: base64 }]`.
+The same attachment shape works with chat and streaming. Supported media types
+are JPEG, PNG, WebP, and GIF. Pass base64 bytes, without a data-URL prefix; image
+URLs are not fetched by the library. Image input requires a compatible model.
+System, assistant, and tool messages cannot carry image attachments. Existing
+text-only messages keep their original wire format.
 
 ## Streaming
 
