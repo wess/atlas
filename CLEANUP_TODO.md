@@ -18,7 +18,7 @@ original dependency declarations; it is not a claim about deployed versions.
 
 ## Current validation and release status
 
-The modular **0.4.0 candidate is not published**. Distribution uses versioned
+The modular **0.4.1 candidate is not published**. Distribution uses versioned
 GitHub release artifacts from `wess/atlas`, per the repository-only requirement.
 Each selected library is installed from its release asset URL; imports remain
 `@wess/atlas/<package>`. Consumer release manifests are prepared in isolated candidates;
@@ -54,6 +54,11 @@ GitHub release installs pass. No production deployment or rollback has been veri
   to private temporary files. Request duration increased from 142 to 153 ms in that
   single comparison. This is not a production throughput or fleet-wide memory result;
   measure concurrent uploads, disk use, and production-like latency before rollout.
+- Four concurrent 64 MiB uploads to a local HTTP receiver completed with valid
+  payload digests. The previous buffering implementation peaked at 1,061,978,112
+  bytes RSS; the packed candidate peaked at 110,706,688 bytes (about 90% less).
+  Total time was 582 ms versus 495 ms. These local results include the receiver
+  in the same process and do not replace production latency or capacity testing.
 - Clean production installs use `bun install --production --omit=peer --frozen-lockfile`.
   Selected module closures and external peers are explicit application dependencies.
   The plain `--production` test retained the development CLI through optional peers;

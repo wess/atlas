@@ -45,7 +45,7 @@ jobs:
           NEW="${{ steps.version.outputs.version }}"
           if DRAFT=$(gh api "repos/wess/atlas/releases/tags/v${NEW}" --jq '.draft' 2>/tmp/releasecheck.log); then
             echo "changed=${DRAFT}" >> "$GITHUB_OUTPUT"
-          elif rg -q 'HTTP 404' /tmp/releasecheck.log; then
+          elif grep -q 'HTTP 404' /tmp/releasecheck.log; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             cat /tmp/releasecheck.log >&2

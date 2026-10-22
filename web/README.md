@@ -12,11 +12,11 @@ No framework lock-in. No classes. Just functions and immutable data flowing thro
 
 ## Install
 
-The modular release candidate is `0.4.0`. These GitHub release commands become available
+The modular release candidate is `0.4.1`. These GitHub release commands become available
 once all release artifacts have been published.
 
 ```sh
-bunx --package https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-cli-0.4.0.tgz atlas add server config db/query db/postgres
+bunx --package https://github.com/wess/atlas/releases/download/v0.4.1/wess-atlas-cli-0.4.1.tgz atlas add server config db/query db/postgres
 ```
 
 The installer records exact GitHub release URLs and the dependency closure for
@@ -89,7 +89,7 @@ Build a user API with authentication in 60 lines.
 ```bash
 mkdir myapp && cd myapp
 bun init -y
-bunx --package https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-cli-0.4.0.tgz atlas add server config db/sqlite db/query migrate auth/flows auth/token
+bunx --package https://github.com/wess/atlas/releases/download/v0.4.1/wess-atlas-cli-0.4.1.tgz atlas add server config db/sqlite db/query migrate auth/flows auth/token
 ```
 
 The example below uses public `@wess/atlas/<pkg>` exports from the selected libraries.
