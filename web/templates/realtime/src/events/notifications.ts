@@ -1,4 +1,4 @@
-import { createSseChannel } from "@atlas/server/sse"
+import { createSseChannel } from "@wess/atlas/server/sse"
 
 export const notifications = createSseChannel()
 

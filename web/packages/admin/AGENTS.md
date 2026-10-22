@@ -1,6 +1,6 @@
-# @atlas/admin
+# @wess/atlas/admin
 
-Django-style admin panel that auto-generates CRUD API routes from @atlas/db schemas.
+Django-style admin panel that auto-generates CRUD API routes from @wess/atlas/db schemas.
 
 ## Exports
 
@@ -40,9 +40,9 @@ List endpoint query params: `?page=1&limit=20&sort=name&order=asc&search=foo&fil
 ## Usage
 
 ```ts
-import { admin, model } from "@atlas/admin"
-import { defineSchema, column, connect } from "@atlas/db"
-import { serve, get, pipe, json } from "@atlas/server"
+import { admin, model } from "@wess/atlas/admin"
+import { defineSchema, column, connect } from "@wess/atlas/db"
+import { serve, get, pipe, json } from "@wess/atlas/server"
 
 const users = defineSchema("users", {
   id: column.serial().primaryKey(),
@@ -61,7 +61,7 @@ const db = connect({ driver: "sqlite", path: "./app.db" })
 const panel = admin({
   db,
   basePath: "/admin",
-  auth: { secret: "my-secret" },
+  auth: { secret: "my-secret", authorize: claims => claims.role === "admin" },
   models: [
     model({
       schema: users,
@@ -111,10 +111,12 @@ The admin SPA is served at `GET {basePath}` and `GET {basePath}/*`. Uses React, 
 
 ## Dependencies
 
-- `@atlas/db` — schema, query builder, connection
-- `@atlas/server` — pipe, pipeline, router, json, parseJson
-- `@atlas/auth` — requireAuth (optional, when auth config provided)
+- `@wess/atlas/db` — schema, query builder, connection
+- `@wess/atlas/server` — pipe, pipeline, router, json, parseJson
+- `@wess/atlas/auth` — requireAuth (optional, when auth config provided)
 - `@mantine/core`, `@mantine/hooks`, `@mantine/form` — UI components and hooks
 - `@tanstack/react-table` — table with sorting, selection, pagination
 - `react`, `react-dom` — rendering
 - `lucide-react` — icons
+
+Query payloads accept registered schema fields only, including sort/filter/group fields. Limits default to 100 and must be integers from 1 to 1000. List pages accept positive integer page/limit values, with at most 100 rows. When auth is configured, `auth.authorize(claims)` is required and must explicitly grant administrator access. Missing auth is rejected by default. Tests and local development can opt in with `allowUnauthenticated: true`; production always requires auth. Import browser components from `@wess/atlas/admin/ui`; the server entry point does not load React or Mantine.

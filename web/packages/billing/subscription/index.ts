@@ -21,7 +21,12 @@ const normalize = (value: StripeObject, prices: Record<string, string>): Subscri
     status: value.status,
     priceIds: priceIds as string[],
     plan: plans.length === 1 ? plans[0]![0] : null,
-    cancelAtPeriodEnd: value.cancel_at_period_end === true,
+    cancelAtPeriodEnd:
+      value.cancel_at_period_end === true ||
+      (typeof value.cancel_at === "number" &&
+        value.cancel_at > 0 &&
+        (value.cancel_at === value.current_period_end ||
+          items.some((item) => object(item)?.current_period_end === value.cancel_at))),
   };
 };
 

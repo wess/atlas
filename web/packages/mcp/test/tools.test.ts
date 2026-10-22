@@ -158,3 +158,21 @@ test("logs.tail defaults to 50 lines", async () => {
   expect(result.lines).toEqual(["a", "b"]);
   expect(result.count).toBe(2);
 });
+
+test("config redaction covers arrays, non-string secrets, credential URLs, and cycles", async () => {
+  const config: Record<string, unknown> = {
+    endpoints: [{ password: "hidden", host: "visible" }],
+    authorization: { bearer: "hidden" },
+    port: 3000,
+    connection: "postgres://user:pass@db/app",
+    apiToken: [1, 2, 3],
+  };
+  config.self = config;
+  const ctx = createContext({ config });
+  const tool = collectTools(ctx).find((item) => item.name === "config.show")!;
+  const result = JSON.stringify(await tool.handler({}, ctx));
+  expect(result).not.toContain("hidden");
+  expect(result).not.toContain("user:pass");
+  expect(result).toContain("visible");
+  expect(result).toContain("[circular]");
+});

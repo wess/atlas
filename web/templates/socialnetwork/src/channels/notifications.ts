@@ -1,6 +1,6 @@
-import { token } from "@atlas/auth"
-import type { WsConfig } from "@atlas/server/ws"
-import { channel } from "@atlas/server/ws"
+import * as token from "@wess/atlas/auth/token";
+import type { WsConfig } from "@wess/atlas/server/ws"
+import { channel } from "@wess/atlas/server/ws"
 import { config } from "../config.ts"
 
 type Notification = {

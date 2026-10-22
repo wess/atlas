@@ -1,5 +1,5 @@
-import { tool } from "@atlas/ai"
-import type { AgentTool } from "@atlas/ai"
+import { tool } from "@wess/atlas/ai"
+import type { AgentTool } from "@wess/atlas/ai"
 import { db } from "../db.ts"
 
 export const databaseTool: AgentTool = {

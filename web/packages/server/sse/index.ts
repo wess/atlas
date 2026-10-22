@@ -1,6 +1,11 @@
 import type { Conn } from "../conn/index.ts";
 
 const encoder = new TextEncoder();
+const MAX_QUEUE_BYTES = 256 * 1024;
+const frame = (event: string, data: unknown): Uint8Array => {
+  if (/[\r\n]/.test(event)) throw new Error("Invalid SSE event name");
+  return encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+};
 
 export type SseClient = {
   readonly id: string;
@@ -24,7 +29,13 @@ export const createSseChannel = (): SseChannel => {
     send: (event, data) => {
       const ctrl = store.get(id)?.controller;
       if (ctrl) {
-        ctrl.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+        const msg = frame(event, data);
+        if ((ctrl.desiredSize ?? 0) < msg.byteLength) {
+          ctrl.error(new Error("SSE client is too slow"));
+          store.delete(id);
+          return;
+        }
+        ctrl.enqueue(msg);
       }
     },
     close: () => {
@@ -43,26 +54,32 @@ export const createSseChannel = (): SseChannel => {
   return {
     clients: () => [...store.keys()].map(makeClient),
     broadcast: (event, data) => {
-      const msg = encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-      for (const { controller } of store.values()) {
+      const msg = frame(event, data);
+      for (const [id, { controller }] of store) {
         try {
-          controller.enqueue(msg);
+          if ((controller.desiredSize ?? 0) < msg.byteLength) {
+            controller.error(new Error("SSE client is too slow"));
+            store.delete(id);
+          } else controller.enqueue(msg);
         } catch {
-          /* closed */
+          store.delete(id);
         }
       }
     },
     pipe: (conn) => {
       const id = crypto.randomUUID();
-      const stream = new ReadableStream({
-        start(controller) {
-          store.set(id, { controller });
-          controller.enqueue(encoder.encode(`event: connected\ndata: ${JSON.stringify({ id })}\n\n`));
+      const stream = new ReadableStream(
+        {
+          start(controller) {
+            store.set(id, { controller });
+            controller.enqueue(encoder.encode(`event: connected\ndata: ${JSON.stringify({ id })}\n\n`));
+          },
+          cancel() {
+            store.delete(id);
+          },
         },
-        cancel() {
-          store.delete(id);
-        },
-      });
+        new ByteLengthQueuingStrategy({ highWaterMark: MAX_QUEUE_BYTES }),
+      );
 
       const headers = new Headers(conn.respHeaders);
       headers.set("content-type", "text/event-stream");
@@ -84,14 +101,29 @@ export const eventStream = (
   conn: Conn,
   generator: (send: (event: string, data: unknown) => void) => void | Promise<void>,
 ): Conn => {
-  const stream = new ReadableStream({
-    start(controller) {
-      const send = (event: string, data: unknown) => {
-        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
-      };
-      Promise.resolve(generator(send)).then(() => controller.close());
+  let cancelled = false;
+  const stream = new ReadableStream<Uint8Array>(
+    {
+      async start(controller) {
+        const send = (event: string, data: unknown) => {
+          if (cancelled) return;
+          const msg = frame(event, data);
+          if ((controller.desiredSize ?? 0) < msg.byteLength) throw new Error("SSE client is too slow");
+          controller.enqueue(msg);
+        };
+        try {
+          await generator(send);
+          if (!cancelled) controller.close();
+        } catch (err) {
+          if (!cancelled) controller.error(err);
+        }
+      },
+      cancel() {
+        cancelled = true;
+      },
     },
-  });
+    new ByteLengthQueuingStrategy({ highWaterMark: MAX_QUEUE_BYTES }),
+  );
 
   const headers = new Headers(conn.respHeaders);
   headers.set("content-type", "text/event-stream");

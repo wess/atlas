@@ -1,5 +1,5 @@
-import { post, pipe, json } from "@atlas/server"
-import { query as ragQuery } from "@atlas/ai"
+import { post, pipe, json } from "@wess/atlas/server"
+import { query as ragQuery } from "@wess/atlas/ai"
 import { ai } from "../ai.ts"
 import { vectorStore } from "../vectors/index.ts"
 

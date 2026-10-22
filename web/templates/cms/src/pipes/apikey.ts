@@ -1,6 +1,6 @@
-import { from } from "@atlas/db"
-import type { Conn } from "@atlas/server"
-import { assign, halt, pipe, pipeline } from "@atlas/server"
+import { from } from "@wess/atlas/db/query";
+import type { Conn } from "@wess/atlas/server"
+import { assign, halt, pipe, pipeline } from "@wess/atlas/server"
 import { db } from "../db.ts"
 import { apiKeys } from "../schema.ts"
 import { cors } from "./cors.ts"

@@ -45,3 +45,5 @@ All API routes are mounted under `/api`.
 - `GET /api/users/:handle` — user profile
 
 All routes except signup/login require `Authorization: Bearer <token>`.
+
+Set `SECRET` in `.env` to at least 32 random characters before starting the demo.

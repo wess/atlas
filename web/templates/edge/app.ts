@@ -1,4 +1,4 @@
-import { get, json, pipe, serve } from "@atlas/server";
+import { get, json, pipe, serve } from "@wess/atlas/server";
 import { config } from "./src/config.ts";
 
 // Your application server. The edge proxies all incoming traffic here.

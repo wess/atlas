@@ -1,4 +1,4 @@
-# @atlas/security
+# @wess/atlas/security
 
 Security primitives every web app needs: response-hardening headers, rate
 limiting, audit logging, TOTP/2FA, and revocable JWT sessions.
@@ -14,13 +14,13 @@ limiting, audit logging, TOTP/2FA, and revocable JWT sessions.
 | `totp` | `generateSecret`, `totpAt`, `verifyTotp`, `otpauthUrl`, `generateBackupCodes` |
 | `sessions` | `createSessionStore` — DB-backed JWT sessions with revoke, sweep, and `last_used_at` |
 
-Everything is exported from the package root: `import { ... } from "@atlas/security"`.
+Everything is exported from the package root: `import { ... } from "@wess/atlas/security"`.
 
 ## Headers
 
 ```ts
-import { withSecurityHeaders } from "@atlas/security"
-import { serve } from "@atlas/server"
+import { withSecurityHeaders } from "@wess/atlas/security"
+import { serve } from "@wess/atlas/server"
 
 const fetch = withSecurityHeaders(buildFetch(routes), { dev: process.env.NODE_ENV !== "production" })
 Bun.serve({ port: 3000, fetch })
@@ -39,7 +39,7 @@ trusting `X-Forwarded-For` from the client.
 ## Inline downloads
 
 ```ts
-import { decideInline } from "@atlas/security"
+import { decideInline } from "@wess/atlas/security"
 
 const { contentType, disposition } = decideInline(file.mime, file.name, wantInline)
 ```
@@ -51,7 +51,7 @@ as XML and runs script.
 ## Rate limiting
 
 ```ts
-import { createDbRateLimit, clientIp, parseTrustedProxies } from "@atlas/security"
+import { createDbRateLimit, clientIp, parseTrustedProxies } from "@wess/atlas/security"
 
 const trustedProxies = parseTrustedProxies(process.env.TRUSTED_PROXIES)
 const limiter = createDbRateLimit({ db })
@@ -71,8 +71,8 @@ CREATE TABLE rate_limits (
 );
 ```
 
-`createMemoryRateLimit()` returns the same interface for tests / dev (it also
-self-sweeps expired buckets opportunistically).
+`createMemoryRateLimit({ maxEntries? })` returns the same interface for tests / dev (it also
+self-sweeps expired buckets opportunistically). Capacity defaults to 10,000; new buckets are denied when full without resetting active counters.
 
 Both limiters expose `sweep(olderThanSeconds)` — drop buckets whose window
 started more than that many seconds ago, returning the removed count. Run it
@@ -81,12 +81,12 @@ from accumulating one row per bucket key forever.
 
 `clientIp(req, { trustedProxies })` returns the real client IP. It honors
 `X-Forwarded-For` / `X-Real-IP` *only* when the request actually arrived from a
-configured trusted proxy — otherwise the headers are attacker-supplied.
+configured trusted proxy — otherwise the headers are attacker-supplied. Forwarded chains are walked from the nearest hop toward the client; the first untrusted address wins.
 
 ## Audit log
 
 ```ts
-import { createAuditLogger } from "@atlas/security"
+import { createAuditLogger } from "@wess/atlas/security"
 
 const audit = createAuditLogger({ db })
 
@@ -112,7 +112,7 @@ Logging is fire-and-forget — `log` never throws and never blocks the response.
 ## TOTP / 2FA
 
 ```ts
-import { generateSecret, otpauthUrl, verifyTotp, generateBackupCodes } from "@atlas/security"
+import { generateSecret, otpauthUrl, verifyTotp, generateBackupCodes } from "@wess/atlas/security"
 
 const secret = generateSecret()
 const provisioning = otpauthUrl({ secret, account: user.email, issuer: "Atlas" })
@@ -130,7 +130,7 @@ clock skew.
 ## Sessions
 
 ```ts
-import { createSessionStore } from "@atlas/security"
+import { createSessionStore } from "@wess/atlas/security"
 
 const sessions = createSessionStore<{ id: number; email: string }>({
   db,
@@ -156,7 +156,7 @@ await sessions.sweepExpired()
 
 The JWT stays stateless, but the embedded `jti` is bound to a row whose
 `revoked_at` lets you kill a session server-side. Pair with
-`@atlas/auth#requireAuth` plus a sessions check to enforce the revocation.
+`@wess/atlas/auth#requireAuth` plus a sessions check to enforce the revocation.
 
 Schema:
 
@@ -173,14 +173,14 @@ CREATE TABLE sessions (
 );
 ```
 
-Note: `@atlas/auth` already exports an in-memory `SessionStore` for simple
+Note: `@wess/atlas/auth` already exports an in-memory `SessionStore` for simple
 flows. The store here is a different (richer) interface — DB-backed,
 revocable, with audit context. Pick whichever fits.
 
 ## Dependencies
 
-- `@atlas/auth` — for `token.sign` (sessions only)
-- `@atlas/db` — for the rate-limit / audit / session tables
+- `@wess/atlas/auth` — for `token.sign` (sessions only)
+- `@wess/atlas/db` — for the rate-limit / audit / session tables
 - `node:crypto` — for TOTP and `randomUUID`
 
 ## Testing

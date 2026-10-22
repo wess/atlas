@@ -14,7 +14,7 @@ AI-powered application with chatbot, document RAG, agent tools, and streaming re
 
 ```bash
 bun install
-cp .env.example .env
+test -f .env || cp .env.example .env
 # Edit .env with your API key
 bun run migrate:up
 bun run dev
@@ -116,3 +116,5 @@ The agent has access to these tools:
 - **query_database** runs read-only SQL queries against the database
 
 Add custom tools in `src/tools/` and register them in `src/tools/index.ts`.
+
+`atlas init` creates `.env` with fresh authentication secrets. Preserve that file. When copying this template manually, fill each authentication/setup secret with at least 32 random characters before starting.

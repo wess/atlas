@@ -1,6 +1,7 @@
-import { hash, requireAuth } from "@atlas/auth"
-import { from } from "@atlas/db"
-import { del, get, json, parseJson, pipeline, post, put } from "@atlas/server"
+import { hash } from "@wess/atlas/auth/password";
+import { requireAuth } from "@wess/atlas/auth/flows";
+import { from } from "@wess/atlas/db/query";
+import { del, get, json, parseJson, pipeline, post, put } from "@wess/atlas/server"
 import { config } from "../config.ts"
 import { db } from "../db.ts"
 import { users } from "../schema.ts"

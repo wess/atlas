@@ -1,4 +1,4 @@
-# @atlas/mcp
+# @wess/atlas/mcp
 
 MCP (Model Context Protocol) server exposing Atlas app internals as tools for AI/LLM debugging.
 
@@ -48,7 +48,7 @@ app can self-introspect the framework — no web fetch required.
 ### Programmatic
 
 ```ts
-import { createContext, collectTools, createMcpServer } from "@atlas/mcp"
+import { createContext, collectTools, createMcpServer } from "@wess/atlas/mcp"
 
 const ctx = createContext({ db, cache, routes })
 const tools = collectTools(ctx)
@@ -81,12 +81,12 @@ Environment variables: `DATABASE_URL`, `DATABASE_PATH`, `REDIS_URL`, `S3_ENDPOIN
 
 Sibling packages are *optional* — pass only the services you want exposed:
 
-- `@atlas/db` — enables `db.*` and `migrate.*` tools
-- `@atlas/cache` — enables `cache.*` tools
-- `@atlas/server` — enables `routes.list`
-- `@atlas/config` — enables `config.show` (secrets redacted)
-- `@atlas/storage` — enables `storage.*` tools
-- `@atlas/migrate` — enables `migrate.up` / `migrate.down`
+- `@wess/atlas/db` — enables `db.*` and `migrate.*` tools
+- `@wess/atlas/cache` — enables `cache.*` tools
+- `@wess/atlas/server` — enables `routes.list`
+- `@wess/atlas/config` — enables `config.show` (secrets redacted)
+- `@wess/atlas/storage` — enables `storage.*` tools
+- `@wess/atlas/migrate` — enables `migrate.up` / `migrate.down`
 
 External: none. Pure JSON-RPC over stdio with Content-Length framing.
 
@@ -95,3 +95,5 @@ External: none. Pure JSON-RPC over stdio with Content-Length framing.
 ```sh
 bun test packages/mcp/
 ```
+
+Stdio framing uses byte lengths and caps headers at 8 KiB and bodies at 1 MiB. Invalid JSON returns a parse error; ambiguous/oversized frames terminate the transport. `stop` cancels a pending stdin read. Configuration redaction covers nested arrays, credential URLs, non-string secrets, and circular objects. Exposing a service in the MCP context grants its tools access to that service, including SQL writes and migrations.

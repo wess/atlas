@@ -1,0 +1,526 @@
+{
+  "version": "0.4.0",
+  "exports": {
+    "./admin": {
+      "entry": "packages/admin/index.ts",
+      "package": "@wess/atlas-admin",
+      "import": "@wess/atlas-admin",
+      "packages": [
+        "@wess/atlas-admin",
+        "@wess/atlas-auth",
+        "@wess/atlas-db",
+        "@wess/atlas-server"
+      ],
+      "externals": {
+        "zod": "^4.6.7"
+      }
+    },
+    "./admin/ui": {
+      "entry": "packages/admin/ui/index.ts",
+      "package": "@wess/atlas-admin",
+      "import": "@wess/atlas-admin/ui/index.ts",
+      "packages": [
+        "@wess/atlas-admin"
+      ],
+      "externals": {
+        "@mantine/core": "^9.7.3",
+        "@mantine/hooks": "^9.7.3",
+        "@tanstack/react-table": "^9.3.1",
+        "lucide-react": "^1.61.0",
+        "react": "^19.3.1"
+      }
+    },
+    "./ai": {
+      "entry": "packages/ai/index.ts",
+      "package": "@wess/atlas-ai",
+      "import": "@wess/atlas-ai",
+      "packages": [
+        "@wess/atlas-ai",
+        "@wess/atlas-server"
+      ],
+      "externals": {}
+    },
+    "./auth": {
+      "entry": "packages/auth/index.ts",
+      "package": "@wess/atlas-auth",
+      "import": "@wess/atlas-auth",
+      "packages": [
+        "@wess/atlas-auth",
+        "@wess/atlas-db",
+        "@wess/atlas-server"
+      ],
+      "externals": {}
+    },
+    "./auth/flows": {
+      "entry": "packages/auth/flows/index.ts",
+      "package": "@wess/atlas-auth",
+      "import": "@wess/atlas-auth/flows/index.ts",
+      "packages": [
+        "@wess/atlas-auth",
+        "@wess/atlas-db",
+        "@wess/atlas-server"
+      ],
+      "externals": {}
+    },
+    "./auth/password": {
+      "entry": "packages/auth/password/index.ts",
+      "package": "@wess/atlas-auth",
+      "import": "@wess/atlas-auth/password/index.ts",
+      "packages": [
+        "@wess/atlas-auth"
+      ],
+      "externals": {}
+    },
+    "./auth/session": {
+      "entry": "packages/auth/session/index.ts",
+      "package": "@wess/atlas-auth",
+      "import": "@wess/atlas-auth/session/index.ts",
+      "packages": [
+        "@wess/atlas-auth"
+      ],
+      "externals": {}
+    },
+    "./auth/social": {
+      "entry": "packages/auth/social/index.ts",
+      "package": "@wess/atlas-auth",
+      "import": "@wess/atlas-auth/social/index.ts",
+      "packages": [
+        "@wess/atlas-auth",
+        "@wess/atlas-server"
+      ],
+      "externals": {}
+    },
+    "./auth/token": {
+      "entry": "packages/auth/token/index.ts",
+      "package": "@wess/atlas-auth",
+      "import": "@wess/atlas-auth/token/index.ts",
+      "packages": [
+        "@wess/atlas-auth"
+      ],
+      "externals": {}
+    },
+    "./billing": {
+      "entry": "packages/billing/index.ts",
+      "package": "@wess/atlas-billing",
+      "import": "@wess/atlas-billing",
+      "packages": [
+        "@wess/atlas-billing",
+        "@wess/atlas-request"
+      ],
+      "externals": {}
+    },
+    "./cache": {
+      "entry": "packages/cache/index.ts",
+      "package": "@wess/atlas-cache",
+      "import": "@wess/atlas-cache",
+      "packages": [
+        "@wess/atlas-cache"
+      ],
+      "externals": {}
+    },
+    "./cli": {
+      "entry": "packages/cli/index.ts",
+      "package": "@wess/atlas-cli",
+      "import": "@wess/atlas-cli",
+      "packages": [
+        "@wess/atlas-cli"
+      ],
+      "externals": {}
+    },
+    "./cli/command": {
+      "entry": "packages/cli/command/index.ts",
+      "package": "@wess/atlas-cli",
+      "import": "@wess/atlas-cli/command/index.ts",
+      "packages": [
+        "@wess/atlas-cli"
+      ],
+      "externals": {}
+    },
+    "./cli/docs": {
+      "entry": "packages/cli/docs/index.ts",
+      "package": "@wess/atlas-cli",
+      "import": "@wess/atlas-cli/docs/index.ts",
+      "packages": [
+        "@wess/atlas-cli"
+      ],
+      "externals": {}
+    },
+    "./cli/entry": {
+      "entry": "packages/cli/entry.ts",
+      "package": "@wess/atlas-cli",
+      "import": "@wess/atlas-cli/entry.ts",
+      "packages": [
+        "@wess/atlas-cli"
+      ],
+      "externals": {}
+    },
+    "./cli/foreman": {
+      "entry": "packages/cli/foreman/index.ts",
+      "package": "@wess/atlas-cli",
+      "import": "@wess/atlas-cli/foreman/index.ts",
+      "packages": [
+        "@wess/atlas-cli"
+      ],
+      "externals": {}
+    },
+    "./cli/scaffold": {
+      "entry": "packages/cli/scaffold/index.ts",
+      "package": "@wess/atlas-cli",
+      "import": "@wess/atlas-cli/scaffold/index.ts",
+      "packages": [
+        "@wess/atlas-cli"
+      ],
+      "externals": {}
+    },
+    "./config": {
+      "entry": "packages/config/index.ts",
+      "package": "@wess/atlas-config",
+      "import": "@wess/atlas-config",
+      "packages": [
+        "@wess/atlas-config"
+      ],
+      "externals": {}
+    },
+    "./db": {
+      "entry": "packages/db/index.ts",
+      "package": "@wess/atlas-db",
+      "import": "@wess/atlas-db",
+      "packages": [
+        "@wess/atlas-db"
+      ],
+      "externals": {}
+    },
+    "./db/changeset": {
+      "entry": "packages/db/changeset/index.ts",
+      "package": "@wess/atlas-db",
+      "import": "@wess/atlas-db/changeset/index.ts",
+      "packages": [
+        "@wess/atlas-db"
+      ],
+      "externals": {}
+    },
+    "./db/postgres": {
+      "entry": "packages/db/postgres/index.ts",
+      "package": "@wess/atlas-db",
+      "import": "@wess/atlas-db/postgres/index.ts",
+      "packages": [
+        "@wess/atlas-db"
+      ],
+      "externals": {}
+    },
+    "./db/query": {
+      "entry": "packages/db/query.ts",
+      "package": "@wess/atlas-db",
+      "import": "@wess/atlas-db/query.ts",
+      "packages": [
+        "@wess/atlas-db"
+      ],
+      "externals": {}
+    },
+    "./db/sqlite": {
+      "entry": "packages/db/sqlite/index.ts",
+      "package": "@wess/atlas-db",
+      "import": "@wess/atlas-db/sqlite/index.ts",
+      "packages": [
+        "@wess/atlas-db"
+      ],
+      "externals": {}
+    },
+    "./edge": {
+      "entry": "packages/edge/index.ts",
+      "package": "@wess/atlas-edge",
+      "import": "@wess/atlas-edge",
+      "packages": [
+        "@wess/atlas-edge"
+      ],
+      "externals": {}
+    },
+    "./email": {
+      "entry": "packages/email/index.ts",
+      "package": "@wess/atlas-email",
+      "import": "@wess/atlas-email",
+      "packages": [
+        "@wess/atlas-email"
+      ],
+      "externals": {}
+    },
+    "./mcp": {
+      "entry": "packages/mcp/index.ts",
+      "package": "@wess/atlas-mcp",
+      "import": "@wess/atlas-mcp",
+      "packages": [
+        "@wess/atlas-cache",
+        "@wess/atlas-db",
+        "@wess/atlas-mcp",
+        "@wess/atlas-migrate",
+        "@wess/atlas-server",
+        "@wess/atlas-storage"
+      ],
+      "externals": {}
+    },
+    "./mcp/entry": {
+      "entry": "packages/mcp/entry.ts",
+      "package": "@wess/atlas-mcp",
+      "import": "@wess/atlas-mcp/entry.ts",
+      "packages": [
+        "@wess/atlas-cache",
+        "@wess/atlas-db",
+        "@wess/atlas-mcp",
+        "@wess/atlas-migrate",
+        "@wess/atlas-server",
+        "@wess/atlas-storage"
+      ],
+      "externals": {}
+    },
+    "./migrate": {
+      "entry": "packages/migrate/index.ts",
+      "package": "@wess/atlas-migrate",
+      "import": "@wess/atlas-migrate",
+      "packages": [
+        "@wess/atlas-db",
+        "@wess/atlas-migrate"
+      ],
+      "externals": {}
+    },
+    "./oauth": {
+      "entry": "packages/oauth/index.ts",
+      "package": "@wess/atlas-oauth",
+      "import": "@wess/atlas-oauth",
+      "packages": [
+        "@wess/atlas-auth",
+        "@wess/atlas-db",
+        "@wess/atlas-oauth",
+        "@wess/atlas-server"
+      ],
+      "externals": {}
+    },
+    "./request": {
+      "entry": "packages/request/index.ts",
+      "package": "@wess/atlas-request",
+      "import": "@wess/atlas-request",
+      "packages": [
+        "@wess/atlas-request"
+      ],
+      "externals": {}
+    },
+    "./request/providers": {
+      "entry": "packages/request/providers/index.ts",
+      "package": "@wess/atlas-request",
+      "import": "@wess/atlas-request/providers/index.ts",
+      "packages": [
+        "@wess/atlas-request"
+      ],
+      "externals": {}
+    },
+    "./security": {
+      "entry": "packages/security/index.ts",
+      "package": "@wess/atlas-security",
+      "import": "@wess/atlas-security",
+      "packages": [
+        "@wess/atlas-auth",
+        "@wess/atlas-db",
+        "@wess/atlas-security"
+      ],
+      "externals": {}
+    },
+    "./server": {
+      "entry": "packages/server/index.ts",
+      "package": "@wess/atlas-server",
+      "import": "@wess/atlas-server",
+      "packages": [
+        "@wess/atlas-server"
+      ],
+      "externals": {}
+    },
+    "./server/sse": {
+      "entry": "packages/server/sse/index.ts",
+      "package": "@wess/atlas-server",
+      "import": "@wess/atlas-server/sse/index.ts",
+      "packages": [
+        "@wess/atlas-server"
+      ],
+      "externals": {}
+    },
+    "./server/ws": {
+      "entry": "packages/server/ws/index.ts",
+      "package": "@wess/atlas-server",
+      "import": "@wess/atlas-server/ws/index.ts",
+      "packages": [
+        "@wess/atlas-server"
+      ],
+      "externals": {}
+    },
+    "./share": {
+      "entry": "packages/share/index.ts",
+      "package": "@wess/atlas-share",
+      "import": "@wess/atlas-share",
+      "packages": [
+        "@wess/atlas-email",
+        "@wess/atlas-share"
+      ],
+      "externals": {}
+    },
+    "./social": {
+      "entry": "packages/social/index.ts",
+      "package": "@wess/atlas-social",
+      "import": "@wess/atlas-social",
+      "packages": [
+        "@wess/atlas-social"
+      ],
+      "externals": {}
+    },
+    "./sso": {
+      "entry": "packages/sso/index.ts",
+      "package": "@wess/atlas-sso",
+      "import": "@wess/atlas-sso",
+      "packages": [
+        "@wess/atlas-auth",
+        "@wess/atlas-db",
+        "@wess/atlas-server",
+        "@wess/atlas-sso"
+      ],
+      "externals": {}
+    },
+    "./storage": {
+      "entry": "packages/storage/index.ts",
+      "package": "@wess/atlas-storage",
+      "import": "@wess/atlas-storage",
+      "packages": [
+        "@wess/atlas-storage"
+      ],
+      "externals": {}
+    },
+    "./storage/signing": {
+      "entry": "packages/storage/signing/index.ts",
+      "package": "@wess/atlas-storage",
+      "import": "@wess/atlas-storage/signing/index.ts",
+      "packages": [
+        "@wess/atlas-storage"
+      ],
+      "externals": {}
+    },
+    "./ui": {
+      "entry": "packages/ui/index.ts",
+      "package": "@wess/atlas-ui",
+      "import": "@wess/atlas-ui",
+      "packages": [
+        "@wess/atlas-ui"
+      ],
+      "externals": {
+        "@mantine/core": "^9.7.3",
+        "@mantine/form": "^9.7.3",
+        "@mantine/hooks": "^9.7.3",
+        "@tanstack/react-table": "^9.3.1",
+        "lucide-react": "^1.61.0",
+        "react": "^19.3.1",
+        "zod": "^4.6.7"
+      }
+    },
+    "./ui/ai": {
+      "entry": "packages/ui/ai/index.tsx",
+      "package": "@wess/atlas-ui",
+      "import": "@wess/atlas-ui/ai/index.tsx",
+      "packages": [
+        "@wess/atlas-ui"
+      ],
+      "externals": {
+        "@mantine/core": "^9.7.3",
+        "@mantine/hooks": "^9.7.3",
+        "lucide-react": "^1.61.0",
+        "react": "^19.3.1"
+      }
+    },
+    "./ui/auth": {
+      "entry": "packages/ui/auth/index.tsx",
+      "package": "@wess/atlas-ui",
+      "import": "@wess/atlas-ui/auth/index.tsx",
+      "packages": [
+        "@wess/atlas-ui"
+      ],
+      "externals": {
+        "@mantine/core": "^9.7.3",
+        "lucide-react": "^1.61.0",
+        "react": "^19.3.1"
+      }
+    },
+    "./ui/cache": {
+      "entry": "packages/ui/cache/index.tsx",
+      "package": "@wess/atlas-ui",
+      "import": "@wess/atlas-ui/cache/index.tsx",
+      "packages": [
+        "@wess/atlas-ui"
+      ],
+      "externals": {
+        "@mantine/core": "^9.7.3",
+        "lucide-react": "^1.61.0",
+        "react": "^19.3.1"
+      }
+    },
+    "./ui/forms": {
+      "entry": "packages/ui/forms/index.tsx",
+      "package": "@wess/atlas-ui",
+      "import": "@wess/atlas-ui/forms/index.tsx",
+      "packages": [
+        "@wess/atlas-ui"
+      ],
+      "externals": {
+        "@mantine/core": "^9.7.3",
+        "@mantine/form": "^9.7.3",
+        "react": "^19.3.1",
+        "zod": "^4.6.7"
+      }
+    },
+    "./ui/nav": {
+      "entry": "packages/ui/nav/index.tsx",
+      "package": "@wess/atlas-ui",
+      "import": "@wess/atlas-ui/nav/index.tsx",
+      "packages": [
+        "@wess/atlas-ui"
+      ],
+      "externals": {
+        "@mantine/core": "^9.7.3",
+        "lucide-react": "^1.61.0",
+        "react": "^19.3.1"
+      }
+    },
+    "./ui/provider": {
+      "entry": "packages/ui/provider/index.tsx",
+      "package": "@wess/atlas-ui",
+      "import": "@wess/atlas-ui/provider/index.tsx",
+      "packages": [
+        "@wess/atlas-ui"
+      ],
+      "externals": {
+        "@mantine/core": "^9.7.3",
+        "react": "^19.3.1"
+      }
+    },
+    "./ui/storage": {
+      "entry": "packages/ui/storage/index.tsx",
+      "package": "@wess/atlas-ui",
+      "import": "@wess/atlas-ui/storage/index.tsx",
+      "packages": [
+        "@wess/atlas-ui"
+      ],
+      "externals": {
+        "@mantine/core": "^9.7.3",
+        "lucide-react": "^1.61.0",
+        "react": "^19.3.1"
+      }
+    },
+    "./ui/table": {
+      "entry": "packages/ui/table/index.tsx",
+      "package": "@wess/atlas-ui",
+      "import": "@wess/atlas-ui/table/index.tsx",
+      "packages": [
+        "@wess/atlas-ui"
+      ],
+      "externals": {
+        "@mantine/core": "^9.7.3",
+        "@tanstack/react-table": "^9.3.1",
+        "lucide-react": "^1.61.0",
+        "react": "^19.3.1"
+      }
+    }
+  }
+}

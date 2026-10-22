@@ -24,16 +24,16 @@ test("docs.list returns the package list and top-level docs", async () => {
   expect(result.docs).toContain("cookbook.md");
 });
 
-test("docs.read delivers the @atlas/share AGENTS.md", async () => {
+test("docs.read delivers the @wess/atlas/share AGENTS.md", async () => {
   const ctx = createContext();
   const read = docsTools.find((t) => t.name === "docs.read")!;
   const result = (await read.handler({ package: "share" }, ctx)) as { source: string; content: string };
   expect(result.source).toBe("packages/share/AGENTS.md");
-  expect(result.content).toContain("@atlas/share");
+  expect(result.content).toContain("@wess/atlas/share");
   expect(result.content).toContain("shareUrl");
 });
 
-test("docs.read for @atlas/auth surfaces the social section", async () => {
+test("docs.read for @wess/atlas/auth surfaces the social section", async () => {
   const ctx = createContext();
   const read = docsTools.find((t) => t.name === "docs.read")!;
   const result = (await read.handler({ package: "auth" }, ctx)) as { source: string; content: string };
@@ -46,7 +46,7 @@ test("docs.read returns the AGENTS.md for a package", async () => {
   const read = docsTools.find((t) => t.name === "docs.read")!;
   const result = (await read.handler({ package: "db" }, ctx)) as { source: string; content: string };
   expect(result.source).toBe("packages/db/AGENTS.md");
-  expect(result.content).toContain("@atlas/db");
+  expect(result.content).toContain("@wess/atlas/db");
   expect(result.content).toContain("defineSchema");
 });
 
@@ -55,7 +55,7 @@ test("docs.read returns top-level doc files", async () => {
   const read = docsTools.find((t) => t.name === "docs.read")!;
   const result = (await read.handler({ doc: "api" }, ctx)) as { source: string; content: string };
   expect(result.source).toBe("docs/api.md");
-  expect(result.content).toContain("@atlas/db");
+  expect(result.content).toContain("@wess/atlas/db");
 });
 
 test("docs.read returns the agent grounding guide", async () => {

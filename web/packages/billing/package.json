@@ -2,6 +2,12 @@
   "name": "@atlas/billing",
   "version": "0.0.1",
   "type": "module",
-  "exports": { ".": { "import": "./index.ts" } },
-  "peerDependencies": { "typescript": ">=5.9" }
+  "exports": {
+    ".": {
+      "import": "./index.ts"
+    }
+  },
+  "peerDependencies": {
+    "typescript": ">=7.0.2"
+  }
 }

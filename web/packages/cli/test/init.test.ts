@@ -9,6 +9,7 @@ import {
   listTemplates,
   scaffoldFromTemplate,
 } from "../init/templates.ts";
+import { releaseUrl } from "../modules/source.ts";
 
 test("questions are well-formed", () => {
   expect(questions.length).toBeGreaterThan(0);
@@ -68,19 +69,18 @@ test("applyDefaults accepts partial overrides", () => {
   expect(answers.features).toEqual(["auth", "migrate"]);
 });
 
-test("generatePackageJson includes selected features", () => {
+test("generated projects select versioned Atlas libraries", () => {
   const answers = applyDefaults({ template: "custom", features: ["auth", "storage", "admin"] });
   const pkg = JSON.parse(generatePackageJson(answers));
-  expect(pkg.dependencies["@atlas/auth"]).toBeDefined();
-  expect(pkg.dependencies["@atlas/storage"]).toBeDefined();
-  expect(pkg.dependencies["@atlas/admin"]).toBeDefined();
-  expect(pkg.dependencies["@atlas/cache"]).toBeUndefined();
-});
-
-test("generatePackageJson excludes db when none selected", () => {
-  const answers = applyDefaults({ template: "custom", database: "none", features: [] });
-  const pkg = JSON.parse(generatePackageJson(answers));
-  expect(pkg.dependencies["@atlas/db"]).toBeUndefined();
+  expect(pkg.dependencies["@wess/atlas"]).toBe(releaseUrl("@wess/atlas", "0.4.0"));
+  expect(pkg.dependencies["@wess/atlas-server"]).toBe(releaseUrl("@wess/atlas-server", "0.4.0"));
+  expect(pkg.dependencies["@wess/atlas-auth"]).toBe(releaseUrl("@wess/atlas-auth", "0.4.0"));
+  expect(pkg.dependencies["@wess/atlas-admin"]).toBe(releaseUrl("@wess/atlas-admin", "0.4.0"));
+  expect(pkg.dependencies["@wess/atlas-storage"]).toBe(releaseUrl("@wess/atlas-storage", "0.4.0"));
+  expect(Object.values(pkg.dependencies).some((value) => /^(file:|link:|workspace:|github:)/.test(String(value)))).toBe(
+    false,
+  );
+  expect(Object.keys(pkg.dependencies).some((name) => name.startsWith("@atlas/"))).toBe(false);
 });
 
 test("generateEnv includes postgres config", () => {
@@ -93,7 +93,7 @@ test("generateEnv includes postgres config", () => {
 test("generateEnv includes sqlite config", () => {
   const answers = applyDefaults({ template: "custom", database: "sqlite", name: "myapp" });
   const env = generateEnv(answers);
-  expect(env).toContain("DATABASE_PATH=./data/myapp.db");
+  expect(env).toContain("DATABASE_PATH=./myapp.db");
 });
 
 test("generateEnv includes storage config when selected", () => {
@@ -103,19 +103,13 @@ test("generateEnv includes storage config when selected", () => {
   expect(env).toContain("S3_BUCKET");
 });
 
-test("generatePackageJson includes social login deps", () => {
-  const answers = applyDefaults({ template: "custom", features: ["social"] });
-  const pkg = JSON.parse(generatePackageJson(answers));
-  // social uses @atlas/auth/social — the subpath comes for free with @atlas/auth.
-  expect(pkg.dependencies["@atlas/auth"]).toBeDefined();
-});
-
-test("generatePackageJson includes share package when selected", () => {
-  const answers = applyDefaults({ template: "custom", features: ["share"] });
-  const pkg = JSON.parse(generatePackageJson(answers));
-  expect(pkg.dependencies["@atlas/share"]).toBeDefined();
-  // share pulls @atlas/email through transport, so the env helper should add the keys too.
-  expect(pkg.dependencies["@atlas/email"]).toBeDefined();
+test("frontend scaffolds declare the UI peer dependencies", () => {
+  const pkg = JSON.parse(generatePackageJson(applyDefaults({ template: "custom", frontend: true })));
+  expect(pkg.dependencies.react).toBeDefined();
+  expect(pkg.dependencies["@mantine/core"]).toBeDefined();
+  expect(pkg.dependencies["@wess/atlas"]).toBe(releaseUrl("@wess/atlas", "0.4.0"));
+  expect(pkg.dependencies["@wess/atlas-ui"]).toBe(releaseUrl("@wess/atlas-ui", "0.4.0"));
+  expect(pkg.dependencies["@tanstack/react-table"]).toBeUndefined();
 });
 
 test("generateEnv includes OAuth provider stubs when social is selected", () => {

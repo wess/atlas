@@ -1,7 +1,7 @@
-import type { Connection } from "@atlas/db"
-import { from } from "@atlas/db"
-import { pipeline, parseJson, json, get, post, del } from "@atlas/server"
-import { requireAuth } from "@atlas/auth"
+import type { Connection } from "@wess/atlas/db/query";
+import { from } from "@wess/atlas/db/query";
+import { pipeline, parseJson, json, get, post, del } from "@wess/atlas/server"
+import { requireAuth } from "@wess/atlas/auth/flows";
 
 export const postRoutes = (db: Connection, secret: string) => {
   const authed = pipeline(requireAuth({ secret }), parseJson)

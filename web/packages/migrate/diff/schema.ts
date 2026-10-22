@@ -1,4 +1,4 @@
-import type { ColumnDef, ColumnType, Schema } from "../../db/index.ts";
+import type { ColumnDef, ColumnType, Schema } from "../../db/query.ts";
 import type { LiveColumn, LiveTable } from "./types.ts";
 
 // Convert a defineSchema() result into the same shape as the introspected DB.

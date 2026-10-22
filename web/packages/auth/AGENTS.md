@@ -1,6 +1,13 @@
-# @atlas/auth
+# @wess/atlas/auth
 
 Authentication primitives and prebuilt auth flow pipes for the Atlas framework.
+
+## Entry points
+
+Use `@wess/atlas/auth/password` for `hash` and `verify`, `/auth/token` for JWT and
+JWK functions, and `/auth/session` for the in-memory session store. These entry
+points load no server, database flows, or social providers. `/auth/flows` provides
+the server pipes; `/auth/social` provides social login. `/auth` is the aggregate.
 
 ## Exports
 
@@ -14,15 +21,15 @@ Authentication primitives and prebuilt auth flow pipes for the Atlas framework.
 - `token.sign(payload, secret, opts?): Promise<string>` - Create an HS256 JWT
   - `opts.expiresIn` - seconds until expiration
 - `token.verify(token, secret): Promise<TokenPayload>` - Verify and decode a JWT
-  - Throws on invalid signature, bad format, or expiration
+  - Requires HS256, object claims and finite numeric dates; rejects invalid signatures, expired `exp` (including zero), and future `nbf`
 - `TokenPayload` - `Record<string, unknown> & { iat?: number; exp?: number }`
 
 ### Session Management
 
-- `createMemoryStore({ ttl? }): SessionStore` - In-memory session store for dev/testing; `ttl` (seconds) expires sessions, without it they live until `destroy`
+- `createMemoryStore({ ttl?, maxEntries? }): SessionStore` - In-memory session store for dev/testing; `ttl` (seconds) expires sessions, without it they live until `destroy`; capacity defaults to 10,000 and refuses new sessions when full
 - `SessionStore` type with `create`, `get`, `destroy` methods
 
-### Auth Flows (PipeFn factories for @atlas/server)
+### Auth Flows (PipeFn factories for @wess/atlas/server)
 
 - `signup({ db, table, fields, onSuccess })` - Registration pipe; `table` is a name string or a `defineSchema` object
   - Reads body fields, hashes password, inserts into DB
@@ -41,7 +48,7 @@ Authentication primitives and prebuilt auth flow pipes for the Atlas framework.
 ## Usage
 
 ```ts
-import { hash, verify, token, requireAuth, login, signup } from "@atlas/auth"
+import { hash, verify, token, requireAuth, login, signup } from "@wess/atlas/auth"
 
 // password hashing
 const hashed = await hash("mypassword")
@@ -65,7 +72,7 @@ const loginPipe = login({
 })
 ```
 
-### Social Login (`@atlas/auth/social`)
+### Social Login (`@wess/atlas/auth/social`)
 
 Pluggable OAuth-client side of authentication. Seven built-in providers — each
 exported as a factory that takes its config and returns a `SocialProvider`.
@@ -101,9 +108,9 @@ type SocialProfile = {
 ```ts
 import {
   socialAuth, google, github, apple, microsoft, facebook, twitter, tiktok,
-} from "@atlas/auth/social"
-import { get, redirect, putHeader } from "@atlas/server"
-import { token } from "@atlas/auth"
+} from "@wess/atlas/auth/social"
+import { get, redirect, putHeader } from "@wess/atlas/server"
+import { token } from "@wess/atlas/auth"
 
 const social = socialAuth({
   secret: process.env.OAUTH_STATE_SECRET!,
@@ -152,8 +159,8 @@ verifies + exchanges + fetches and returns the normalized result.
 
 ## Dependencies
 
-- `@atlas/db` - database access for flows
-- `@atlas/server` - Conn/PipeFn types for flows and social pipes
+- `@wess/atlas/db` - database access for flows
+- `@wess/atlas/server` - Conn/PipeFn types for flows and social pipes
 - Zero external dependencies; uses Bun.password, Web Crypto, and `fetch`
 
 ## Testing
@@ -161,3 +168,20 @@ verifies + exchanges + fetches and returns the normalized result.
 ```sh
 bun test packages/auth/
 ```
+
+Social authorization URLs carry an opaque state nonce. The signed HttpOnly cookie keeps the PKCE verifier private. Google, Apple, and Microsoft profiles verify RS256 signatures plus issuer, audience, and expiry against provider JWKS; extra authorization parameters cannot replace state, redirect URI, or PKCE fields.
+
+For native clients that must recover an error destination even when the browser
+loses its state cookie, configure `intentStore: createMemoryIntentStore()` on
+`socialAuth`. `onError(conn, error, context)` receives the stored `context.returnTo`.
+This is only a redirect hint: clamp it to allowed destinations and never authorize
+an account, link, or invitation from error context. Successful authentication still
+requires the signed cookie and matching nonce. Do not decode the provider's state.
+
+`createMemoryIntentStore({ maxEntries? })` defaults to 512 entries and refuses hints
+over 4096 characters. Entries expire after the login flow's ten-minute TTL and are
+consumed once, bound to provider and nonce. It starts no timers. Multi-instance
+hosts can supply a shared `SocialIntentStore` implementing asynchronous
+`remember(provider, nonce, returnTo, expires)` and `take(provider, nonce)`; the
+adapter must enforce expiry and atomic consumption. Without an intent store,
+social login remains stateless and missing-cookie errors have no redirect hint.

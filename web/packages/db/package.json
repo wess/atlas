@@ -8,9 +8,9 @@
     }
   },
   "dependencies": {
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "peerDependencies": {
-    "typescript": ">=5.9"
+    "typescript": ">=7.0.2"
   }
 }

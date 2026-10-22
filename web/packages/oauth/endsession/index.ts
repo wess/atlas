@@ -1,5 +1,5 @@
-import { token as jwt } from "../../auth/index.ts";
-import { from } from "../../db/index.ts";
+import * as jwt from "../../auth/token/index.ts";
+import { from } from "../../db/query.ts";
 import type { Route } from "../../server/index.ts";
 import { get, halt, json, redirect } from "../../server/index.ts";
 import { isAllowedRedirect, issuerFromRequest } from "../helpers";

@@ -1,5 +1,5 @@
 import { config } from "./src/config.ts"
-import { serve } from "@atlas/server"
+import { serve } from "@wess/atlas/server"
 import { healthRoutes } from "./src/routes/health.ts"
 import { userRoutes } from "./src/routes/users.ts"
 

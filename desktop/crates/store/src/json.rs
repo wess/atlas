@@ -7,6 +7,7 @@
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::io::{BufWriter, Write};
 use std::path::Path;
 
 /// Read and decode a document, falling back to the default when it is missing
@@ -48,14 +49,16 @@ pub fn write<T: Serialize>(path: &Path, value: &T) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let text = serde_json::to_string_pretty(value)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-
-    // Same directory, so the rename is atomic — a temp file in /tmp is often
-    // on another filesystem and the rename degrades to a copy.
-    let tmp = path.with_extension("json.tmp");
-    std::fs::write(&tmp, text.as_bytes())?;
-    std::fs::rename(&tmp, path)?;
+    let parent = path.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+    let mut tmp = tempfile::NamedTempFile::new_in(parent)?;
+    {
+        let mut writer = BufWriter::new(tmp.as_file_mut());
+        serde_json::to_writer_pretty(&mut writer, value)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        writer.flush()?;
+    }
+    tmp.as_file().sync_all()?;
+    tmp.persist(path).map_err(|e| e.error)?;
     Ok(())
 }
 

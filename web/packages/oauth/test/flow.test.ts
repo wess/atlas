@@ -703,3 +703,71 @@ test("client revoke invalidates outstanding refresh tokens", async () => {
   );
   expect(refresh.status).toBe(400);
 });
+
+test("a refresh token has one winner under simultaneous exchanges", async () => {
+  const { db, app: concurrent } = await buildApp();
+  const client = await j(
+    await concurrent(
+      new Request("http://localhost/admin/oauth/clients", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "Race", redirect_uris: ["myapp://cb"], allowed_scopes: ["read"] }),
+      }),
+    ),
+  );
+  const refresh = "oat_concurrency";
+  const hash = createHash("sha256").update(refresh).digest("hex");
+  await db.execute({
+    text: "INSERT INTO oauth_refresh_tokens (token_hash, client_id, user_id, scope, expires_at) VALUES (?, ?, 1, 'read', ?)",
+    values: [hash, client.client_id, new Date(Date.now() + 60_000).toISOString()],
+  });
+  const exchange = () =>
+    concurrent(
+      new Request("http://localhost/oauth/token", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ grant_type: "refresh_token", client_id: client.client_id, refresh_token: refresh }),
+      }),
+    );
+  const responses = await Promise.all([exchange(), exchange()]);
+  expect(responses.map((res) => res.status).sort()).toEqual([200, 400]);
+  for (const response of responses) expect(response.headers.get("cache-control")).toBe("no-store");
+  const rows = await db.all({
+    text: "SELECT token_hash FROM oauth_refresh_tokens WHERE parent_token_hash = ?",
+    values: [hash],
+  });
+  expect(rows).toHaveLength(1);
+  await db.close();
+});
+
+test("approved device codes can be redeemed only once concurrently", async () => {
+  const { db, app: concurrent } = await buildApp();
+  const client = await j(
+    await concurrent(
+      new Request("http://localhost/admin/oauth/clients", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "Device", redirect_uris: ["myapp://cb"], allowed_scopes: ["read"] }),
+      }),
+    ),
+  );
+  await db.execute({
+    text: "INSERT INTO oauth_device_codes (device_code, user_code, client_id, scope, user_id, approved_at, expires_at) VALUES ('device', 'USER', ?, 'read', 1, ?, ?)",
+    values: [client.client_id, new Date().toISOString(), new Date(Date.now() + 60_000).toISOString()],
+  });
+  const exchange = () =>
+    concurrent(
+      new Request("http://localhost/oauth/token", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+          client_id: client.client_id,
+          device_code: "device",
+        }),
+      }),
+    );
+  const responses = await Promise.all([exchange(), exchange()]);
+  expect(responses.filter((res) => res.status === 200)).toHaveLength(1);
+  await db.close();
+});

@@ -1,5 +1,5 @@
-import { defineConfig, env } from "@atlas/config"
-import { serve, get, post, pipe, json } from "@atlas/server"
+import { defineConfig, env } from "@wess/atlas/config"
+import { serve, get, post, pipe, json } from "@wess/atlas/server"
 
 const config = defineConfig({
   port: env("PORT", { parse: Number, default: "3000" }),

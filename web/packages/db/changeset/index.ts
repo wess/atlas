@@ -1,4 +1,8 @@
-import type { z } from "zod";
+export type ChangesetValidator = {
+  safeParse: (
+    input: unknown,
+  ) => { success: true; data: unknown } | { success: false; error: { issues: readonly { message: string }[] } };
+};
 
 export type ChangesetResult<T> = {
   readonly valid: boolean;
@@ -9,7 +13,7 @@ export type ChangesetResult<T> = {
 export type ChangesetOptions<T> = {
   cast: (keyof T)[];
   required?: (keyof T)[];
-  validate?: Record<string, z.ZodType>;
+  validate?: Record<string, ChangesetValidator>;
 };
 
 type SchemaLike = { readonly table: string };

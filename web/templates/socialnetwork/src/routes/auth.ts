@@ -1,6 +1,7 @@
-import { hash, token, verify } from "@atlas/auth"
-import { from } from "@atlas/db"
-import { json, post } from "@atlas/server"
+import * as token from "@wess/atlas/auth/token";
+import { hash, verify } from "@wess/atlas/auth/password";
+import { from } from "@wess/atlas/db/query";
+import { json, post } from "@wess/atlas/server"
 import { config } from "../config.ts"
 import { db } from "../db.ts"
 import { api } from "../pipes/auth.ts"

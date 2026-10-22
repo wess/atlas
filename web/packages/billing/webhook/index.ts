@@ -1,5 +1,5 @@
 import { billingError } from "../errors.ts";
-import { verifySignature } from "../signature/index.ts";
+import { verifiedEvent } from "../event/index.ts";
 import { identifier, object, type StripeClient } from "../stripe/index.ts";
 import { reconcile } from "../subscription/index.ts";
 import type { BillingOptions, WebhookResult } from "../types.ts";
@@ -18,22 +18,11 @@ export const webhook = async (
   body: string,
   signature: string,
 ): Promise<WebhookResult> => {
-  if (!options.webhookSecret) throw billingError("unavailable", "Billing webhooks are not configured.");
-  if (!(await verifySignature(body, signature, options.webhookSecret)))
-    throw billingError("invalid_signature", "Invalid billing webhook signature.");
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(body);
-  } catch {
-    throw billingError("invalid_event", "Invalid billing webhook payload.");
-  }
-  const event = object(parsed);
-  if (!event || !identifier(event) || typeof event.type !== "string")
-    throw billingError("invalid_event", "Invalid billing webhook event.");
+  const event = await verifiedEvent(body, signature, options.webhookSecret);
   if (!supported.has(event.type)) return { received: true, ignored: true };
-  const eventId = identifier(event)!;
+  const eventId = event.id;
   if (await options.store.hasEvent(eventId)) return { received: true, duplicate: true };
-  const value = object(object(event.data)?.object);
+  const value = event.value;
   const customerId = identifier(value?.customer);
   if (!value || !identifier(value) || !customerId)
     throw billingError("invalid_event", "Billing event is missing its customer or object.");

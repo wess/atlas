@@ -1,7 +1,16 @@
 {
-  "exclude": ["node_modules", "dist", "build"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "out",
+    "build"
+  ],
   "compilerOptions": {
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",
@@ -20,31 +29,210 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
     "paths": {
-      "@atlas/config": ["./packages/config/index.ts"],
-      "@atlas/db": ["./packages/db/index.ts"],
-      "@atlas/cache": ["./packages/cache/index.ts"],
-      "@atlas/request": ["./packages/request/index.ts"],
-      "@atlas/request/providers": ["./packages/request/providers/index.ts"],
-      "@atlas/server": ["./packages/server/index.ts"],
-      "@atlas/server/ws": ["./packages/server/ws/index.ts"],
-      "@atlas/server/sse": ["./packages/server/sse/index.ts"],
-      "@atlas/auth": ["./packages/auth/index.ts"],
-      "@atlas/billing": ["./packages/billing/index.ts"],
-      "@atlas/auth/social": ["./packages/auth/social/index.ts"],
-      "@atlas/email": ["./packages/email/index.ts"],
-      "@atlas/share": ["./packages/share/index.ts"],
-      "@atlas/oauth": ["./packages/oauth/index.ts"],
-      "@atlas/sso": ["./packages/sso/index.ts"],
-      "@atlas/security": ["./packages/security/index.ts"],
-      "@atlas/storage": ["./packages/storage/index.ts"],
-      "@atlas/edge": ["./packages/edge/index.ts"],
-      "@atlas/ui": ["./packages/ui/index.ts"],
-      "@atlas/ui/*": ["./packages/ui/*/index.tsx"],
-      "@atlas/mcp": ["./packages/mcp/index.ts"],
-      "@atlas/migrate": ["./packages/migrate/index.ts"],
-      "@atlas/ai": ["./packages/ai/index.ts"],
-      "@atlas/admin": ["./packages/admin/index.ts"],
-      "@atlas/cli": ["./packages/cli/index.ts"]
+      "@atlas/config": [
+        "./packages/config/index.ts"
+      ],
+      "@atlas/db": [
+        "./packages/db/index.ts"
+      ],
+      "@atlas/cache": [
+        "./packages/cache/index.ts"
+      ],
+      "@atlas/request": [
+        "./packages/request/index.ts"
+      ],
+      "@atlas/request/providers": [
+        "./packages/request/providers/index.ts"
+      ],
+      "@atlas/server": [
+        "./packages/server/index.ts"
+      ],
+      "@atlas/server/ws": [
+        "./packages/server/ws/index.ts"
+      ],
+      "@atlas/server/sse": [
+        "./packages/server/sse/index.ts"
+      ],
+      "@atlas/auth": [
+        "./packages/auth/index.ts"
+      ],
+      "@atlas/billing": [
+        "./packages/billing/index.ts"
+      ],
+      "@atlas/auth/social": [
+        "./packages/auth/social/index.ts"
+      ],
+      "@atlas/email": [
+        "./packages/email/index.ts"
+      ],
+      "@atlas/share": [
+        "./packages/share/index.ts"
+      ],
+      "@atlas/social": [
+        "./packages/social/index.ts"
+      ],
+      "@atlas/oauth": [
+        "./packages/oauth/index.ts"
+      ],
+      "@atlas/sso": [
+        "./packages/sso/index.ts"
+      ],
+      "@atlas/security": [
+        "./packages/security/index.ts"
+      ],
+      "@atlas/storage": [
+        "./packages/storage/index.ts"
+      ],
+      "@atlas/edge": [
+        "./packages/edge/index.ts"
+      ],
+      "@atlas/ui": [
+        "./packages/ui/index.ts"
+      ],
+      "@atlas/ui/*": [
+        "./packages/ui/*/index.tsx"
+      ],
+      "@atlas/mcp": [
+        "./packages/mcp/index.ts"
+      ],
+      "@atlas/migrate": [
+        "./packages/migrate/index.ts"
+      ],
+      "@atlas/ai": [
+        "./packages/ai/index.ts"
+      ],
+      "@atlas/admin": [
+        "./packages/admin/index.ts"
+      ],
+      "@atlas/cli": [
+        "./packages/cli/index.ts"
+      ],
+      "@wess/atlas/config": [
+        "./packages/config/index.ts"
+      ],
+      "@wess/atlas/db": [
+        "./packages/db/index.ts"
+      ],
+      "@wess/atlas/cache": [
+        "./packages/cache/index.ts"
+      ],
+      "@wess/atlas/request": [
+        "./packages/request/index.ts"
+      ],
+      "@wess/atlas/request/providers": [
+        "./packages/request/providers/index.ts"
+      ],
+      "@wess/atlas/server": [
+        "./packages/server/index.ts"
+      ],
+      "@wess/atlas/server/ws": [
+        "./packages/server/ws/index.ts"
+      ],
+      "@wess/atlas/server/sse": [
+        "./packages/server/sse/index.ts"
+      ],
+      "@wess/atlas/auth": [
+        "./packages/auth/index.ts"
+      ],
+      "@wess/atlas/billing": [
+        "./packages/billing/index.ts"
+      ],
+      "@wess/atlas/auth/social": [
+        "./packages/auth/social/index.ts"
+      ],
+      "@wess/atlas/email": [
+        "./packages/email/index.ts"
+      ],
+      "@wess/atlas/share": [
+        "./packages/share/index.ts"
+      ],
+      "@wess/atlas/social": [
+        "./packages/social/index.ts"
+      ],
+      "@wess/atlas/oauth": [
+        "./packages/oauth/index.ts"
+      ],
+      "@wess/atlas/sso": [
+        "./packages/sso/index.ts"
+      ],
+      "@wess/atlas/security": [
+        "./packages/security/index.ts"
+      ],
+      "@wess/atlas/storage": [
+        "./packages/storage/index.ts"
+      ],
+      "@wess/atlas/edge": [
+        "./packages/edge/index.ts"
+      ],
+      "@wess/atlas/ui": [
+        "./packages/ui/index.ts"
+      ],
+      "@wess/atlas/ui/*": [
+        "./packages/ui/*/index.tsx"
+      ],
+      "@wess/atlas/mcp": [
+        "./packages/mcp/index.ts"
+      ],
+      "@wess/atlas/migrate": [
+        "./packages/migrate/index.ts"
+      ],
+      "@wess/atlas/ai": [
+        "./packages/ai/index.ts"
+      ],
+      "@wess/atlas/admin": [
+        "./packages/admin/index.ts"
+      ],
+      "@wess/atlas/cli": [
+        "./packages/cli/index.ts"
+      ],
+      "@wess/atlas/admin/ui": [
+        "./packages/admin/ui/index.ts"
+      ],
+      "@wess/atlas/auth/password": [
+        "./packages/auth/password/index.ts"
+      ],
+      "@wess/atlas/auth/token": [
+        "./packages/auth/token/index.ts"
+      ],
+      "@wess/atlas/auth/session": [
+        "./packages/auth/session/index.ts"
+      ],
+      "@wess/atlas/auth/flows": [
+        "./packages/auth/flows/index.ts"
+      ],
+      "@wess/atlas/db/query": [
+        "./packages/db/query.ts"
+      ],
+      "@wess/atlas/db/postgres": [
+        "./packages/db/postgres/index.ts"
+      ],
+      "@wess/atlas/db/sqlite": [
+        "./packages/db/sqlite/index.ts"
+      ],
+      "@wess/atlas/db/changeset": [
+        "./packages/db/changeset/index.ts"
+      ],
+      "@wess/atlas/storage/signing": [
+        "./packages/storage/signing/index.ts"
+      ],
+      "@wess/atlas/cli/command": [
+        "./packages/cli/command/index.ts"
+      ],
+      "@wess/atlas/cli/foreman": [
+        "./packages/cli/foreman/index.ts"
+      ],
+      "@wess/atlas/cli/scaffold": [
+        "./packages/cli/scaffold/index.ts"
+      ],
+      "@wess/atlas/cli/docs": [
+        "./packages/cli/docs/index.ts"
+      ],
+      "@wess/atlas/cli/entry": [
+        "./packages/cli/entry.ts"
+      ],
+      "@wess/atlas/mcp/entry": [
+        "./packages/mcp/entry.ts"
+      ]
     }
   }
 }

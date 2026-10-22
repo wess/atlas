@@ -1,5 +1,6 @@
 import type { AtlasMcpContext } from "../context/index.ts";
 import type { Tool } from "../tools/index.ts";
+import { createFramer } from "./framing.ts";
 
 type JsonRpcRequest = {
   jsonrpc: "2.0";
@@ -10,7 +11,7 @@ type JsonRpcRequest = {
 
 type JsonRpcResponse = {
   jsonrpc: "2.0";
-  id: string | number;
+  id: string | number | null;
   result?: unknown;
   error?: { code: number; message: string; data?: unknown };
 };
@@ -23,8 +24,18 @@ export type McpServer = {
 
 export const createMcpServer = (tools: Tool[], ctx: AtlasMcpContext): McpServer => {
   let running = true;
+  let input: ReadableStreamDefaultReader<Uint8Array> | undefined;
 
   const handleRequest = async (req: JsonRpcRequest): Promise<JsonRpcResponse> => {
+    if (
+      !req ||
+      typeof req !== "object" ||
+      req.jsonrpc !== "2.0" ||
+      typeof req.method !== "string" ||
+      (req.id !== undefined && typeof req.id !== "string" && typeof req.id !== "number")
+    ) {
+      return { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid Request" } };
+    }
     const id = req.id ?? 0;
 
     if (req.method === "initialize") {
@@ -59,6 +70,14 @@ export const createMcpServer = (tools: Tool[], ctx: AtlasMcpContext): McpServer 
 
     if (req.method === "tools/call") {
       const p = req.params as { name: string; arguments?: Record<string, unknown> };
+      if (
+        !p ||
+        typeof p !== "object" ||
+        typeof p.name !== "string" ||
+        (p.arguments !== undefined && (!p.arguments || typeof p.arguments !== "object" || Array.isArray(p.arguments)))
+      ) {
+        return { jsonrpc: "2.0", id, error: { code: -32602, message: "Invalid tool parameters" } };
+      }
       const tool = tools.find((t) => t.name === p.name);
       if (!tool) {
         return {
@@ -93,46 +112,43 @@ export const createMcpServer = (tools: Tool[], ctx: AtlasMcpContext): McpServer 
   return {
     handleRequest,
     start: async () => {
-      const stdin = Bun.stdin.stream();
-      const reader = stdin.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (running) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value);
-
-        while (buffer.includes("\r\n\r\n")) {
-          const headerEnd = buffer.indexOf("\r\n\r\n");
-          const header = buffer.slice(0, headerEnd);
-          const match = header.match(/Content-Length: (\d+)/);
-          if (!match) {
-            buffer = buffer.slice(headerEnd + 4);
-            continue;
-          }
-
-          const contentLength = parseInt(match[1]!, 10);
-          const bodyStart = headerEnd + 4;
-          if (buffer.length < bodyStart + contentLength) break;
-
-          const body = buffer.slice(bodyStart, bodyStart + contentLength);
-          buffer = buffer.slice(bodyStart + contentLength);
-
-          const req = JSON.parse(body) as JsonRpcRequest;
-          const res = await handleRequest(req);
-
-          if (req.id !== undefined) {
-            const resBody = JSON.stringify(res);
-            const resMsg = `Content-Length: ${Buffer.byteLength(resBody)}\r\n\r\n${resBody}`;
-            process.stdout.write(resMsg);
+      const reader = Bun.stdin.stream().getReader();
+      input = reader;
+      const frames = createFramer();
+      try {
+        while (running) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          for (const body of frames.push(value)) {
+            let req: JsonRpcRequest;
+            try {
+              req = JSON.parse(body) as JsonRpcRequest;
+            } catch {
+              const response = JSON.stringify({
+                jsonrpc: "2.0",
+                id: null,
+                error: { code: -32700, message: "Parse error" },
+              });
+              await Bun.write(Bun.stdout, `Content-Length: ${Buffer.byteLength(response)}\r\n\r\n${response}`);
+              continue;
+            }
+            const res = await handleRequest(req);
+            if (!req || req.id !== undefined || res.error?.code === -32600) {
+              const response = JSON.stringify(res);
+              await Bun.write(Bun.stdout, `Content-Length: ${Buffer.byteLength(response)}\r\n\r\n${response}`);
+            }
+            if (!running) break;
           }
         }
+      } finally {
+        input = undefined;
+        await reader.cancel();
+        reader.releaseLock();
       }
-      reader.releaseLock();
     },
     stop: () => {
       running = false;
+      void input?.cancel();
     },
   };
 };

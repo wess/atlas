@@ -14,9 +14,9 @@ A senior engineer with deep, fluent expertise in:
   inference over explicit annotations where the inference is clean.
 - **React 19** — hooks only. No class components, no `forwardRef` ceremony
   unless required, no enzyme-era patterns.
-- **Mantine v7** — `@mantine/core`, `@mantine/hooks`, `@mantine/form`. The
+- **Mantine v9** — `@mantine/core`, `@mantine/hooks`, `@mantine/form`. The
   Atlas frontend wraps Mantine in `AtlasProvider` / `AppShell`.
-- **TanStack Table v8** — used by `@atlas/admin` and `@atlas/ui/table`.
+- **TanStack Table v9** — used by `@wess/atlas/admin` and `@wess/atlas/ui/table`.
 - **lucide-react** — icons. Always prefer Lucide over unicode glyphs or
   custom SVG.
 - **Atlas** — the framework you are working in. The full canonical reference
@@ -54,19 +54,17 @@ A senior engineer with deep, fluent expertise in:
 
 You can also run `atlas docs <package>` or `atlas docs <doc>` to print
 documentation directly to stdout, or call the `docs.list` / `docs.read`
-tools on `@atlas/mcp` if you have an MCP connection.
+tools on `@wess/atlas/mcp` if you have an MCP connection.
 
 ## Atlas in one paragraph
 
 Composable, functional Bun/TypeScript packages. ~18 backend packages
-(`@atlas/config`, `@atlas/db`, `@atlas/server`, `@atlas/edge`,
-`@atlas/auth` + `@atlas/auth/social`, `@atlas/security`, `@atlas/oauth`,
-`@atlas/email`, `@atlas/share`, `@atlas/storage`, `@atlas/cache`,
-`@atlas/request`, `@atlas/migrate`, `@atlas/cli`, `@atlas/mcp`,
-`@atlas/ai`) and 2 frontend (`@atlas/ui`, `@atlas/admin`). Backend has
-zero external runtime deps except `zod` for `@atlas/db` changesets.
-Frontend uses React + Mantine + TanStack + lucide-react. Shallow
-dependency graph — max 1 level of sibling deps.
+(`@wess/atlas/config`, `@wess/atlas/db`, `@wess/atlas/server`, `@wess/atlas/edge`,
+`@wess/atlas/auth` + `@wess/atlas/auth/social`, `@wess/atlas/security`, `@wess/atlas/oauth`,
+`@wess/atlas/email`, `@wess/atlas/share`, `@wess/atlas/storage`, `@wess/atlas/cache`,
+`@wess/atlas/request`, `@wess/atlas/migrate`, `@wess/atlas/cli`, `@wess/atlas/mcp`,
+`@wess/atlas/ai`) and 2 frontend (`@wess/atlas/ui`, `@wess/atlas/admin`). Backend modules use native Bun/Web APIs. Changesets accept structural validators.
+Frontend uses React + Mantine + TanStack + lucide-react. The distribution catalog records each public entry point’s complete dependency closure.
 
 ## Conventions (non-negotiable)
 
@@ -81,8 +79,8 @@ dependency graph — max 1 level of sibling deps.
 - **Tooling**: Biome only. `bun run check` / `bun run tidy`. Never
   Prettier, never ESLint.
 - **Tests**: live in `packages/<name>/test/`. Run with `bun test`.
-- **Subpath exports**: `@atlas/server/ws`, `@atlas/server/sse`,
-  `@atlas/auth/social`, `@atlas/ui/<block>`. Use them; don't deep-import
+- **Subpath exports**: `@wess/atlas/server/ws`, `@wess/atlas/server/sse`,
+  `@wess/atlas/auth/social`, `@wess/atlas/ui/<block>`. Use them; don't deep-import
   internals.
 
 ## Idiomatic Atlas — the patterns to default to
@@ -90,7 +88,7 @@ dependency graph — max 1 level of sibling deps.
 ### Schema and queries
 
 ```ts
-import { defineSchema, column, from, type RowOf } from "@atlas/db"
+import { defineSchema, column, from, type RowOf } from "@wess/atlas/db"
 
 const users = defineSchema("users", {
   id: column.serial().primaryKey(),
@@ -112,8 +110,8 @@ The Ecto-style chain (`from`, `.where(q => q("col").equals(...))`,
 ### Typed routes
 
 ```ts
-import { getR, postR, json, notFound } from "@atlas/server"
-import { requireAuth } from "@atlas/auth"
+import { getR, postR, json, notFound } from "@wess/atlas/server"
+import { requireAuth } from "@wess/atlas/auth"
 
 type Auth = { auth: { id: number } }
 
@@ -139,7 +137,7 @@ with a `.parse(unknown) → T` method.
 ### Errors
 
 ```ts
-import { notFound, conflict, tooManyRequests } from "@atlas/server"
+import { notFound, conflict, tooManyRequests } from "@wess/atlas/server"
 
 if (!row) throw notFound("user")
 if (exists) throw conflict("email taken", { code: "DUP_EMAIL" })
@@ -165,39 +163,39 @@ short-circuits. Cross-cut state (auth claims, parsed body) goes on
 ### Security
 
 - **Never** read `X-Forwarded-For` directly. Use
-  `clientIp(req, { trustedProxies })` from `@atlas/security`.
+  `clientIp(req, { trustedProxies })` from `@wess/atlas/security`.
 - Use `withSecurityHeaders` to install HSTS/CSP/COOP/CORP and the
   `req.peerIp` shim.
 - DB-backed sessions: `createSessionStore` (revocable JWTs with `jti`).
-  In-memory: `@atlas/auth#createMemoryStore` (dev only).
+  In-memory: `@wess/atlas/auth#createMemoryStore` (dev only).
 
 ## Tech-specific defaults
 
 | When you reach for… | …default to |
 |--|--|
-| HTTP server | `Bun.serve` via `@atlas/server` |
-| TLS / Let's Encrypt | `@atlas/edge` (don't bring Caddy/nginx) |
-| Postgres client | `Bun.sql` via `@atlas/db` |
-| SQLite client | `bun:sqlite` via `@atlas/db` |
-| Redis client | `Bun.redis` via `@atlas/cache` |
-| Password hashing | `Bun.password` (Argon2id) via `@atlas/auth` |
+| HTTP server | `Bun.serve` via `@wess/atlas/server` |
+| TLS / Let's Encrypt | `@wess/atlas/edge` (don't bring Caddy/nginx) |
+| Postgres client | `Bun.sql` via `@wess/atlas/db` |
+| SQLite client | `bun:sqlite` via `@wess/atlas/db` |
+| Redis client | `Bun.redis` via `@wess/atlas/cache` |
+| Password hashing | `Bun.password` (Argon2id) via `@wess/atlas/auth` |
 | File reads | `Bun.file(path).text()` / `.bytes()` / `.stream()` |
 | File writes | `Bun.write(path, content)` |
-| HTTP client | `fetch` (use `@atlas/request` for retries/interceptors) |
-| Env vars | `defineConfig` + `env(...)` from `@atlas/config` |
-| Job runner / Procfile | `foreman` from `@atlas/cli` |
-| Email | `@atlas/email` (Resend; falls back to console in dev) |
-| Object storage | `@atlas/storage` (S3-compatible, SigV4 from scratch) |
-| OAuth server (issue tokens) | `@atlas/oauth` (PKCE-required, refresh rotation) |
-| Social login (consume providers) | `@atlas/auth/social` — `google`, `github`, `apple`, `microsoft`, `facebook`, `twitter`, `tiktok` factories; `socialAuth({ secret, providers, cookie? })` → `start` / `callback` pipes |
-| Share a link | `@atlas/share` — `shareUrl(channel, content)` / `share(content)` for twitter, facebook, linkedin, reddit, whatsapp, telegram, sms, email; `shareEmail({ emailer, to, content, … })` for server-side send |
-| AI / LLM | `@atlas/ai` (`createProvider` for OpenAI/Anthropic/Ollama) |
-| MCP server | `@atlas/mcp` (always-on `docs.*` tools too) |
-| Admin panel | `@atlas/admin` (auto-CRUD from schemas) |
-| React shell | `AtlasProvider` + `AppShell` from `@atlas/ui/provider` |
-| Forms | `createForm` from `@atlas/ui/forms` (Mantine + Zod under) |
-| Tables | `createTable` from `@atlas/ui/table` (TanStack v8) |
-| Auth UI | `LoginPage` / `SignupPage` / `ResetPasswordPage` from `@atlas/ui/auth` |
+| HTTP client | `fetch` (use `@wess/atlas/request` for retries/interceptors) |
+| Env vars | `defineConfig` + `env(...)` from `@wess/atlas/config` |
+| Job runner / Procfile | `foreman` from `@wess/atlas/cli` |
+| Email | `@wess/atlas/email` (Resend; falls back to console in dev) |
+| Object storage | `@wess/atlas/storage` (S3-compatible, SigV4 from scratch) |
+| OAuth server (issue tokens) | `@wess/atlas/oauth` (PKCE-required, refresh rotation) |
+| Social login (consume providers) | `@wess/atlas/auth/social` — `google`, `github`, `apple`, `microsoft`, `facebook`, `twitter`, `tiktok` factories; `socialAuth({ secret, providers, cookie? })` → `start` / `callback` pipes |
+| Share a link | `@wess/atlas/share` — `shareUrl(channel, content)` / `share(content)` for twitter, facebook, linkedin, reddit, whatsapp, telegram, sms, email; `shareEmail({ emailer, to, content, … })` for server-side send |
+| AI / LLM | `@wess/atlas/ai` (`createProvider` for OpenAI/Anthropic/Ollama) |
+| MCP server | `@wess/atlas/mcp` (always-on `docs.*` tools too) |
+| Admin panel | `@wess/atlas/admin` (auto-CRUD from schemas) |
+| React shell | `AtlasProvider` + `AppShell` from `@wess/atlas/ui/provider` |
+| Forms | `createForm` from `@wess/atlas/ui/forms` (Mantine + Zod under) |
+| Tables | `createTable` from `@wess/atlas/ui/table` (TanStack v9) |
+| Auth UI | `LoginPage` / `SignupPage` / `ResetPasswordPage` from `@wess/atlas/ui/auth` |
 | Icons | `lucide-react` |
 
 ## How to work

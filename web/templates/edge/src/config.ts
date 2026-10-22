@@ -1,4 +1,4 @@
-import { defineConfig, env } from "@atlas/config";
+import { defineConfig, env } from "@wess/atlas/config";
 
 // One config, two modes:
 //   - dev:  DOMAIN unset → edge runs plain HTTP on EDGE_PORT (default 8080)
@@ -10,6 +10,8 @@ export const config = defineConfig({
   appUrl: env("APP_URL", { default: "" }),
   storage: env("CERT_DIR", { default: "./.certs" }),
   staging: env("ACME_STAGING", { default: "" }),
+  httpPort: env("EDGE_HTTP_PORT", { parse: Number, default: "80" }),
+  httpsPort: env("EDGE_HTTPS_PORT", { parse: Number, default: "443" }),
   edgePort: env("EDGE_PORT", { parse: Number, default: "8080" }),
 });
 

@@ -1,4 +1,4 @@
-import { LETSENCRYPT_PROD, LETSENCRYPT_STAGING, defineEdge, proxy } from "@atlas/edge";
+import { LETSENCRYPT_PROD, LETSENCRYPT_STAGING, defineEdge, proxy } from "@wess/atlas/edge";
 import { config, isProd, upstreamUrl } from "./src/config.ts";
 
 defineEdge({
@@ -12,7 +12,7 @@ defineEdge({
       }
     : undefined,
   // In dev: pick a non-privileged port. In prod: leave defaults (80 + 443).
-  ...(isProd ? {} : { httpPort: config.edgePort }),
+  ...(isProd ? { httpPort: config.httpPort, httpsPort: config.httpsPort } : { httpPort: config.edgePort }),
   sites: [
     {
       host: config.domain,

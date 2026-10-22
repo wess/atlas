@@ -39,9 +39,9 @@ anyhow = "1"
 thiserror = "2"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4"] }
-dirs = "6"
+dirs = "7.0.0"
 tracing = "0.1"
-keyring = { version = "3", features = ["apple-native", "linux-native", "windows-native"] }
+keyring = "4.2.0"
 
 # The Atlas crates themselves.
 atlas-core = { version = "0.1.0", path = "crates/core" }

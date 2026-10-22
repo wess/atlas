@@ -4,32 +4,17 @@ Composable, functional Bun/TypeScript building blocks. No classes, no mutation, 
 
 ## Usage
 
-Atlas installs as a single package, `@wess/atlas`, straight from [github.com/wess/atlas](https://github.com/wess/atlas):
+Consumers import public `@wess/atlas/<module>` entry points. The modular release
+uses a thin facade and separately distributed implementation libraries. After the
+release is published, use `bunx --package https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-cli-0.4.0.tgz atlas add server db/postgres db/query`
+to record only selected modules and their dependencies. See README.md for release
+status and installation commands. Do not configure aliases into node_modules or
+require a neighboring Atlas checkout.
 
-```bash
-bun add github:wess/atlas
-```
-
-Every package is a subpath export (`@wess/atlas/config`, `@wess/atlas/db`, …).
-To keep the `@atlas/<pkg>` spelling used in these docs, map it via
-`tsconfig.json` `paths` (bun reads tsconfig paths at runtime; full list in
-README.md):
-
-```json
-{
-  "compilerOptions": {
-    "paths": {
-      "@atlas/config": ["./node_modules/@wess/atlas/web/packages/config/index.ts"],
-      "@atlas/db":     ["./node_modules/@wess/atlas/web/packages/db/index.ts"],
-      "@atlas/server": ["./node_modules/@wess/atlas/web/packages/server/index.ts"]
-    }
-  }
-}
-```
-
-Atlas's internal cross-package imports use relative paths (`../db/index.ts`),
-so resolution inside `node_modules/@wess/atlas/` works without the consumer's
-tsconfig paths reaching in. Bump with `bun update @wess/atlas`.
+Source development retains internal workspace aliases and relative imports.
+`bun run distribution:build` emits the facade, rewrites implementation imports,
+and packs all libraries under `out/distribution/`. `bun run distribution:verify`
+checks packed installs with unrelated optional peers absent.
 
 ## Bun Only
 
@@ -39,31 +24,32 @@ tsconfig paths reaching in. Bump with `bun update @wess/atlas`.
 
 | Import | Purpose |
 |--------|---------|
-| `@atlas/config` | Typed env vars via `defineConfig`, `env` |
-| `@atlas/db` | Query builder, schemas, changesets, Postgres/SQLite drivers |
-| `@atlas/migrate` | Timestamped SQL migrations |
-| `@atlas/server` | Pipe-based HTTP server, router, response helpers |
-| `@atlas/edge` | TLS-terminating reverse proxy with built-in Let's Encrypt |
-| `@atlas/server/ws` | WebSocket channels, rooms |
-| `@atlas/server/sse` | Server-sent events |
-| `@atlas/auth` | Password hashing, JWT, sessions, auth flow pipes |
-| `@atlas/auth/social` | Pluggable OAuth-client social login (Google, GitHub, Apple, Microsoft, Facebook, X, TikTok) |
-| `@atlas/security` | CSP/headers, rate limit, audit log, TOTP, DB-backed revocable sessions |
-| `@atlas/oauth` | OAuth 2.1 server (PKCE, refresh rotation, device flow, discovery) |
-| `@atlas/sso` | OIDC relying-party (Sign in with $IdP): discovery, PKCE, state, code exchange, id_token verify |
-| `@atlas/email` | Provider-agnostic email transport + invite/reset templates |
-| `@atlas/billing` | Stripe checkout, customer portal, subscription state, verified webhooks |
-| `@atlas/share` | Share-URL builders (Twitter/X, FB, LinkedIn, Reddit, WhatsApp, Telegram, SMS, mailto) + server-side share-by-email |
-| `@atlas/storage` | S3-compatible storage, presigned URLs |
-| `@atlas/cache` | Redis caching with TTL, cache-aside |
-| `@atlas/request` | HTTP client, retries, interceptors |
-| `@atlas/cli` | CLI framework, Foreman, scaffolding |
-| `@atlas/ui/*` | React + Mantine blocks (provider/forms/table/auth/storage/nav/cache/ai) |
-| `@atlas/admin` | Auto-generated CRUD admin from schemas |
-| `@atlas/mcp` | MCP server for AI debugging |
-| `@atlas/ai` | AI providers, chat, embeddings, RAG, agents, streaming |
+| `@wess/atlas/config` | Typed env vars via `defineConfig`, `env` |
+| `@wess/atlas/db` | Query builder, schemas, changesets, Postgres/SQLite drivers |
+| `@wess/atlas/migrate` | Timestamped SQL migrations |
+| `@wess/atlas/server` | Pipe-based HTTP server, router, response helpers |
+| `@wess/atlas/edge` | TLS-terminating reverse proxy with built-in Let's Encrypt |
+| `@wess/atlas/server/ws` | WebSocket channels, rooms |
+| `@wess/atlas/server/sse` | Server-sent events |
+| `@wess/atlas/auth` | Password hashing, JWT, sessions, auth flow pipes |
+| `@wess/atlas/auth/social` | Pluggable OAuth-client social login (Google, GitHub, Apple, Microsoft, Facebook, X, TikTok) |
+| `@wess/atlas/security` | CSP/headers, rate limit, audit log, TOTP, DB-backed revocable sessions |
+| `@wess/atlas/oauth` | OAuth 2.1 server (PKCE, refresh rotation, device flow, discovery) |
+| `@wess/atlas/sso` | OIDC relying-party (Sign in with $IdP): discovery, PKCE, state, code exchange, id_token verify |
+| `@wess/atlas/email` | Provider-agnostic email transport + invite/reset templates |
+| `@wess/atlas/billing` | Stripe checkout, customer portal, subscription state, Connect marketplace payments, verified webhooks |
+| `@wess/atlas/share` | Share-URL builders (Twitter/X, FB, LinkedIn, Reddit, WhatsApp, Telegram, SMS, mailto) + server-side share-by-email |
+| `@wess/atlas/social` | Public/private visibility, owner moderation, image signatures, comment text rules |
+| `@wess/atlas/storage` | S3-compatible storage, presigned URLs |
+| `@wess/atlas/cache` | Redis caching with TTL, cache-aside |
+| `@wess/atlas/request` | HTTP client, retries, interceptors |
+| `@wess/atlas/cli` | CLI framework, Foreman, scaffolding |
+| `@wess/atlas/ui/*` | React + Mantine blocks (provider/forms/table/auth/storage/nav/cache/ai) |
+| `@wess/atlas/admin` | Auto-generated CRUD admin from schemas |
+| `@wess/atlas/mcp` | MCP server for AI debugging |
+| `@wess/atlas/ai` | AI providers, chat, embeddings, RAG, agents, streaming |
 
-Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. Subpath exports: `@atlas/server/ws`, `@atlas/server/sse`, `@atlas/auth/social`, `@atlas/ui/*`.
+Path aliases in `tsconfig.json` resolve `@wess/atlas/*` to source during local dev. Subpath exports: `@wess/atlas/server/ws`, `@wess/atlas/server/sse`, `@wess/atlas/auth/social`, `@wess/atlas/ui/*`.
 
 ## Conventions
 
@@ -72,7 +58,7 @@ Path aliases in `tsconfig.json` resolve `@atlas/*` to source during local dev. S
 - Small focused files, one concern each
 - Immutable data, return new objects
 - Pipes compose via `pipeline()`, `halt()` short-circuits
-- Zero external runtime deps except `zod` (in `@atlas/db`) and React/Mantine (in `@atlas/ui`, `@atlas/admin`) — wrap Bun/Web APIs, not packages
+- Zero external runtime deps except `zod` (in `@wess/atlas/db`) and React/Mantine (in `@wess/atlas/ui`, `@wess/atlas/admin`) — wrap Bun/Web APIs, not packages
 
 ## Scripts
 

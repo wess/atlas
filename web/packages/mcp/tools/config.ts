@@ -1,19 +1,19 @@
 import type { Tool } from "./types.ts";
 import { defineTool } from "./types.ts";
 
-const REDACT_PATTERNS = /secret|password|key|token/i;
+const REDACT_PATTERNS =
+  /secret|password|passwd|key|token|credential|authorization|cookie|dsn|database.?url|redis.?url/i;
 
-const redact = (obj: Record<string, unknown>): Record<string, unknown> => {
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-      result[key] = redact(value as Record<string, unknown>);
-    } else if (typeof value === "string" && REDACT_PATTERNS.test(key)) {
-      result[key] = "***REDACTED***";
-    } else {
-      result[key] = value;
-    }
-  }
+const redact = (value: unknown, key = "", seen = new WeakSet<object>()): unknown => {
+  if (REDACT_PATTERNS.test(key)) return "***REDACTED***";
+  if (typeof value === "string" && /[a-z][a-z0-9+.-]*:\/\/[^/\s]*@/i.test(value)) return "***REDACTED***";
+  if (!value || typeof value !== "object") return value;
+  if (seen.has(value)) return "[circular]";
+  seen.add(value);
+  const result = Array.isArray(value)
+    ? value.map((item) => redact(item, key, seen))
+    : Object.fromEntries(Object.entries(value).map(([name, item]) => [name, redact(item, name, seen)]));
+  seen.delete(value);
   return result;
 };
 

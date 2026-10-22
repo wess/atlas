@@ -1,4 +1,4 @@
-import type { Connection, Schema } from "../../db/index.ts";
+import type { Connection, Schema } from "../../db/query.ts";
 import type { Conn, PipeFn, Route } from "../../server/index.ts";
 import { get, halt, pipe, putHeader } from "../../server/index.ts";
 import { generateQueryRoutes } from "../query/index.ts";
@@ -34,7 +34,8 @@ export type AdminConfig = {
   readonly db: Connection;
   readonly models: ModelConfig[];
   readonly basePath?: string;
-  readonly auth?: { secret: string };
+  readonly allowUnauthenticated?: boolean;
+  readonly auth?: { secret: string; authorize: (claims: Record<string, unknown>) => boolean | Promise<boolean> };
 };
 
 export const model = (config: ModelConfig): ModelConfig => config;

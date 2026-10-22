@@ -25,7 +25,7 @@ bun add @wess/atlas
 ```
 
 Every package is a subpath export (`@wess/atlas/config`, `@wess/atlas/db`, …).
-To use the `@atlas/<pkg>` spelling this guide uses, map it via `tsconfig.json`
+To use the `@wess/atlas/<pkg>` spelling this guide uses, map it via `tsconfig.json`
 `paths` (bun reads tsconfig paths at runtime) — the full mapping lives in the
 README's Install section.
 
@@ -46,7 +46,7 @@ S3_SECRET_KEY="minioadmin"
 Create `src/schema.ts`:
 
 ```ts
-import { defineSchema, column } from "@atlas/db"
+import { defineSchema, column } from "@wess/atlas/db"
 
 export const users = defineSchema("users", {
   id: column.serial().primaryKey(),
@@ -72,7 +72,7 @@ export const uploads = defineSchema("uploads", {
 Create `src/config.ts`:
 
 ```ts
-import { defineConfig, env } from "@atlas/config"
+import { defineConfig, env } from "@wess/atlas/config"
 
 export const config = defineConfig({
   database: env("DATABASE_URL"),
@@ -94,8 +94,8 @@ or — preferred — generate them from the `defineSchema()` you already wrote:
 
 ```ts
 // scripts/diff.ts
-import { connect } from "@atlas/db"
-import { migrate } from "@atlas/migrate"
+import { connect } from "@wess/atlas/db"
+import { migrate } from "@wess/atlas/migrate"
 import { users, uploads } from "../src/schema"
 
 const db = connect({ driver: "sqlite", path: "./app.db" })
@@ -143,8 +143,8 @@ Create `src/server.ts`:
 ```ts
 import { config } from "./config"
 import { users, uploads } from "./schema"
-import { connect, from, type RowOf } from "@atlas/db"
-import { migrate } from "@atlas/migrate"
+import { connect, from, type RowOf } from "@wess/atlas/db"
+import { migrate } from "@wess/atlas/migrate"
 import {
   serve,
   pipeline,
@@ -155,10 +155,10 @@ import {
   postR,
   post,
   parseJson,
-} from "@atlas/server"
-import { token, signup, login, requireAuth } from "@atlas/auth"
-import { createStore, upload as uploadFile, presign } from "@atlas/storage"
-import { admin, model } from "@atlas/admin"
+} from "@wess/atlas/server"
+import { token, signup, login, requireAuth } from "@wess/atlas/auth"
+import { createStore, upload as uploadFile, presign } from "@wess/atlas/storage"
+import { admin, model } from "@wess/atlas/admin"
 
 // Connect to database
 const db = connect({ driver: "sqlite", path: "./app.db" })
@@ -391,15 +391,15 @@ You'll see:
 
 ### Add Frontend
 
-Create a React frontend using `@atlas/ui` blocks:
+Create a React frontend using `@wess/atlas/ui` blocks:
 
 ```tsx
 // frontend.tsx
 import React from "react"
 import { createRoot } from "react-dom/client"
-import { AtlasProvider, AppShell } from "@atlas/ui/provider"
-import { LoginPage } from "@atlas/ui/auth"
-import { FileUpload } from "@atlas/ui/storage"
+import { AtlasProvider, AppShell } from "@wess/atlas/ui/provider"
+import { LoginPage } from "@wess/atlas/ui/auth"
+import { FileUpload } from "@wess/atlas/ui/storage"
 
 export default function App() {
   const [token, setToken] = React.useState<string | null>(null)
@@ -450,7 +450,7 @@ root.render(<App />)
 ### Add Caching
 
 ```ts
-import { createCache, cached } from "@atlas/cache"
+import { createCache, cached } from "@wess/atlas/cache"
 
 const cache = createCache({ url: process.env.REDIS_URL || "redis://localhost" })
 
@@ -476,7 +476,7 @@ Update migrations path as needed. Everything else stays the same.
 ### Add AI
 
 ```ts
-import { createProvider } from "@atlas/ai"
+import { createProvider } from "@wess/atlas/ai"
 
 const openai = createProvider({ provider: "openai", key: process.env.OPENAI_API_KEY! })
 
@@ -493,7 +493,7 @@ for await (const chunk of openai.chatStream({ messages: [{ role: "user", content
 Add the AI UI block to your frontend:
 
 ```tsx
-import { ChatWindow } from "@atlas/ui/ai"
+import { ChatWindow } from "@wess/atlas/ui/ai"
 
 <ChatWindow messages={messages} onSend={(text) => sendToApi(text)} />
 ```
@@ -505,9 +505,9 @@ PKCE + state ride in a signed HttpOnly cookie, so the flow stays stateless —
 no extra schema, no session table.
 
 ```ts
-import { socialAuth, google, github, tiktok } from "@atlas/auth/social"
-import { token } from "@atlas/auth"
-import { get, post, redirect, putHeader, parseForm, pipeline } from "@atlas/server"
+import { socialAuth, google, github, tiktok } from "@wess/atlas/auth/social"
+import { token } from "@wess/atlas/auth"
+import { get, post, redirect, putHeader, parseForm, pipeline } from "@wess/atlas/server"
 
 const origin = `http://localhost:${config.port}`
 
@@ -559,8 +559,8 @@ matrix and Apple-specific notes live in `docs/cookbook.md`.
 ### Add Share Buttons
 
 ```ts
-import { share, shareUrl, shareEmail } from "@atlas/share"
-import { createEmailer } from "@atlas/email"
+import { share, shareUrl, shareEmail } from "@wess/atlas/share"
+import { createEmailer } from "@wess/atlas/email"
 
 const content = { url: "https://example.com/post/123", title: "Look at this" }
 
@@ -571,7 +571,7 @@ shareUrl("twitter", { ...content, hashtags: ["atlas"] })
 share(content)
 // → { twitter, facebook, linkedin, reddit, whatsapp, telegram, sms, email }
 
-// Server-side share-by-email (reuses your @atlas/email transport):
+// Server-side share-by-email (reuses your @wess/atlas/email transport):
 const emailer = createEmailer({ apiKey: process.env.RESEND_API_KEY, from: process.env.RESEND_FROM })
 await shareEmail({ emailer, to: "friend@example.com", sharerName: "Wess", content })
 ```
@@ -579,7 +579,7 @@ await shareEmail({ emailer, to: "friend@example.com", sharerName: "Wess", conten
 ### Add External API Calls
 
 ```ts
-import { github } from "@atlas/request/providers"
+import { github } from "@wess/atlas/request/providers"
 
 const gh = github({ token: process.env.GITHUB_TOKEN! })
 const repos = await (await gh.get("/user/repos")).json()
@@ -588,7 +588,7 @@ const repos = await (await gh.get("/user/repos")).json()
 ### Add MCP Debugging
 
 ```ts
-import { collectTools, createContext, createMcpServer } from "@atlas/mcp"
+import { collectTools, createContext, createMcpServer } from "@wess/atlas/mcp"
 
 const ctx = createContext({ db, routes: myRoutes, config })
 const mcp = createMcpServer(collectTools(ctx), ctx)
@@ -629,7 +629,7 @@ atlas init -n mysocial --template socialnetwork
 
 ### Deploy with TLS (no Caddy / nginx)
 
-`@atlas/edge` terminates TLS, automates Let's Encrypt, and reverse-proxies
+`@wess/atlas/edge` terminates TLS, automates Let's Encrypt, and reverse-proxies
 to your app. The `edge` template ships a complete pattern — a one-line
 edge.ts, a Dockerfile, and a compose.yaml that drops the typical caddy
 sidecar entirely.
@@ -638,7 +638,7 @@ Add it to an existing app:
 
 ```ts
 // edge.ts
-import { LETSENCRYPT_PROD, LETSENCRYPT_STAGING, defineEdge, proxy } from "@atlas/edge"
+import { LETSENCRYPT_PROD, LETSENCRYPT_STAGING, defineEdge, proxy } from "@wess/atlas/edge"
 
 const isProd = Boolean(process.env.ADMIN_EMAIL)
 

@@ -1,4 +1,4 @@
-# @atlas/edge
+# @wess/atlas/edge
 
 TLS-terminating reverse proxy with built-in Let's Encrypt automation.
 Replaces a Caddy/nginx layer in front of a Bun app.
@@ -55,7 +55,7 @@ type ForwardContext = { remoteIp: string; tls: boolean; host: string }
 ## Usage
 
 ```ts
-import { defineEdge, proxy, files } from "@atlas/edge"
+import { defineEdge, proxy, files } from "@wess/atlas/edge"
 
 defineEdge({
   acme: { email: "you@example.com", storage: "/var/atlas/edge" },
@@ -102,3 +102,5 @@ bun test packages/edge/
 Tests cover the DER encoder, JWS signing, host/route matchers, the
 proxy header policy, and the renewal scheduler. End-to-end ACME flow is
 not unit-tested — point at `LETSENCRYPT_STAGING` for live verification.
+
+Static files resolve URL escapes and filesystem symlinks inside the configured root and accept GET/HEAD only. Hidden paths (except `.well-known`) are not served. Proxy requests cannot change the upstream origin through a double-slash path; Connection-nominated headers are removed and client cancellation propagates upstream. Compressed upstream bodies remain encoded. Gzip compression streams; zstd buffers only responses with a known length up to 1 MiB, with an enforced read bound. SSE, partial responses, and `no-transform` responses bypass compression. Certificate/account files are replaced atomically with mode 0600 in directories created with mode 0700.

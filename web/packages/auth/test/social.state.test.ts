@@ -31,7 +31,7 @@ test("createState issues a state token with the right shape", async () => {
 
 test("verifyState accepts matching cookie and state param", async () => {
   const s = await createState(SECRET, "github");
-  const payload = await verifyState(SECRET, s.stateToken, s.stateToken, "github");
+  const payload = await verifyState(SECRET, s.stateToken, s.nonce, "github");
   expect(payload.provider).toBe("github");
   expect(payload.codeVerifier).toBe(s.codeVerifier);
 });
@@ -49,17 +49,17 @@ test("verifyState rejects missing state param", async () => {
 test("verifyState rejects cookie/state mismatch", async () => {
   const a = await createState(SECRET, "google");
   const b = await createState(SECRET, "google");
-  expect(() => verifyState(SECRET, a.stateToken, b.stateToken, "google")).toThrow(/mismatch/);
+  expect(() => verifyState(SECRET, a.stateToken, b.nonce, "google")).toThrow(/mismatch/);
 });
 
 test("verifyState rejects provider mismatch", async () => {
   const s = await createState(SECRET, "github");
-  expect(() => verifyState(SECRET, s.stateToken, s.stateToken, "google")).toThrow(/provider/);
+  expect(() => verifyState(SECRET, s.stateToken, s.nonce, "google")).toThrow(/provider/);
 });
 
 test("verifyState rejects tampered token", async () => {
   const s = await createState(SECRET, "github");
-  expect(() => verifyState("wrong-secret", s.stateToken, s.stateToken, "github")).toThrow();
+  expect(() => verifyState("wrong-secret", s.stateToken, s.nonce, "github")).toThrow();
 });
 
 test("setStateCookieHeader serializes HttpOnly + SameSite + Secure by default", () => {

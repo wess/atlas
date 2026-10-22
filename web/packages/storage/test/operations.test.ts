@@ -48,7 +48,22 @@ describeS3("operations (requires S3 server)", () => {
       await download(store, testKey);
       expect(true).toBe(false); // should not reach
     } catch (e: any) {
-      expect(e.message).toContain("Download failed");
+      expect(e.message).toContain("HTTP 404");
+    }
+  });
+
+  test("reserved and Unicode keys round-trip through signed uploads, listing, and presigned downloads", async () => {
+    const { presign } = await import("../presign/index.ts");
+    const key = `test/${Date.now()}/résumé #?%&.txt`;
+    try {
+      await upload(store, { key, body: new Blob([testBody]) });
+      expect(await (await download(store, key)).text()).toBe(testBody);
+      expect((await list(store, key)).keys).toContain(key);
+      const response = await fetch(presign(store, key, { expires: 60 }));
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe(testBody);
+    } finally {
+      await remove(store, key);
     }
   });
 });

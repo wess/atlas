@@ -30,23 +30,18 @@ the document head.
 
 ## Import Rule
 
-Atlas installs as one package:
+Select released library modules with the Atlas installer:
 
-```bash
-bun add @wess/atlas
+```sh
+bunx --package https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-cli-0.4.0.tgz atlas add server config db/postgres db/query
 ```
 
-Use public subpath imports in generated consumer code:
-
-```ts
-import { defineConfig, env } from "@wess/atlas/config"
-import { connect } from "@wess/atlas/db"
-import { get, json, serve } from "@wess/atlas/server"
-```
-
-The shorter `@atlas/<package>` spelling appears in some repository examples. It requires the
-`tsconfig.json` path aliases documented in the README. Do not emit it for a new consumer unless
-that alias is already configured.
+See README.md for the release candidate's publication status. Import public
+`@wess/atlas/<module>` entry points, for example `@wess/atlas/server`,
+`@wess/atlas/auth/password`, or `@wess/atlas/db/postgres`. The installer includes
+the selected implementation packages and their dependency closure. Applications
+must build without source aliases, links, local tarballs, or a local Atlas checkout.
+Keep exact coordinated Atlas versions and the application's lockfile.
 
 ## Package Selection
 

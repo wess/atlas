@@ -1,7 +1,8 @@
-import { requireAuth } from "../../auth/index.ts";
-import { from } from "../../db/index.ts";
-import type { PipeFn, Route } from "../../server/index.ts";
+import { z } from "zod";
+import { from } from "../../db/query.ts";
+import type { Route } from "../../server/index.ts";
 import { json, parseJson, pipe, pipeline, post } from "../../server/index.ts";
+import { adminAuth } from "../auth/index.ts";
 import type { AdminConfig } from "../config/index.ts";
 
 export type QueryFilter = {
@@ -18,6 +19,48 @@ export type QueryPayload = {
   readonly limit?: number;
   readonly offset?: number;
   readonly groupBy?: string[];
+};
+
+const payloadSchema = z.object({
+  table: z.string(),
+  select: z.array(z.string()).max(100).optional(),
+  filters: z
+    .array(
+      z.object({
+        field: z.string(),
+        op: z.enum(["eq", "neq", "gt", "gte", "lt", "lte", "like", "ilike", "in", "null", "notnull"]),
+        value: z.unknown().optional(),
+      }),
+    )
+    .max(100)
+    .optional(),
+  sort: z.object({ field: z.string(), direction: z.enum(["asc", "desc"]) }).optional(),
+  limit: z.number().int().min(1).max(1000).default(100),
+  offset: z.number().int().min(0).optional(),
+  groupBy: z.array(z.string()).max(100).optional(),
+});
+
+const validatePayload = (body: unknown, config: AdminConfig): QueryPayload | null => {
+  const parsed = payloadSchema.safeParse(body);
+  if (!parsed.success) return null;
+  const payload = parsed.data;
+  const model = config.models.find((item) => item.schema.table === payload.table);
+  if (!model) return null;
+  const fields = new Set(Object.keys(model.schema.columns));
+  const selected = [
+    ...(payload.select ?? []),
+    ...(payload.groupBy ?? []),
+    ...(payload.filters ?? []).map((filter) => filter.field),
+    ...(payload.sort ? [payload.sort.field] : []),
+  ];
+  if (selected.some((field) => !fields.has(field))) return null;
+  if (
+    payload.filters?.some(
+      (filter) => filter.op === "in" && (!Array.isArray(filter.value) || filter.value.length > 1000),
+    )
+  )
+    return null;
+  return payload;
 };
 
 const applyFilters = (query: any, filters: QueryFilter[]) => {
@@ -83,9 +126,7 @@ const buildQuery = (payload: QueryPayload) => {
 
 export const generateQueryRoutes = (config: AdminConfig): Route[] => {
   const base = config.basePath ?? "/admin";
-  const withAuth = config.auth
-    ? (handler: PipeFn): PipeFn => pipeline(requireAuth(config.auth!))(handler)
-    : (handler: PipeFn): PipeFn => handler;
+  const withAuth = adminAuth(config);
 
   return [
     post(
@@ -93,9 +134,9 @@ export const generateQueryRoutes = (config: AdminConfig): Route[] => {
       withAuth(
         pipeline(parseJson)(
           pipe(async (c) => {
-            const payload = c.body as QueryPayload;
-            const modelCfg = config.models.find((m) => m.schema.table === payload.table);
-            if (!modelCfg) return json(c, 400, { error: `Unknown table: ${payload.table}` });
+            const payload = validatePayload(c.body, config);
+            if (!payload)
+              return json(c, 400, { error: "Invalid query: use registered tables and fields with a limit of 1–1000" });
 
             const query = buildQuery(payload);
             const sql = query.toSql(config.db.dialect);
@@ -112,9 +153,9 @@ export const generateQueryRoutes = (config: AdminConfig): Route[] => {
       withAuth(
         pipeline(parseJson)(
           pipe(async (c) => {
-            const payload = c.body as QueryPayload;
-            const modelCfg = config.models.find((m) => m.schema.table === payload.table);
-            if (!modelCfg) return json(c, 400, { error: `Unknown table: ${payload.table}` });
+            const payload = validatePayload(c.body, config);
+            if (!payload)
+              return json(c, 400, { error: "Invalid query: use registered tables and fields with a limit of 1–1000" });
 
             const query = buildQuery(payload);
             const sql = query.toSql(config.db.dialect);

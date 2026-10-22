@@ -17,6 +17,12 @@ beforeAll(() => {
         headers[k] = v;
       });
       seen.push({ method: req.method, path: url.pathname + url.search, headers });
+      if (url.pathname === "/encoded") {
+        const headers = new Headers({ "content-encoding": "gzip" });
+        headers.append("set-cookie", "session=one; HttpOnly; Path=/");
+        headers.append("set-cookie", "other=two; Path=/");
+        return new Response(Bun.gzipSync("encoded body"), { headers });
+      }
       return new Response(JSON.stringify({ ok: true, path: url.pathname }), {
         headers: { "content-type": "application/json" },
       });
@@ -80,4 +86,34 @@ test("forward strips client-supplied hop-by-hop values", async () => {
   await forward(req, { upstream: upstreamUrl }, ctx);
   const recv = seen[0]!;
   expect(recv.headers.connection).not.toBe("close");
+});
+
+test("double-slash request paths cannot replace the configured upstream origin", async () => {
+  seen.length = 0;
+  const ctx: ForwardContext = { remoteIp: "9.9.9.9", tls: false, host: "edge" };
+  await forward(new Request("http://edge//127.0.0.1:1/private?q=1"), { upstream: upstreamUrl }, ctx);
+  expect(seen).toHaveLength(1);
+  expect(seen[0]?.headers.host).toBe(new URL(upstreamUrl).host);
+});
+
+test("Connection-nominated request headers and Trailer are stripped", async () => {
+  seen.length = 0;
+  await forward(
+    new Request("http://edge/", { headers: { connection: "x-private", "x-private": "secret", trailer: "x-secret" } }),
+    { upstream: upstreamUrl },
+    { remoteIp: "1.2.3.4", tls: false, host: "edge" },
+  );
+  expect(seen[0]?.headers["x-private"]).toBeUndefined();
+  expect(seen[0]?.headers.trailer).toBeUndefined();
+});
+
+test("encoded upstream bodies and multiple cookies survive forwarding", async () => {
+  const response = await forward(
+    new Request("http://edge/encoded"),
+    { upstream: upstreamUrl },
+    { remoteIp: "1.2.3.4", tls: false, host: "edge" },
+  );
+  expect(response.headers.get("content-encoding")).toBe("gzip");
+  expect(new TextDecoder().decode(Bun.gunzipSync(await response.bytes()))).toBe("encoded body");
+  expect(response.headers.getSetCookie()).toHaveLength(2);
 });

@@ -1,4 +1,4 @@
-import { from } from "../../db/index.ts";
+import { from } from "../../db/query.ts";
 import type { Conn, Route } from "../../server/index.ts";
 import { json, parseForm, parseJson, pipeline, post } from "../../server/index.ts";
 import { sha256 } from "../helpers";

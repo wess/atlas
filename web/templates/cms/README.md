@@ -25,7 +25,7 @@ bun run dev
 Open `http://localhost:3000` for the admin panel. Register an account to get
 started. Migrations also run automatically on server boot.
 
-An auto-generated CRUD dashboard (from `@atlas/admin`) covering every table is
+An auto-generated CRUD dashboard (from `@wess/atlas/admin`) covering every table is
 mounted at `http://localhost:3000/panel`.
 
 ## Environment Variables
@@ -158,3 +158,7 @@ Payloads are signed with HMAC-SHA256. Verify using the `X-Webhook-Signature` hea
 - **admin** -- full access, can manage API keys and webhooks
 - **editor** -- can create, edit, publish entries and upload media
 - **viewer** -- read-only access to admin API
+
+The registration endpoint requires `X-Setup-Token` matching `ADMIN_SETUP_SECRET` from the generated local `.env`. Keep this setup credential private. Normal login does not require it. Generic admin-panel routes also require an administrator role.
+
+`atlas init` creates `.env` with fresh authentication secrets. Preserve that file. When copying this template manually, fill each authentication/setup secret with at least 32 random characters before starting.

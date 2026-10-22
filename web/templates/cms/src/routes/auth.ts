@@ -1,6 +1,8 @@
-import { hash, token, verify } from "@atlas/auth"
-import { from } from "@atlas/db"
-import { json, parseJson, pipeline, post } from "@atlas/server"
+import { timingSafeEqual } from "node:crypto"
+import * as token from "@wess/atlas/auth/token";
+import { hash, verify } from "@wess/atlas/auth/password";
+import { from } from "@wess/atlas/db/query";
+import { json, parseJson, pipeline, post } from "@wess/atlas/server"
 import { config } from "../config.ts"
 import { db } from "../db.ts"
 import { users } from "../schema.ts"
@@ -37,6 +39,12 @@ export const authRoutes = [
   post(
     "/admin/api/auth/register",
     api(async (c) => {
+      const provided = c.headers.get("x-setup-token") ?? "";
+      const expected = config.setupSecret;
+      if (Buffer.byteLength(provided) !== Buffer.byteLength(expected) ||
+        !timingSafeEqual(Buffer.from(provided), Buffer.from(expected))) {
+        return json(c, 403, { error: "Administrator setup token required" });
+      }
       const { email, name, password } = (c.body ?? {}) as { email?: string; name?: string; password?: string }
 
       if (!email || !name || !password) {

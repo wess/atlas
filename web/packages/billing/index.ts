@@ -6,6 +6,19 @@ import { reconcile } from "./subscription/index.ts";
 import type { Billing, BillingOptions } from "./types.ts";
 import { webhook } from "./webhook/index.ts";
 
+export type {
+  Connect,
+  ConnectOptions,
+  ConnectStore,
+  FeeInput,
+  OnboardOptions,
+  Payment,
+  PaymentItem,
+  PaymentOptions,
+  PaymentStatus,
+  Seller,
+} from "./connect/index.ts";
+export { createConnect } from "./connect/index.ts";
 export type { BillingError, BillingErrorCode } from "./errors.ts";
 export { isBillingError } from "./errors.ts";
 export { verifySignature } from "./signature/index.ts";

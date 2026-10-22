@@ -1,4 +1,4 @@
-import { defineConfig, env } from "@atlas/config"
+import { defineConfig, env } from "@wess/atlas/config"
 
 export const config = defineConfig({
   port: env("PORT", { parse: Number, default: "3000" }),

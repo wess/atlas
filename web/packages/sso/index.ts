@@ -4,7 +4,8 @@
 // app uses). The package handles discovery, PKCE, state, code exchange,
 // id_token verification, and back-channel logout.
 
-import { token as jwt } from "../auth/index.ts";
+import { readStateCookie } from "../auth/social/state/index.ts";
+import * as jwt from "../auth/token/index.ts";
 import type { Route } from "../server/index.ts";
 import { get, halt, json, parseForm, parseJson, pipeline, post, redirect } from "../server/index.ts";
 import { clearDiscoveryCache, discover } from "./discovery.ts";
@@ -40,6 +41,22 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
   const defaultPath = cfg.defaultPostLoginPath ?? "/";
   const scopes = ensureOpenIdScope(cfg.scopes ?? ["openid", "email", "profile"]);
   const parseBody = pipeline(parseJson, parseForm);
+  const logoutIds = new Map<string, number>();
+  const localPath = (path: string): string => {
+    if (!path.startsWith("/") || path.startsWith("//") || /[\\\r\n]/.test(path)) return "/";
+    return path;
+  };
+  const cookie = (request: Request, value: string, maxAge: number): string => {
+    const secure = new URL(cfg.redirectUri ?? request.url).protocol === "https:" ? "; Secure" : "";
+    return `_atlas_sso_state=${value}; Path=${basePath}; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`;
+  };
+  const boundClaims = (claims: jwt.TokenPayload): boolean => {
+    const audience = claims.aud;
+    return (
+      claims.iss === cfg.issuerUrl &&
+      (audience === cfg.clientId || (Array.isArray(audience) && audience.includes(cfg.clientId)))
+    );
+  };
 
   return [
     /**
@@ -49,7 +66,7 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
      */
     get(`${basePath}/login`, async (c) => {
       const url = new URL(c.request.url);
-      const returnTo = url.searchParams.get("return_to") || defaultPath;
+      const returnTo = localPath(url.searchParams.get("return_to") || defaultPath);
 
       let disc: DiscoveryEntry;
       try {
@@ -81,6 +98,7 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
       authUrl.searchParams.set("nonce", nonce);
       authUrl.searchParams.set("code_challenge", pkce.challenge);
       authUrl.searchParams.set("code_challenge_method", "S256");
+      c.respHeaders.append("set-cookie", cookie(c.request, state, 600));
       return redirect(c, authUrl.toString(), 302);
     }),
 
@@ -102,6 +120,9 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
       if (!code || !stateParam) {
         return halt(c, 400, { error: "invalid_request", error_description: "Missing code or state" });
       }
+      const stateCookie = readStateCookie(c.headers.get("cookie"), { name: "_atlas_sso_state" });
+      c.respHeaders.append("set-cookie", cookie(c.request, "", 0));
+      if (stateCookie !== stateParam) return halt(c, 400, { error: "invalid_state" });
       const stateRow = await consumeState(cfg.db, stateTable, stateParam);
       if (!stateRow) {
         return halt(c, 400, { error: "invalid_state", error_description: "Unknown or expired state" });
@@ -134,12 +155,14 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
           accept: "application/json",
         },
         body,
+        signal: AbortSignal.timeout(10_000),
+        redirect: "error",
       });
       const tokText = await tokRes.text();
       if (!tokRes.ok) {
         return halt(c, 502, {
           error: "token_exchange_failed",
-          error_description: `IdP returned HTTP ${tokRes.status}: ${tokText.slice(0, 200)}`,
+          error_description: `IdP returned HTTP ${tokRes.status}`,
         });
       }
       const tokens = JSON.parse(tokText) as { id_token?: string; access_token?: string };
@@ -166,18 +189,21 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
         }
       }
 
-      // Validate nonce + aud + iss bindings.
+      if (
+        !boundClaims(claims) ||
+        typeof claims.sub !== "string" ||
+        !claims.sub ||
+        typeof claims.exp !== "number" ||
+        typeof claims.iat !== "number" ||
+        (Array.isArray(claims.aud) && claims.aud.length > 1 && claims.azp !== cfg.clientId) ||
+        (claims.azp !== undefined && claims.azp !== cfg.clientId)
+      ) {
+        return halt(c, 400, { error: "invalid_id_token_claims" });
+      }
+      // the nonce binds the token to this browser login
       if (claims.nonce !== stateRow.nonce) {
         return halt(c, 400, { error: "nonce_mismatch", error_description: "id_token nonce does not match" });
       }
-      const audOk = Array.isArray(claims.aud) ? claims.aud.includes(cfg.clientId) : claims.aud === cfg.clientId;
-      if (!audOk) {
-        return halt(c, 400, { error: "aud_mismatch", error_description: "id_token aud does not match client_id" });
-      }
-      if (claims.iss !== cfg.issuerUrl && claims.iss.replace(/\/+$/, "") !== cfg.issuerUrl.replace(/\/+$/, "")) {
-        return halt(c, 400, { error: "iss_mismatch", error_description: "id_token iss does not match issuer" });
-      }
-
       let user: Awaited<ReturnType<typeof cfg.onAuthenticated>>;
       try {
         user = await cfg.onAuthenticated(cfg.db, claims);
@@ -194,7 +220,7 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
       const withSession = await cfg.issueSession(c, user, claims);
       // If the session helper didn't redirect, do it ourselves.
       if (!withSession.halted) {
-        return redirect(withSession, stateRow.return_to || defaultPath, 302);
+        return redirect(withSession, localPath(stateRow.return_to || defaultPath), 302);
       }
       return withSession;
     }),
@@ -232,6 +258,16 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
             error_description: err instanceof Error ? err.message : String(err),
           });
         }
+        if (
+          !boundClaims(payload) ||
+          typeof payload.iat !== "number" ||
+          payload.iat > Date.now() / 1000 ||
+          payload.iat < Date.now() / 1000 - 300 ||
+          typeof payload.jti !== "string" ||
+          !payload.jti
+        ) {
+          return halt(c, 400, { error: "invalid_token", error_description: "Invalid logout token claims" });
+        }
         const events = payload.events as Record<string, unknown> | undefined;
         if (!events?.["http://schemas.openid.net/event/backchannel-logout"]) {
           return halt(c, 400, {
@@ -248,12 +284,19 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
           return halt(c, 400, { error: "invalid_token", error_description: "logout_token missing sub" });
         }
 
-        let localUserId: number | string | null = null;
-        if (cfg.findLocalUserBySub) {
-          localUserId = await cfg.findLocalUserBySub(cfg.db, sub);
+        for (const [id, expires] of logoutIds) {
+          if (expires <= Date.now()) logoutIds.delete(id);
         }
-        if (cfg.invalidateSessions) {
-          await Promise.resolve(cfg.invalidateSessions(cfg.db, { sub, localUserId }));
+        if (logoutIds.has(payload.jti) || logoutIds.size >= 4096) return halt(c, 400, { error: "invalid_token" });
+        logoutIds.set(payload.jti, (payload.iat + 300) * 1000);
+
+        let localUserId: number | string | null = null;
+        try {
+          if (cfg.findLocalUserBySub) localUserId = await cfg.findLocalUserBySub(cfg.db, sub);
+          if (cfg.invalidateSessions) await cfg.invalidateSessions(cfg.db, { sub, localUserId });
+        } catch (err) {
+          logoutIds.delete(payload.jti);
+          throw err;
         }
 
         const out = json(c, 200, { ok: true });

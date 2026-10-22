@@ -15,6 +15,7 @@ const DEFAULT_MAX_ENTRIES = 10_000;
 
 export const createMemoryCache = (opts?: { maxEntries?: number }): Cache => {
   const max = opts?.maxEntries ?? DEFAULT_MAX_ENTRIES;
+  if (!Number.isSafeInteger(max) || max < 1) throw new Error("Invalid cache capacity");
   const store = new Map<string, { value: string; expiresAt?: number }>();
 
   const evictIfNeeded = () => {
@@ -29,7 +30,7 @@ export const createMemoryCache = (opts?: { maxEntries?: number }): Cache => {
     get: async <T = unknown>(key: string): Promise<T | null> => {
       const entry = store.get(key);
       if (!entry) return null;
-      if (entry.expiresAt && Date.now() > entry.expiresAt) {
+      if (entry.expiresAt && Date.now() >= entry.expiresAt) {
         store.delete(key);
         return null;
       }

@@ -24,6 +24,7 @@ beforeEach(async () => {
   await db.execute({ text: "INSERT INTO users (email, name) VALUES (?, ?)", values: ["c@test.com", "C"] });
 
   const adm = admin({
+    allowUnauthenticated: true,
     db,
     models: [
       model({

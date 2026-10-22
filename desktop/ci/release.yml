@@ -24,7 +24,7 @@ jobs:
       repo: ${{ steps.app.outputs.repo }}
       desc: ${{ steps.app.outputs.desc }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Read app metadata
         id: app
@@ -62,7 +62,7 @@ jobs:
     needs: check-version
     if: needs.check-version.outputs.changed == 'true'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Create git tag
         run: |
@@ -84,7 +84,7 @@ jobs:
           fi
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: "v${{ needs.check-version.outputs.version }}"
           body_path: ${{ runner.temp }}/notes.md
@@ -106,7 +106,7 @@ jobs:
       APP_NAME: ${{ needs.check-version.outputs.name }}
       APP_SLUG: ${{ needs.check-version.outputs.slug }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: "v${{ needs.check-version.outputs.version }}"
 
@@ -118,10 +118,10 @@ jobs:
           echo "${APP_ENV}_RELEASE=1" >> "$GITHUB_ENV"
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
 
       - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
 
       - name: Import signing certificate
         if: env.APPLE_SIGNING_IDENTITY != ''
@@ -139,7 +139,11 @@ jobs:
           echo "$CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
           security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$CERT_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
-          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | sed s/\"//g)
+          KEYCHAINS=()
+          while IFS= read -r keychain; do
+            KEYCHAINS+=("$keychain")
+          done < <(security list-keychains -d user | sed 's/^[[:space:]]*"//; s/"[[:space:]]*$//')
+          security list-keychains -d user -s "$KEYCHAIN" "${KEYCHAINS[@]}"
           rm -f "$RUNNER_TEMP/cert.p12"
 
       - name: Build + bundle (.app)
@@ -205,7 +209,7 @@ jobs:
             runner: ubuntu-22.04-arm
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: "v${{ needs.check-version.outputs.version }}"
 
@@ -223,10 +227,10 @@ jobs:
             libwayland-dev libx11-xcb-dev libxkbcommon-x11-dev
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
 
       - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
 
       - name: Install cargo-deb
         run: cargo install cargo-deb --locked
@@ -257,15 +261,15 @@ jobs:
     if: needs.check-version.outputs.changed == 'true'
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: "v${{ needs.check-version.outputs.version }}"
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
 
       - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
 
       - name: Build + package (.zip + .msi)
         shell: pwsh
@@ -316,7 +320,7 @@ jobs:
           echo "value=$(sha256sum /tmp/app.dmg | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
       - name: Checkout homebrew tap
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: wess/homebrew-packages
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -378,7 +382,7 @@ jobs:
     if: needs.check-version.outputs.changed == 'true'
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Update Scoop manifest
         env:

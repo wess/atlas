@@ -1,6 +1,6 @@
-import { requireAuth } from "@atlas/auth"
-import type { Conn } from "@atlas/server"
-import { parseJson, parseMultipart, pipeline } from "@atlas/server"
+import { requireAuth } from "@wess/atlas/auth/flows";
+import type { Conn } from "@wess/atlas/server"
+import { parseJson, parseMultipart, pipeline } from "@wess/atlas/server"
 import { config } from "../config.ts"
 
 export const authed = pipeline(requireAuth({ secret: config.auth.secret }), parseJson)

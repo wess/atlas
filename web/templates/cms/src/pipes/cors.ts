@@ -1,4 +1,4 @@
-import { pipe, putHeader } from "@atlas/server"
+import { pipe, putHeader } from "@wess/atlas/server"
 
 export const cors = pipe((c) =>
   putHeader(

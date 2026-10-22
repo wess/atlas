@@ -1,6 +1,29 @@
 # Atlas API Reference
 
-## @atlas/billing
+## Module selection
+
+Public imports use `@wess/atlas/<module>`. `atlas add <module>...` installs the exact
+coordinated Atlas libraries and external peers selected by the release catalog.
+Use `/auth/password`, `/auth/token`, `/auth/session`, `/auth/flows`, `/auth/social`,
+`/db/query`, `/db/postgres`, `/db/sqlite`, and `/db/changeset` to isolate runtime
+imports. `/storage/signing` exports SigV4 helpers. `/cli` contains command parsing
+and process management; `/cli/scaffold` and `/cli/docs` are explicit tooling APIs.
+See README.md for release status and installation commands.
+
+`/auth/social` optionally accepts `intentStore: createMemoryIntentStore({ maxEntries? })`.
+The error callback receives `(conn, error, { returnTo? })`; this provider-bound,
+single-use hint restores only an allowed error destination and cannot authenticate
+or link an account. Missing-cookie callbacks still fail authentication.
+
+`/db/postgres#connect({ url, pool?, driver?: "postgres" })` and
+`/db/sqlite#connect({ path, driver?: "sqlite" })` load only the chosen driver.
+`ChangesetValidator` is a structural safeParse contract, with no required Zod import.
+
+`/storage#upload(store, { key, body, contentType?, acl? })` accepts `"private"` or
+`"public-read"` per object. Omitting `acl` sends no ACL header. The explicit ACL
+header is signed; neither bucket policy nor store defaults are changed.
+
+## @wess/atlas/billing
 ```
 createBilling({ secretKey, webhookSecret, prices, store, accountMetadataKey?, apiVersion? }) → Billing
   .checkout({ accountId, plan, successUrl, cancelUrl }) → Promise<{ url }>
@@ -17,13 +40,30 @@ complete next account and any entitlement projection, and return false on confli
 Persist checkout attempts and idempotent event receipts. Each account owns a dedicated
 customer with at most one nonterminal subscription. See `packages/billing/AGENTS.md`.
 
-## @atlas/config
+```
+createConnect({ secretKey, webhookSecret, store, fee, tax?, apiVersion? }) → Connect
+  .onboard({ sellerId, country?, returnUrl, refreshUrl }) → Promise<{ url }>
+  .seller(sellerId) → Promise<Seller>          persisted state
+  .sync(sellerId) → Promise<Seller>            fetch the connected account and persist
+  .checkout({ paymentId, sellerId, amount, currency, item, email?, successUrl, cancelUrl }) → Promise<{ url }>
+  .payment(paymentId) → Promise<Payment>       persisted state
+  .reconcile(paymentId) → Promise<Payment>     fetch current Stripe state and persist
+  .refund(paymentId, amount?) → Promise<Payment>
+  .webhook(rawBody, signature) → Promise<{ received: true, duplicate?, ignored? }>
+ConnectStore: seller(id), sellerByAccount(id), saveSeller(next, expectedRevision), payment(id),
+  paymentByIntent(id), createPayment(next), savePayment(next, expectedRevision), hasEvent(id), recordEvent(id)
+```
+Marketplace payments over Stripe Connect. Sellers own full-dashboard accounts and are the
+merchant; one-time payments are direct charges on the seller's account with a platform fee.
+The webhook takes the "connected accounts" endpoint and its own secret.
+
+## @wess/atlas/config
 ```
 env(name, opts?) → EnvRef<T>          opts: { parse: (s)=>T, default: string }
 defineConfig(schema) → Readonly<T>    resolves all EnvRef values, freezes
 ```
 
-## @atlas/db
+## @wess/atlas/db
 ```
 from(schema, alias?) → Chainable<RowOf<schema>>   typed Ecto-style chain
 from(table: string, alias?) → Chainable<any>      dynamic / cross-table chain
@@ -51,7 +91,7 @@ connect({ driver, path|url, pool? }) → Connection
               row type is inferred from the chain when from(schema) is used
 ```
 
-## @atlas/migrate
+## @wess/atlas/migrate
 ```
 migrate.create(dir, name)            creates timestamped up.sql/down.sql
 migrate.up(db, dir)                  runs pending migrations
@@ -65,7 +105,7 @@ migrate.diff(db, schemas, { name?, dir? }) → DiffWriteResult
                                      emit `-- ALTER` comments for review.
 ```
 
-## @atlas/server
+## @wess/atlas/server
 ```
 createConn(req, params?) → Conn      immutable connection from Request
 assign(conn, data) → Conn            merge into conn.assigns
@@ -76,7 +116,7 @@ pipe(fn) → PipeFn                    type-inference wrapper
 pipeline(...pipes)(handler) → PipeFn compose pipes, halt short-circuits
 get|post|put|patch|del|head|options(path, handler) → Route
 router(...routes) → fetch handler
-serve({ port, routes, hostname?, websocket? })
+serve({ port, routes, hostname?, websocket?, development?, maxRequestBodySize? }) // production mode, 1 MiB default
 json(conn, status, data) → Conn
 text(conn, status, body) → Conn
 redirect(conn, location, status?) → Conn
@@ -105,7 +145,7 @@ serviceUnavailable(message?, opts?) → HttpError
   router catches `throw httpError(...)` and renders { error, code?, details? }
 ```
 
-## @atlas/edge
+## @wess/atlas/edge
 ```
 defineEdge(config) → { ...config, listen() → Promise<RunningEdge> }
 runEdge(config) → Promise<RunningEdge>          { mode: "tls"|"plain", stop() }
@@ -135,7 +175,7 @@ Route: { match?: { path?, method? }, handler: (req, ctx) => Promise<Response> }
 ForwardContext: { remoteIp, tls, host }
 ```
 
-## @atlas/server/ws
+## @wess/atlas/server/ws
 ```
 ws(config) → { websocket, rooms, upgrade }
 channel(name, handlers) → Channel
@@ -143,27 +183,27 @@ createRooms() → { join, leave, leaveAll, broadcast, members }
 WsConn<T>: wrapped ws with auto-JSON send
 ```
 
-## @atlas/server/sse
+## @wess/atlas/server/sse
 ```
 createSseChannel() → { broadcast, pipe, clients }
 eventStream(conn, generator) → SSE response
 SseClient: { id, send, close }
 ```
 
-## @atlas/auth
+## @wess/atlas/auth
 ```
 hash(password) → Promise<string>           Argon2id via Bun.password
 verify(password, hashed) → Promise<bool>
 token.sign(payload, secret, opts?) → Promise<string>   opts: { expiresIn: seconds }
 token.verify(jwt, secret) → Promise<TokenPayload>
-createMemoryStore({ ttl? }) → SessionStore dev/testing session store; ttl seconds expires entries
+createMemoryStore({ ttl?, maxEntries? }) → SessionStore dev/testing session store; ttl seconds expires entries
 signup({ db, table, fields, onSuccess }) → PipeFn
 login({ db, table, identity, password, onSuccess }) → PipeFn
 requireAuth({ secret }) → PipeFn           reads Bearer token, sets conn.assigns.auth
 passwordReset({ db, table, secret, transport, expiresIn? }) → PipeFn
 ```
 
-## @atlas/auth/social
+## @wess/atlas/auth/social
 ```
 socialAuth({ secret, providers, cookie? }) → SocialAuth
   SocialAuth: { providers,
@@ -186,7 +226,7 @@ State + PKCE verifier live in a signed, HttpOnly, SameSite=lax cookie
   (`_atlas_oauth_state`, 10 min TTL). Override via cookie: { name?, path?, secure?, sameSite? }.
 ```
 
-## @atlas/share
+## @wess/atlas/share
 ```
 shareUrl(channel, content) → string           throws on unknown channel or missing url
 share(content) → Record<ShareChannel, string> all eight URLs at once
@@ -198,11 +238,11 @@ ShareContent: { url, title?, text?, hashtags?, via?, phone?, to?, cc?, bcc? }
 Provider re-exports (each is a `ShareProvider { channel, label, build }`):
   twitter, facebook, linkedin, reddit, whatsapp, telegram, sms, email
 shareEmail({ emailer, to, from?, replyTo?, sharerName?, product?, message?, content, brand?, accent? })
-  → Promise<SendResult>                        dispatches a branded HTML email through @atlas/email
+  → Promise<SendResult>                        dispatches a branded HTML email through @wess/atlas/email
 renderShareEmailMessage(opts) → { subject, html, text }   pure preview/render
 ```
 
-## @atlas/email
+## @wess/atlas/email
 ```
 createEmailer({ apiKey?, from? }) → Emailer    auto-picks Resend if both set, else console
 createResendEmailer({ apiKey, from }) → Emailer
@@ -215,7 +255,7 @@ layout({ title, body, brand?, footer?, accent? }) → string
 escapeHtml(s) → string                          always wrap untrusted input
 ```
 
-## @atlas/oauth
+## @wess/atlas/oauth
 ```
 oauthRoutes(cfg, { basePath?, adminBasePath? }) → Route[]   all OAuth endpoints
 oauthAuthorizeRoutes(cfg, base) | oauthTokenRoutes | oauthRevokeRoutes
@@ -230,7 +270,7 @@ types: OAuthConfig, OAuthUser, ClientRow, AuthCodeRow, RefreshTokenRow,
        DeviceCodeRow, OAuthAuditEvent, RequestContext
 ```
 
-## @atlas/sso
+## @wess/atlas/sso
 ```
 mountSso(cfg: SsoConfig) → readonly Route[]            mount /login + /callback + /backchannel-logout
 ensureSsoStateTable(db, table?)                        idempotent CREATE TABLE IF NOT EXISTS
@@ -246,12 +286,12 @@ IdTokenClaims: { sub, iss, aud, email?, email_verified?, name?, preferred_userna
 DiscoveryDoc: { issuer, authorization_endpoint, token_endpoint, jwks_uri, userinfo_endpoint?, end_session_endpoint? }
 ```
 
-## @atlas/security
+## @wess/atlas/security
 ```
 withSecurityHeaders(fetch, { dev?, csp?, disableCsp? }) → fetch     HSTS/CSP/COOP/CORP + req.peerIp shim
 developmentCsp | productionCsp                                       string CSP presets
 decideInline(mime, name, wantInline) → { contentType, disposition }  safe-MIME allowlist for inline
-createDbRateLimit({ db }) | createMemoryRateLimit() → RateLimit      .check(bucket, max, windowSec) .reset(bucket) .sweep(olderThanSec)
+createDbRateLimit({ db }) | createMemoryRateLimit({ maxEntries? }) → RateLimit      .check(bucket, max, windowSec) .reset(bucket) .sweep(olderThanSec)
 clientIp(req, { trustedProxies? }) → string                          honors X-Forwarded-For only via trusted proxy
 userAgent(req) → string | undefined
 parseTrustedProxies(env) → string[]
@@ -267,17 +307,18 @@ generateBackupCodes(n?) → string[]              store hashed
 base32Encode(bytes) | base32Decode(str)
 ```
 
-## @atlas/storage
+## @wess/atlas/storage
 ```
 createStore({ endpoint, bucket, region, accessKey, secretKey }) → Store
-upload(store, { key, body, contentType }) → Promise
+upload(store, { key, body, contentType?, acl?, maxBytes?, signal? }) → Promise
 download(store, key) → Promise<Response>
 list(store, prefix?) → Promise<ListResult>
 remove(store, key) → Promise
-presign(store, key, { expires?, method? }) → string
+stat(store, key) → Promise<{ size, contentType, etag } | null>   signed HEAD, null on 404
+presign(store, key, { expires?, method?, query? }) → string     query = extra signed params
 ```
 
-## @atlas/cache
+## @wess/atlas/cache
 ```
 createCache({ url }) → Cache               Redis-backed
 createMemoryCache() → Cache                 in-memory for dev
@@ -285,54 +326,55 @@ cached(cache, prefix, fn, { ttl? }) → cached function
 invalidate(cache, prefix, ...args) → Promise
 ```
 
-## @atlas/request
+## @wess/atlas/request
 ```
 request(url, opts?) → Promise<Response>     opts: { json, headers, method, body, retry, timeout (ms) }
 createClient({ baseUrl, headers?, retry?, interceptors?, timeout? }) → Client
   Client: .get .post .put .patch .del .request — all return Promise<Response>
 withRetry(fn, { attempts?, delay?, backoff?, retryOn? })
 github({ token }) | stripe({ key }) | openai({ key }) | resend({ key })
-  preconfigured clients — import from @atlas/request/providers
+  preconfigured clients — import from @wess/atlas/request/providers
 ```
 
-## @atlas/cli
+## @wess/atlas/cli
 ```
 cli(name, commands)                  run CLI with command definitions
 command(name, { flags?, run })       define a command
 flag(short, { type, default? })      define a flag
 parseArgs(argv, flags) → ParsedArgs
 foreman(procs) | parseProcfile(str)  process manager
-initCommand | addCommand | docsCommand   built-in atlas commands
-questions | applyDefaults | generateProject   scaffolding
+@wess/atlas/cli/scaffold: questions | applyDefaults | generateProject | initCommand
+@wess/atlas/cli/docs: docsCommand
 
 CLI surface:
   atlas init [-y] [-n name]            scaffold a new project
-  atlas add <pkg>...                   install @atlas/* packages
+  atlas add <pkg>...                   install @wess/atlas/* packages
+  atlas check                         reject local Atlas paths and legacy aliases
   atlas dev                             foreman → Procfile
   atlas mcp                             start MCP server
   atlas docs [<pkg>|<doc>|<root>]      print canonical documentation to stdout
 ```
 
-## @atlas/ui
+## @wess/atlas/ui
 ```
-@atlas/ui/provider:  AtlasProvider, AppShell
-@atlas/ui/forms:     createForm, TextField, SelectField, SubmitButton
-@atlas/ui/table:     createTable, TextColumn, DateColumn, ActionColumn
-@atlas/ui/auth:      LoginPage, SignupPage, ResetPasswordPage
-@atlas/ui/storage:   FileUpload, ImagePreview
-@atlas/ui/nav:       Sidebar, NavLink, Breadcrumb
-@atlas/ui/cache:     CacheInspector, CacheStatus
-@atlas/ui/ai:        ChatWindow, MessageBubble, PromptInput, AiSearch, GenerateButton
+@wess/atlas/ui/provider:  AtlasProvider, AppShell
+@wess/atlas/ui/forms:     createForm, TextField, SelectField, SubmitButton
+@wess/atlas/ui/table:     createTable, TextColumn, DateColumn, ActionColumn
+@wess/atlas/ui/auth:      LoginPage, SignupPage, ResetPasswordPage
+@wess/atlas/ui/storage:   FileUpload, ImagePreview
+@wess/atlas/ui/nav:       Sidebar, NavLink, Breadcrumb
+@wess/atlas/ui/cache:     CacheInspector, CacheStatus
+@wess/atlas/ui/ai:        ChatWindow, MessageBubble, PromptInput, AiSearch, GenerateButton
 ```
 
-## @atlas/admin
+## @wess/atlas/admin
 ```
 admin({ db, models, basePath?, auth? }) → { mount, routes }
 model({ schema, listFields?, searchFields?, filterFields?, relations?, actions?, bulkActions?, readOnly? }) → ModelConfig
 Components: AdminApp, AdminSidebar, Dashboard, ModelList, Detail, Create, FilterBuilder, QueryBuilder, BulkBar
 ```
 
-## @atlas/mcp
+## @wess/atlas/mcp
 ```
 createContext(opts?) → AtlasMcpContext      opts: { db?, cache?, routes?, config?, storage?, migrationsDir?, logBuffer? }
 collectTools(ctx) → Tool[]                  tools auto-register from what's in ctx
@@ -345,7 +387,7 @@ Always-on tools (independent of context):
   docs.read({ package?, doc?, root? })   read one canonical source; docs/agents.md is the grounding guide
 ```
 
-## @atlas/ai
+## @wess/atlas/ai
 ```
 createProvider({ provider, key?, baseUrl? }) → AiProvider   provider: "openai"|"anthropic"|"ollama"
 createConversation(system?) → Conversation
@@ -370,6 +412,22 @@ withAi(provider) → PipeFn                  adds ai to conn.assigns
 
 ## Dependency baseline
 
-Atlas 0.3 uses Zod 4, React 19.3, Mantine 9, and TanStack Table 9.
+Atlas 0.4 uses Zod 4, React 19.3, Mantine 9, and TanStack Table 9.
 Table column helpers return TanStack v9 column definitions. Pass object or array
 rows to `createTable`; its search, sorting, and pagination options are unchanged.
+
+Memory sessions and rate-limit buckets default to 10,000 entries and refuse new entries at capacity. SSE buffers at most 256 KiB per client; slow consumers reconnect. Cache misses for the same key share one load. SQLite transactions serialize access to their connection; use `tx` inside callbacks. Admin query fields must belong to registered schemas; query limits default to 100 and cap at 1000. SSO state is browser-bound and single-use, return destinations are local, and logout checks issuer/audience plus replay protection.
+
+Scaffolds and `atlas add` select coordinated, versioned `@wess/atlas` libraries from
+versioned GitHub release assets. Emitted imports use public `@wess/atlas/*` paths. Template installs
+generate fresh authentication secrets and keep the CLI in development dependencies.
+Applications must install without a local Atlas checkout. See README.md for release status.
+
+Storage uploads hash Blobs incrementally and spool one-shot streams to private temporary
+files instead of buffering whole uploads. `maxBytes` defaults to 5 GiB; set a smaller
+application limit. `signal` cancels preparation and transport. Temporary files are removed
+after success, failure, or cancellation. Keys preserve reserved characters and Unicode;
+dot path segments are rejected. `/storage/signing#signRequest` accepts a precomputed
+`payloadHash` when signing a body hashed by the caller.
+
+Admin auth requires `{ secret, authorize: claims => boolean | Promise<boolean> }`; authenticated users without permission receive 403. Anonymous admin configuration requires explicit `allowUnauthenticated: true` for local development and is rejected in production. Browser admin components are exported from `@wess/atlas/admin/ui`, keeping UI dependencies out of server startup. CMS administrator registration requires the generated `ADMIN_SETUP_SECRET` via `X-Setup-Token`.

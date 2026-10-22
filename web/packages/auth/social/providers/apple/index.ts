@@ -1,4 +1,5 @@
-import { buildQuery, decodeIdTokenPayload, postForm, toTokenSet } from "../../http/index.ts";
+import { buildQuery, postForm, toTokenSet } from "../../http/index.ts";
+import { verifyIdToken } from "../../http/oidc.ts";
 import type { SocialProfile, SocialProvider, TokenSet } from "../index.ts";
 
 export type AppleConfig = {
@@ -57,6 +58,7 @@ export const apple = (cfg: AppleConfig): SocialProvider<AppleConfig> => ({
   authorizeUrl: (params) => {
     const scopes = (params.scopes ?? DEFAULT_SCOPES).join(" ");
     const query = buildQuery({
+      ...params.extraParams,
       response_type: "code",
       response_mode: cfg.responseMode ?? "form_post",
       client_id: cfg.clientId,
@@ -65,7 +67,6 @@ export const apple = (cfg: AppleConfig): SocialProvider<AppleConfig> => ({
       state: params.state,
       code_challenge: params.codeChallenge,
       code_challenge_method: "S256",
-      ...params.extraParams,
     });
     return `${AUTHORIZE_URL}?${query}`;
   },
@@ -85,7 +86,12 @@ export const apple = (cfg: AppleConfig): SocialProvider<AppleConfig> => ({
     if (!tokens.idToken) {
       throw new Error("Apple token response missing id_token; cannot derive profile.");
     }
-    const claims = decodeIdTokenPayload(tokens.idToken);
+    const claims = await verifyIdToken(
+      tokens.idToken,
+      cfg.clientId,
+      "https://appleid.apple.com/auth/keys",
+      (claims) => claims.iss === "https://appleid.apple.com",
+    );
     const sub = claims.sub as string | undefined;
     if (!sub) {
       throw new Error("Apple id_token missing 'sub' claim; cannot derive user id.");

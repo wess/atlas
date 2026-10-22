@@ -1,6 +1,6 @@
-# @atlas/migrate
+# @wess/atlas/migrate
 
-Database migration manager using `@atlas/db` for Postgres and SQLite.
+Database migration manager using `@wess/atlas/db` for Postgres and SQLite.
 
 ## Exports
 
@@ -22,7 +22,7 @@ Database migration manager using `@atlas/db` for Postgres and SQLite.
   is non-empty. Returns `{ noop: true, path: null }` when the schema is in sync.
 
 ```ts
-import { migrate } from "@atlas/migrate"
+import { migrate } from "@wess/atlas/migrate"
 import { users, posts } from "./schema"
 
 const result = await migrate.diff(db, [users, posts], { name: "add_users" })
@@ -69,8 +69,8 @@ migrations/
 ## Usage
 
 ```ts
-import { connect } from "@atlas/db"
-import { migrate } from "@atlas/migrate"
+import { connect } from "@wess/atlas/db"
+import { migrate } from "@wess/atlas/migrate"
 
 const db = connect({ driver: "sqlite", path: "./app.db" })
 
@@ -91,4 +91,4 @@ await db.close()
 
 ## Dependencies
 
-Sibling: `@atlas/db`. Runtime: `bun:sqlite`, `node:fs`.
+Sibling: `@wess/atlas/db`. Runtime: `bun:sqlite`, `node:fs`.

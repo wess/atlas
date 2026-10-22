@@ -1,5 +1,6 @@
 import type { Conn, PipeFn } from "../../server/index.ts";
 import { halt, putHeader, redirect } from "../../server/index.ts";
+import type { SocialIntentStore } from "./intent/index.ts";
 import type { SocialProfile, SocialProvider, TokenSet } from "./providers/index.ts";
 import {
   type CookieOptions,
@@ -17,6 +18,7 @@ export type SocialAuthConfig = {
   readonly providers: Readonly<Record<string, SocialProvider>>;
   /** Cookie tuning (name / path / secure / sameSite). */
   readonly cookie?: CookieOptions;
+  readonly intentStore?: SocialIntentStore;
 };
 
 export type StartOptions = {
@@ -44,8 +46,10 @@ export type CallbackOptions = {
    */
   readonly onSuccess: (conn: Conn, result: CallbackResult) => Conn | Promise<Conn>;
   /** Optional error handler. Default: halt 400 with `{ error }`. */
-  readonly onError?: (conn: Conn, error: Error) => Conn | Promise<Conn>;
+  readonly onError?: (conn: Conn, error: Error, context: CallbackErrorContext) => Conn | Promise<Conn>;
 };
+
+export type CallbackErrorContext = { readonly returnTo?: string };
 
 export type SocialAuth = {
   readonly providers: Readonly<Record<string, SocialProvider>>;
@@ -85,14 +89,17 @@ const errorFromConn = (conn: Conn): string | null => {
 export const socialAuth = (cfg: SocialAuthConfig): SocialAuth => {
   const authorize = async (name: string, opts: StartOptions = {}): Promise<{ url: string; cookie: string }> => {
     const provider = getProvider(cfg, name);
-    const { stateToken, codeChallenge } = await createState(cfg.secret, provider.name, opts.returnTo);
+    const { stateToken, codeChallenge, nonce } = await createState(cfg.secret, provider.name, opts.returnTo);
     const url = provider.authorizeUrl({
-      state: stateToken,
+      state: nonce,
       codeChallenge,
       scopes: opts.scopes,
       extraParams: opts.extraParams,
     });
     const cookie = setStateCookieHeader(stateToken, cfg.cookie);
+    if (opts.returnTo && cfg.intentStore) {
+      await cfg.intentStore.remember(provider.name, nonce, opts.returnTo, Date.now() + 600_000);
+    }
     return { url, cookie };
   };
 
@@ -122,14 +129,17 @@ export const socialAuth = (cfg: SocialAuthConfig): SocialAuth => {
   const callback =
     (name: string, opts: CallbackOptions): PipeFn =>
     async (conn: Conn) => {
+      let returnTo: string | undefined;
       try {
+        const { state } = codeFromConn(conn);
+        if (state && cfg.intentStore) returnTo = await cfg.intentStore.take(getProvider(cfg, name).name, state);
         const result = await complete(name, conn);
         const cleared = putHeader(conn, "set-cookie", clearStateCookieHeader(cfg.cookie));
         return await opts.onSuccess(cleared, result);
       } catch (err) {
         const cleared = putHeader(conn, "set-cookie", clearStateCookieHeader(cfg.cookie));
         const e = err instanceof Error ? err : new Error(String(err));
-        if (opts.onError) return await opts.onError(cleared, e);
+        if (opts.onError) return await opts.onError(cleared, e, { returnTo });
         return halt(cleared, 400, { error: e.message });
       }
     };
@@ -137,6 +147,8 @@ export const socialAuth = (cfg: SocialAuthConfig): SocialAuth => {
   return { providers: cfg.providers, authorize, complete, start, callback };
 };
 
+export type { SocialIntentStore } from "./intent/index.ts";
+export { createMemoryIntentStore } from "./intent/index.ts";
 export type {
   AppleConfig,
   AuthorizeParams,

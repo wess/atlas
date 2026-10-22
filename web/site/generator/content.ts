@@ -90,6 +90,15 @@ export const desktop: readonly Guide[] = [
 
 export const packages: readonly PackageDoc[] = [
   {
+    slug: "social",
+    title: "@wess/atlas/social",
+    description: "Visibility, moderation, image signatures, and comment text rules.",
+    source: "packages/social/AGENTS.md",
+    group: "service",
+    x: 12,
+    y: 96,
+  },
+  {
     slug: "config",
     title: "@wess/atlas/config",
     description: "Typed environment variables and immutable configuration.",
@@ -245,7 +254,8 @@ export const packages: readonly PackageDoc[] = [
   {
     slug: "billing",
     title: "@wess/atlas/billing",
-    description: "Stripe checkout, subscriptions, customer portal, and verified webhooks.",
+    description:
+      "Stripe checkout, subscriptions, customer portal, Connect marketplace payments, and verified webhooks.",
     source: "packages/billing/AGENTS.md",
     group: "service",
     x: 91,

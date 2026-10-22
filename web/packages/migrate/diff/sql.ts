@@ -1,4 +1,4 @@
-import type { ColumnType, Dialect } from "../../db/index.ts";
+import type { ColumnType, Dialect } from "../../db/query.ts";
 import type { DiffOp, LiveColumn, LiveTable } from "./types.ts";
 
 const PG_TYPES: Record<ColumnType, string> = {

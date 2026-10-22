@@ -1,6 +1,7 @@
 {
   "name": "@wess/atlas",
-  "version": "0.3.2",
+  "private": true,
+  "version": "0.4.0",
   "description": "Composable Bun/TypeScript packages for building APIs, full-stack apps, and CLI tools",
   "license": "MIT",
   "repository": {
@@ -29,7 +30,8 @@
   "files": [
     "web/packages",
     "web/docs",
-    "web/llms.txt"
+    "web/llms.txt",
+    "web/templates"
   ],
   "exports": {
     "./admin": "./web/packages/admin/index.ts",
@@ -57,23 +59,37 @@
     "./storage": "./web/packages/storage/index.ts",
     "./ui": "./web/packages/ui/index.ts",
     "./ui/*": "./web/packages/ui/*/index.tsx",
-    "./packages/*": "./web/packages/*"
-  },
-  "publishConfig": {
-    "access": "public"
+    "./packages/*": "./web/packages/*",
+    "./social": "./web/packages/social/index.ts",
+    "./admin/ui": "./web/packages/admin/ui/index.ts",
+    "./auth/password": "./web/packages/auth/password/index.ts",
+    "./auth/token": "./web/packages/auth/token/index.ts",
+    "./auth/session": "./web/packages/auth/session/index.ts",
+    "./auth/flows": "./web/packages/auth/flows/index.ts",
+    "./db/query": "./web/packages/db/query.ts",
+    "./db/postgres": "./web/packages/db/postgres/index.ts",
+    "./db/sqlite": "./web/packages/db/sqlite/index.ts",
+    "./db/changeset": "./web/packages/db/changeset/index.ts",
+    "./storage/signing": "./web/packages/storage/signing/index.ts",
+    "./cli/command": "./web/packages/cli/command/index.ts",
+    "./cli/foreman": "./web/packages/cli/foreman/index.ts",
+    "./cli/scaffold": "./web/packages/cli/scaffold/index.ts",
+    "./cli/docs": "./web/packages/cli/docs/index.ts",
+    "./cli/entry": "./web/packages/cli/entry.ts",
+    "./mcp/entry": "./web/packages/mcp/entry.ts"
   },
   "dependencies": {
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "peerDependencies": {
-    "typescript": ">=5.9",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "lucide-react": "^1.47.0",
-    "@mantine/core": "^9.6.1",
-    "@mantine/hooks": "^9.6.1",
-    "@mantine/form": "^9.6.1",
-    "@tanstack/react-table": "^9.2.4"
+    "typescript": ">=7.0.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "lucide-react": "^1.61.0",
+    "@mantine/core": "^9.7.3",
+    "@mantine/hooks": "^9.7.3",
+    "@mantine/form": "^9.7.3",
+    "@tanstack/react-table": "^9.3.1"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -98,5 +114,8 @@
       "optional": true
     }
   },
-  "type": "module"
+  "type": "module",
+  "bin": {
+    "atlas": "./web/packages/cli/entry.ts"
+  }
 }

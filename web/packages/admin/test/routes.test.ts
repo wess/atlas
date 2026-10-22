@@ -33,6 +33,7 @@ beforeEach(async () => {
   await db.execute({ text: "INSERT INTO posts (title, userid) VALUES (?, ?)", values: ["Hello", 1] });
 
   const adm = admin({
+    allowUnauthenticated: true,
     db,
     models: [
       model({

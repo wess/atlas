@@ -1,4 +1,5 @@
-import { buildQuery, decodeIdTokenPayload, postForm, toTokenSet } from "../../http/index.ts";
+import { buildQuery, postForm, toTokenSet } from "../../http/index.ts";
+import { verifyIdToken } from "../../http/oidc.ts";
 import type { SocialProfile, SocialProvider, TokenSet } from "../index.ts";
 
 export type MicrosoftConfig = {
@@ -31,6 +32,7 @@ export const microsoft = (cfg: MicrosoftConfig): SocialProvider<MicrosoftConfig>
     authorizeUrl: (params) => {
       const scopes = (params.scopes ?? DEFAULT_SCOPES).join(" ");
       const query = buildQuery({
+        ...params.extraParams,
         response_type: "code",
         client_id: cfg.clientId,
         redirect_uri: cfg.redirectUri,
@@ -40,7 +42,6 @@ export const microsoft = (cfg: MicrosoftConfig): SocialProvider<MicrosoftConfig>
         code_challenge: params.codeChallenge,
         code_challenge_method: "S256",
         prompt: cfg.prompt,
-        ...params.extraParams,
       });
       return `${urls.authorize}?${query}`;
     },
@@ -59,7 +60,16 @@ export const microsoft = (cfg: MicrosoftConfig): SocialProvider<MicrosoftConfig>
       if (!tokens.idToken) {
         throw new Error("Microsoft token response missing id_token; cannot derive profile.");
       }
-      const claims = decodeIdTokenPayload(tokens.idToken);
+      const claims = await verifyIdToken(
+        tokens.idToken,
+        cfg.clientId,
+        "https://login.microsoftonline.com/common/discovery/v2.0/keys",
+        (claims) =>
+          typeof claims.tid === "string" &&
+          /^[a-f0-9-]{36}$/i.test(claims.tid) &&
+          claims.iss === `https://login.microsoftonline.com/${claims.tid}/v2.0` &&
+          (!/^[a-f0-9-]{36}$/i.test(tenant) || claims.tid.toLowerCase() === tenant.toLowerCase()),
+      );
       const sub = (claims.oid as string | undefined) ?? (claims.sub as string | undefined);
       if (!sub) {
         throw new Error("Microsoft id_token missing 'oid' and 'sub' claims; cannot derive user id.");

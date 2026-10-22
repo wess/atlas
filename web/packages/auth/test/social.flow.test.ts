@@ -121,3 +121,14 @@ test("callback() halts 400 when exchange throws", async () => {
   expect(result.halted).toBe(true);
   expect(result.status).toBe(400);
 });
+
+test("the authorization URL exposes only an opaque nonce, never the PKCE verifier", async () => {
+  const social = socialAuth({ secret: SECRET, providers: { mock: fakeProvider("mock") } });
+  const { url, cookie } = await social.authorize("mock");
+  const state = new URL(url).searchParams.get("state")!;
+  const jwt = cookie.split(";")[0]!.split("=")[1]!;
+  const payload = JSON.parse(Buffer.from(jwt.split(".")[1]!, "base64url").toString());
+  expect(state).toBe(payload.nonce);
+  expect(url).not.toContain(payload.codeVerifier);
+  expect(state).not.toContain(".");
+});

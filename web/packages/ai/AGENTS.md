@@ -1,4 +1,4 @@
-# @atlas/ai
+# @wess/atlas/ai
 
 Unified AI provider abstraction with chat, embeddings, streaming, RAG, and agent support. Zero external dependencies -- uses fetch for all API calls.
 
@@ -48,7 +48,7 @@ Server pipe:
 ## Provider setup
 
 ```ts
-import { createProvider } from "@atlas/ai"
+import { createProvider } from "@wess/atlas/ai"
 
 const openai = createProvider({ provider: "openai", key: process.env.OPENAI_API_KEY! })
 const anthropic = createProvider({ provider: "anthropic", key: process.env.ANTHROPIC_API_KEY! })
@@ -58,7 +58,7 @@ const ollama = createProvider({ provider: "ollama" }) // local, no key needed
 ## Chat
 
 ```ts
-import { createConversation, send } from "@atlas/ai"
+import { createConversation, send } from "@wess/atlas/ai"
 
 const conv = createConversation("You are a helpful assistant")
 const { conversation, response } = await send(openai, conv, "Hello!")
@@ -68,7 +68,7 @@ const { conversation, response } = await send(openai, conv, "Hello!")
 ## Streaming
 
 ```ts
-import { collectStream, streamToSse } from "@atlas/ai"
+import { collectStream, streamToSse } from "@wess/atlas/ai"
 
 const stream = openai.chatStream({ messages: [{ role: "user", content: "Hi" }] })
 const full = await collectStream(stream) // collect into ChatResponse
@@ -78,7 +78,7 @@ const sse = streamToSse(stream) // convert to ReadableStream for HTTP responses
 ## Embeddings and vector search
 
 ```ts
-import { embed, cosineSimilarity, createVectorStore } from "@atlas/ai"
+import { embed, cosineSimilarity, createVectorStore } from "@wess/atlas/ai"
 
 const vectors = await embed(openai, ["hello", "world"])
 const score = cosineSimilarity(vectors[0]!, vectors[1]!)
@@ -91,7 +91,7 @@ const results = store.search(vectors[1]!, 5) // top 5 nearest
 ## Structured output
 
 ```ts
-import { generateJson, tool } from "@atlas/ai"
+import { generateJson, tool } from "@wess/atlas/ai"
 
 const user = await generateJson<{ name: string }>(openai, "Generate a user")
 const searchTool = tool("search", "Search the web", { type: "object", properties: { query: { type: "string" } } })
@@ -100,7 +100,7 @@ const searchTool = tool("search", "Search the web", { type: "object", properties
 ## RAG
 
 ```ts
-import { index, query, createVectorStore, createProvider } from "@atlas/ai"
+import { index, query, createVectorStore, createProvider } from "@wess/atlas/ai"
 
 const store = createVectorStore()
 const rag = { ai: openai, store, topK: 3 }
@@ -113,7 +113,7 @@ const result = await query(rag, "What does the document say?")
 ## Agent loop
 
 ```ts
-import { runAgent, tool } from "@atlas/ai"
+import { runAgent, tool } from "@wess/atlas/ai"
 
 const result = await runAgent({
   ai: openai,
@@ -132,7 +132,7 @@ const result = await runAgent({
 ## Server pipe
 
 ```ts
-import { withAi } from "@atlas/ai"
+import { withAi } from "@wess/atlas/ai"
 
 // Add AI provider to conn.assigns.ai in a server pipeline
 const aiPipe = withAi(openai)
@@ -151,7 +151,7 @@ const aiPipe = withAi(openai)
 
 ## Dependencies
 
-- `@atlas/server` — only for the `withAi` pipe; the rest of the package stands alone.
+- `@wess/atlas/server` — only for the `withAi` pipe; the rest of the package stands alone.
 - External: none. All provider calls go through `fetch`.
 
 ## Testing

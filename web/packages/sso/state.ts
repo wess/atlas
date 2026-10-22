@@ -1,5 +1,5 @@
-import type { Connection } from "../db/index.ts";
-import { from } from "../db/index.ts";
+import type { Connection } from "../db/query.ts";
+import { from } from "../db/query.ts";
 
 /**
  * The transient row that survives the redirect dance between
@@ -44,7 +44,7 @@ export const consumeState = async (db: Connection, table: string, state: string)
   )) as StateRow[];
   const row = rows[0];
   if (!row) return null;
-  if (new Date(row.expires_at).getTime() < Date.now()) return null;
+  if (!(new Date(row.expires_at).getTime() > Date.now())) return null;
   return row;
 };
 

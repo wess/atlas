@@ -6,24 +6,52 @@ const base64url = {
   decode: (str: string): Uint8Array => new Uint8Array(Buffer.from(str, "base64url")),
 };
 
-const hmacSign = async (data: string, secret: string): Promise<string> => {
-  const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [
+const hmacKeys = new Map<string, Promise<CryptoKey>>();
+const hmacKey = (secret: string): Promise<CryptoKey> => {
+  if (!secret) throw new Error("Token secret must not be empty");
+  const cached = hmacKeys.get(secret);
+  if (cached) return cached;
+  if (hmacKeys.size >= 32) hmacKeys.delete(hmacKeys.keys().next().value!);
+  const key = crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, [
     "sign",
+    "verify",
   ]);
-  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(data));
+  hmacKeys.set(secret, key);
+  return key;
+};
+
+const hmacSign = async (data: string, secret: string): Promise<string> => {
+  const sig = await crypto.subtle.sign("HMAC", await hmacKey(secret), encoder.encode(data));
   return base64url.encode(new Uint8Array(sig));
 };
 
-const constantTimeEqual = (a: string, b: string): boolean => {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
+const signatureBytes = (signature: string): Buffer<ArrayBuffer> => {
+  const bytes = Buffer.from(signature, "base64url");
+  if (!signature || bytes.toString("base64url") !== signature) throw new Error("Invalid token signature encoding");
+  return bytes;
 };
 
-const hmacVerify = async (data: string, signature: string, secret: string): Promise<boolean> => {
-  const expected = await hmacSign(data, secret);
-  return constantTimeEqual(expected, signature);
+const hmacVerify = async (data: string, signature: string, secret: string): Promise<boolean> =>
+  crypto.subtle.verify("HMAC", await hmacKey(secret), signatureBytes(signature), encoder.encode(data));
+
+const decodeObject = (segment: string): Record<string, unknown> => {
+  if (!/^[A-Za-z0-9_-]+$/.test(segment)) throw new Error("Invalid token encoding");
+  const value: unknown = JSON.parse(decoder.decode(base64url.decode(segment)));
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid token claims");
+  return value as Record<string, unknown>;
+};
+
+const validateClaims = (decoded: Record<string, unknown>): TokenPayload => {
+  const now = Math.floor(Date.now() / 1000);
+  for (const claim of ["exp", "nbf", "iat"]) {
+    const value = decoded[claim];
+    if (value !== undefined && (typeof value !== "number" || !Number.isFinite(value))) {
+      throw new Error(`Invalid token ${claim} claim`);
+    }
+  }
+  if (typeof decoded.exp === "number" && decoded.exp <= now) throw new Error("Token expired");
+  if (typeof decoded.nbf === "number" && decoded.nbf > now) throw new Error("Token not active");
+  return decoded as TokenPayload;
 };
 
 export type TokenPayload = Record<string, unknown> & {
@@ -37,7 +65,7 @@ export const sign = async (payload: TokenPayload, secret: string, opts?: { expir
   const fullPayload = {
     ...payload,
     iat: now,
-    ...(opts?.expiresIn ? { exp: now + opts.expiresIn } : {}),
+    ...(opts?.expiresIn !== undefined ? { exp: now + opts.expiresIn } : {}),
   };
   const headerB64 = base64url.encode(encoder.encode(JSON.stringify(header)));
   const payloadB64 = base64url.encode(encoder.encode(JSON.stringify(fullPayload)));
@@ -52,16 +80,14 @@ export const verify = async (token: string, secret: string): Promise<TokenPayloa
       "Invalid token format. Expected a JWT with three dot-separated base64 segments (header.payload.signature).",
     );
   const [header, payload, signature] = parts as [string, string, string];
+  if (decodeObject(header).alg !== "HS256") throw new Error("Unsupported token algorithm");
+  if (!/^[A-Za-z0-9_-]{43}$/.test(signature)) throw new Error("Invalid token signature");
   const valid = await hmacVerify(`${header}.${payload}`, signature, secret);
   if (!valid)
     throw new Error(
       "Invalid token signature. The token was signed with a different secret. Verify that AUTH_SECRET matches between token creation and verification.",
     );
-  const decoded = JSON.parse(decoder.decode(base64url.decode(payload))) as TokenPayload;
-  if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {
-    throw new Error("Token expired. The token's exp claim is in the past. Issue a new token via the login endpoint.");
-  }
-  return decoded;
+  return validateClaims(decodeObject(payload));
 };
 
 // RS256 — asymmetric JWT signing for cases where verifiers can't share the
@@ -89,7 +115,7 @@ export type Jwk = {
   dp?: string;
   dq?: string;
   qi?: string;
-  oth?: unknown[];
+  oth?: { r?: string; d?: string; t?: string }[];
 };
 
 export type Rs256KeyPair = {
@@ -128,13 +154,16 @@ const jwkThumbprint = async (jwk: Jwk): Promise<string> => {
   return base64url.encode(new Uint8Array(hash));
 };
 
-const importPrivate = (jwk: Jwk): Promise<CryptoKey> =>
-  // DOM's JsonWebKey type shape differs slightly from our Jwk — runtime
-  // is identical, just appease TS.
-  crypto.subtle.importKey("jwk", jwk as any, RSA_PARAMS, false, ["sign"]);
-
-const importPublic = (jwk: Jwk): Promise<CryptoKey> =>
-  crypto.subtle.importKey("jwk", jwk as any, RSA_PARAMS, false, ["verify"]);
+const privateKeys = new WeakMap<Jwk, Promise<CryptoKey>>();
+const publicKeys = new WeakMap<Jwk, Promise<CryptoKey>>();
+const importRsa = (jwk: Jwk, usage: "sign" | "verify"): Promise<CryptoKey> => {
+  const keys = usage === "sign" ? privateKeys : publicKeys;
+  const cached = keys.get(jwk);
+  if (cached) return cached;
+  const key = crypto.subtle.importKey("jwk", jwk, RSA_PARAMS, false, [usage]);
+  keys.set(jwk, key);
+  return key;
+};
 
 export const signRs256 = async (
   payload: TokenPayload,
@@ -146,12 +175,12 @@ export const signRs256 = async (
   const fullPayload = {
     ...payload,
     iat: now,
-    ...(opts?.expiresIn ? { exp: now + opts.expiresIn } : {}),
+    ...(opts?.expiresIn !== undefined ? { exp: now + opts.expiresIn } : {}),
   };
   const headerB64 = base64url.encode(encoder.encode(JSON.stringify(header)));
   const payloadB64 = base64url.encode(encoder.encode(JSON.stringify(fullPayload)));
   const signingInput = `${headerB64}.${payloadB64}`;
-  const cryptoKey = await importPrivate(key.privateJwk);
+  const cryptoKey = await importRsa(key.privateJwk, "sign");
   const sig = await crypto.subtle.sign(RSA_PARAMS.name, cryptoKey, encoder.encode(signingInput));
   return `${signingInput}.${base64url.encode(new Uint8Array(sig))}`;
 };
@@ -168,32 +197,35 @@ export const verifyRs256 = async (token: string, jwks: Jwks): Promise<TokenPaylo
   const parts = token.split(".");
   if (parts.length !== 3) throw new Error("Invalid token format");
   const [headerB64, payloadB64, signatureB64] = parts as [string, string, string];
-  const headerJson = JSON.parse(decoder.decode(base64url.decode(headerB64))) as { alg?: string; kid?: string };
+  const headerJson = decodeObject(headerB64);
   if (headerJson.alg !== "RS256") {
     throw new Error(`Unsupported alg: ${headerJson.alg ?? "(missing)"} — verifier only accepts RS256`);
   }
-  const candidates = headerJson.kid ? jwks.keys.filter((k) => k.kid === headerJson.kid) : jwks.keys;
+  const candidates = jwks.keys.filter(
+    (key) =>
+      (!headerJson.kid || key.kid === headerJson.kid) &&
+      key.kty === "RSA" &&
+      (!key.alg || key.alg === "RS256") &&
+      (!key.use || key.use === "sig") &&
+      (!key.key_ops || key.key_ops.includes("verify")),
+  );
   if (candidates.length === 0) {
     throw new Error(`No JWKS key matches kid=${headerJson.kid ?? "(none)"}`);
   }
   const signingInput = encoder.encode(`${headerB64}.${payloadB64}`);
-  const sig = base64url.decode(signatureB64);
+  const sig = signatureBytes(signatureB64);
   let ok = false;
   for (const jwk of candidates) {
-    const pub = await importPublic(jwk);
+    const pub = await importRsa(jwk, "verify");
     // The verify overloads want BufferSource — Uint8Array satisfies it
     // structurally but TS narrows via the generic. Cast via any.
-    if (await crypto.subtle.verify(RSA_PARAMS.name, pub, sig as any, signingInput as any)) {
+    if (await crypto.subtle.verify(RSA_PARAMS.name, pub, Buffer.from(sig), Buffer.from(signingInput))) {
       ok = true;
       break;
     }
   }
   if (!ok) throw new Error("Invalid RS256 signature");
-  const decoded = JSON.parse(decoder.decode(base64url.decode(payloadB64))) as TokenPayload;
-  if (decoded.exp && decoded.exp < Math.floor(Date.now() / 1000)) {
-    throw new Error("Token expired");
-  }
-  return decoded;
+  return validateClaims(decodeObject(payloadB64));
 };
 
 /**

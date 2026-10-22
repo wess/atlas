@@ -18,6 +18,7 @@ export const templateOptions = [
   { value: "socialnetwork", label: "Social Network — users, posts, follows, feeds" },
   { value: "cms", label: "CMS — content management system" },
   { value: "ai", label: "AI — chatbot, RAG, agents, embeddings" },
+  { value: "edge", label: "Edge — TLS reverse proxy with certificate automation" },
   { value: "custom", label: "Custom — pick features manually" },
 ];
 

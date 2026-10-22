@@ -1,6 +1,6 @@
-import { admin, model } from "@atlas/admin"
-import { migrate } from "@atlas/migrate"
-import { get, pipe, putHeader, serve, text } from "@atlas/server"
+import { admin, model } from "@wess/atlas/admin"
+import { migrate } from "@wess/atlas/migrate"
+import { get, pipe, putHeader, serve, text } from "@wess/atlas/server"
 import { wsConfig } from "./src/channels/notifications.ts"
 import { config } from "./src/config.ts"
 import { db } from "./src/db.ts"
@@ -24,7 +24,7 @@ const adm = admin({
     model({ schema: likes }),
     model({ schema: media }),
   ],
-  auth: { secret: config.auth.secret },
+  auth: { secret: config.auth.secret, authorize: (claims) => claims.admin === true },
 })
 
 const page = await Bun.file(new URL("./index.html", import.meta.url).pathname).text()
@@ -34,6 +34,7 @@ const home = get(
 )
 
 serve({
+  maxRequestBodySize: 16 * 1024 * 1024,
   port: config.port,
   hostname: config.host,
   routes: [

@@ -1,4 +1,4 @@
-import { column, defineSchema } from "@atlas/db"
+import { column, defineSchema } from "@wess/atlas/db/query";
 
 export const documents = defineSchema("documents", {
   id: column.serial().primaryKey(),

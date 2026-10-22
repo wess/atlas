@@ -1,4 +1,4 @@
-import { post, pipe, json } from "@atlas/server"
+import { post, pipe, json } from "@wess/atlas/server"
 import { searchDocuments } from "../vectors/index.ts"
 
 export const searchRoutes = [

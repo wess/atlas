@@ -1,8 +1,6 @@
 name: Release
 
-# Releases are driven by the package version. Bumping `version` in package.json
-# and pushing to main cuts a full release: tag, GitHub Release, and an npm
-# publish of @wess/atlas (skipped with a notice until NPM_TOKEN is set).
+# a release is complete only when every tested library is available from this repository
 
 on:
   push:
@@ -11,13 +9,13 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release
   cancel-in-progress: false
 
-# The npm package is the web half. `desktop/` releases through its own
+# The library artifacts are the web half. `desktop/` releases through its own
 # scaffolded apps, not from here.
 defaults:
   run:
@@ -30,7 +28,7 @@ jobs:
       changed: ${{ steps.diff.outputs.changed }}
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Read package version
         id: version
@@ -38,17 +36,20 @@ jobs:
           VERSION=$(jq -r '.version' package.json)
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      # Release when the package version has no matching tag yet. Idempotent
-      # for both push and manual dispatch.
+      # a tag alone does not establish that all release assets were uploaded
       - name: Decide whether to release
         id: diff
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           NEW="${{ steps.version.outputs.version }}"
-          if git ls-remote --tags origin "refs/tags/v${NEW}" | grep -q .; then
-            echo "v${NEW} already released — skipping."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
+          if DRAFT=$(gh api "repos/wess/atlas/releases/tags/v${NEW}" --jq '.draft' 2>/tmp/releasecheck.log); then
+            echo "changed=${DRAFT}" >> "$GITHUB_OUTPUT"
+          elif rg -q 'HTTP 404' /tmp/releasecheck.log; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            cat /tmp/releasecheck.log >&2
+            exit 1
           fi
 
   test:
@@ -57,45 +58,56 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.4.4"
       - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run check
       - run: bun test
+      - run: bun run distribution:build
+      - run: bun run distribution:verify
+      - run: bun run fixtures:verify out/distribution /tmp/atlasfixtures
+      - name: Install pinned local S3 test server
+        run: |
+          curl --fail --location --silent --show-error https://github.com/rustfs/rustfs/releases/download/1.0.3/rustfs-linux-x86_64-gnu-v1.0.3.zip --output /tmp/atlasrustfs.zip
+          echo "0cb0924df93734d14f708004eff4b0e48a147fbdc074756ca0d6b8ec919629b8  /tmp/atlasrustfs.zip" | sha256sum --check --status
+          unzip -q /tmp/atlasrustfs.zip -d /tmp/atlasrustfs
+          chmod +x /tmp/atlasrustfs/rustfs
+      - run: bun run storage:verify /tmp/atlasrustfs/rustfs out/distribution
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: atlas-libraries
+          path: |
+            web/out/distribution/*.tgz
+            web/out/distribution/catalog.json
+          if-no-files-found: error
 
   release:
+    permissions:
+      contents: write
     needs: [check-version, test]
     if: needs.check-version.outputs.changed == 'true'
     runs-on: ubuntu-latest
-    env:
-      HAS_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: oven-sh/setup-bun@v2
-
-      - name: Create git tag
-        run: |
-          VERSION="${{ needs.check-version.outputs.version }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "v${VERSION}"
-          git push origin "v${VERSION}"
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          tag_name: "v${{ needs.check-version.outputs.version }}"
-          generate_release_notes: true
-          draft: false
+          bun-version: "1.4.4"
 
-      - name: Publish @wess/atlas to npm
-        if: ${{ env.HAS_TOKEN == 'true' }}
-        run: |
-          bun install --frozen-lockfile
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-          bun publish --access public
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: atlas-libraries
+          path: web/out/distribution
+
+      - name: Verify tested library artifacts
+        run: bun distribution/publish.ts
+
+      - name: Upload and verify GitHub release assets before publication
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: bun distribution/release.ts
 
-      - name: Note when token is missing
-        if: ${{ env.HAS_TOKEN != 'true' }}
-        run: echo "::notice::NPM_TOKEN is not set — skipped npm publish."
+      - name: Verify GitHub release artifact integrity
+        run: bun distribution/publish.ts --verify-release

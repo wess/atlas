@@ -1,4 +1,4 @@
-# @atlas/email
+# @wess/atlas/email
 
 Provider-agnostic email transport plus a minimal HTML email shell and two
 ready-to-use templates (invite, password reset).
@@ -6,7 +6,7 @@ ready-to-use templates (invite, password reset).
 ## Transports
 
 ```ts
-import { createEmailer, createResendEmailer, createConsoleEmailer } from "@atlas/email"
+import { createEmailer, createResendEmailer, createConsoleEmailer } from "@wess/atlas/email"
 
 // auto-detect: real Resend transport when both env vars are set, otherwise console
 const emailer = createEmailer({
@@ -46,7 +46,7 @@ those to the caller (or audit-log them) rather than ignoring.
 ## Templates
 
 ```ts
-import { inviteEmail, passwordResetEmail } from "@atlas/email"
+import { inviteEmail, passwordResetEmail } from "@wess/atlas/email"
 
 const invite = inviteEmail({
   inviterName: "Wess",
@@ -67,7 +67,7 @@ Templates return `{ subject, html, text }` so they drop straight into
 ### Layout helper
 
 ```ts
-import { layout, escapeHtml } from "@atlas/email"
+import { layout, escapeHtml } from "@wess/atlas/email"
 
 const html = layout({
   title: "Welcome",

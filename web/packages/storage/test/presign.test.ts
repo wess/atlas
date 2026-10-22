@@ -47,3 +47,15 @@ test("presign returns valid URL", () => {
   const url = presign(store, "file.txt");
   expect(() => new URL(url)).not.toThrow();
 });
+
+test("presign signs extra query parameters", () => {
+  const disposition = 'attachment; filename="brushes.zip"';
+  const url = new URL(presign(store, "file.zip", { query: { "response-content-disposition": disposition } }));
+  expect(url.searchParams.get("response-content-disposition")).toBe(disposition);
+  const other = new URL(presign(store, "file.zip"));
+  expect(url.searchParams.get("X-Amz-Signature")).not.toBe(other.searchParams.get("X-Amz-Signature"));
+});
+
+test("presign refuses to let a query override signing parameters", () => {
+  expect(() => presign(store, "file.zip", { query: { "X-Amz-Expires": "1" } })).toThrow("reserved");
+});

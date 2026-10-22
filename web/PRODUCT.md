@@ -29,7 +29,7 @@ compatibility layers.
 
 ## Operating Context
 
-Readers arrive from the public GitHub repository, npm, search, a package import, `llms.txt`, or an
+Readers arrive from the public GitHub repository, search, a package import, `llms.txt`, or an
 agent tool. They may be evaluating Atlas from a phone, reading a guide beside an editor, jumping
 directly to a package reference, or retrieving one canonical document through the CLI or MCP.
 Source lives in `README.md`, `docs/*.md`, `llms.txt`, and `packages/<name>/AGENTS.md`; GitHub Pages
@@ -37,7 +37,7 @@ is the public delivery surface.
 
 ## Capabilities and Constraints
 
-- The package is installed as `@wess/atlas` and consumed through subpath exports.
+- Libraries install from versioned GitHub release assets and expose `@wess/atlas` subpath imports.
 - Atlas is Bun-only and uses TypeScript strict mode.
 - The public site is static, dependency-light, responsive, and deployable by GitHub Actions.
 - Documentation pages are generated from canonical repository Markdown during the build.

@@ -1,11 +1,18 @@
-import { defineConfig, env } from "@atlas/config"
+import { defineConfig, env } from "@wess/atlas/config"
 
 export const config = defineConfig({
   port: env("PORT", { parse: Number, default: "3000" }),
   host: env("HOST", { default: "0.0.0.0" }),
   databaseUrl: env("DATABASE_URL", { default: "sqlite://cms.db" }),
+  setupSecret: env("ADMIN_SETUP_SECRET", { parse: (value) => {
+    if (value.length < 32) throw new Error("ADMIN_SETUP_SECRET must contain at least 32 random characters");
+    return value;
+  } }),
   auth: {
-    secret: env("AUTH_SECRET", { default: "change-me-in-production" }),
+    secret: env("AUTH_SECRET", { parse: (value) => {
+    if (value.length < 32) throw new Error("AUTH_SECRET must contain at least 32 random characters");
+    return value;
+  } }),
   },
   storage: {
     path: env("STORAGE_PATH", { default: "./uploads" }),

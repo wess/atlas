@@ -1,4 +1,4 @@
-import type { AgentTool } from "@atlas/ai"
+import type { AgentTool } from "@wess/atlas/ai"
 import { weatherTool } from "./weather.ts"
 import { calculatorTool } from "./calculator.ts"
 import { databaseTool } from "./database.ts"

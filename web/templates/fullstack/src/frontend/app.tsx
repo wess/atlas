@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-import { AtlasProvider } from "@atlas/ui/provider"
+import { AtlasProvider } from "@wess/atlas/ui/provider"
 import { Button, Card, Stack, Text, TextInput, Title } from "@mantine/core"
 import "@mantine/core/styles.css"
 import { useEffect, useState } from "react"

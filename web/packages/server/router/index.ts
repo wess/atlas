@@ -35,6 +35,7 @@ const connToResponse = (conn: Conn): Response => {
 };
 
 type CompiledRoute = {
+  readonly order: number;
   readonly method: string;
   readonly parts: readonly string[];
   readonly wildcard: boolean;
@@ -44,10 +45,11 @@ type CompiledRoute = {
 // Patterns are static, so split them once at router creation instead of on
 // every request. Wildcard patterns (e.g. /admin/*) drop the trailing "*" and
 // match any path at least as deep as the fixed prefix.
-const compileRoute = (route: Route): CompiledRoute => {
+const compileRoute = (route: Route, order: number): CompiledRoute => {
   const parts = route.pattern.split("/");
   const wildcard = parts[parts.length - 1] === "*";
   return {
+    order,
     method: route.method,
     parts: wildcard ? parts.slice(0, -1) : parts,
     wildcard,
@@ -76,12 +78,35 @@ const matchParts = (route: CompiledRoute, pathParts: readonly string[]): Record<
 
 export const router = (...routes: Route[]) => {
   const compiled = routes.map(compileRoute);
+  const methods = new Map<string, { paths: Map<string, CompiledRoute[]>; fallback: CompiledRoute[] }>();
+  for (const route of compiled) {
+    let group = methods.get(route.method);
+    if (!group) {
+      group = { paths: new Map(), fallback: [] };
+      methods.set(route.method, group);
+    }
+    const first = route.parts[1];
+    if (first === undefined || first.startsWith(":")) group.fallback.push(route);
+    else {
+      const bucket = group.paths.get(first);
+      if (bucket) bucket.push(route);
+      else group.paths.set(first, [route]);
+    }
+  }
   return async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
     const method = req.method.toUpperCase();
     const pathParts = url.pathname.split("/");
-    for (const route of compiled) {
-      if (method !== route.method) continue;
+    const group = methods.get(method);
+    const candidates = group?.paths.get(pathParts[1] ?? "") ?? [];
+    const fallback = group?.fallback ?? [];
+    let literal = 0;
+    let dynamic = 0;
+    while (literal < candidates.length || dynamic < fallback.length) {
+      const fixed = candidates[literal];
+      const variable = fallback[dynamic];
+      const route =
+        !variable || (fixed && fixed.order < variable.order) ? candidates[literal++]! : fallback[dynamic++]!;
       const params = matchParts(route, pathParts);
       if (params === null) continue;
       try {
@@ -123,13 +148,19 @@ export const router = (...routes: Route[]) => {
 type ServeOptions = {
   port?: number;
   hostname?: string;
-  routes: Route[] | ((req: Request) => Promise<Response>);
+  routes: Route[] | ((req: Request) => Response | Promise<Response>);
   websocket?: WsConfig | any;
   development?: boolean;
+  maxRequestBodySize?: number;
 };
 
 export const serve = (options: ServeOptions) => {
-  const fetch = typeof options.routes === "function" ? options.routes : router(...options.routes);
+  const handler = typeof options.routes === "function" ? options.routes : router(...options.routes);
+  const fetch = (req: Request, server: { requestIP: (req: Request) => { address: string } | null }) => {
+    const peer = server.requestIP(req);
+    if (peer) (req as Request & { peerIp?: string }).peerIp = peer.address;
+    return handler(req);
+  };
 
   if (
     options.websocket &&
@@ -141,19 +172,23 @@ export const serve = (options: ServeOptions) => {
   ) {
     const { websocket, upgrade } = createWs(options.websocket as WsConfig);
     return Bun.serve({
+      development: options.development ?? false,
+      maxRequestBodySize: options.maxRequestBodySize ?? 1024 * 1024,
       port: options.port ?? 3000,
       hostname: options.hostname ?? "0.0.0.0",
       fetch(req, server) {
         if (req.headers.get("upgrade") === "websocket") {
           if (upgrade(req, server)) return undefined as any;
         }
-        return fetch(req);
+        return fetch(req, server);
       },
       websocket,
     });
   }
 
   return Bun.serve({
+    development: options.development ?? false,
+    maxRequestBodySize: options.maxRequestBodySize ?? 1024 * 1024,
     port: options.port ?? 3000,
     hostname: options.hostname ?? "0.0.0.0",
     fetch,

@@ -1,9 +1,9 @@
-# @atlas/oauth
+# @wess/atlas/oauth
 
 Pluggable OAuth 2.1 authorization server. PKCE-required, refresh-token
 rotation with reuse detection, RFC 8628 device-code flow, dynamic client
 management, and RFC 8414 discovery — all as `Route[]` you mount on
-`@atlas/server`.
+`@wess/atlas/server`.
 
 The package is route-only. Your app owns the user table, the consent UI, and
 whatever guard pipes you want to put in front of it.
@@ -11,10 +11,10 @@ whatever guard pipes you want to put in front of it.
 ## Quick start
 
 ```ts
-import { oauthRoutes } from "@atlas/oauth"
-import { requireAuth } from "@atlas/auth"
-import { from } from "@atlas/db"
-import { router } from "@atlas/server"
+import { oauthRoutes } from "@wess/atlas/oauth"
+import { requireAuth } from "@wess/atlas/auth"
+import { from } from "@wess/atlas/db"
+import { router } from "@wess/atlas/server"
 
 const cfg = {
   db,
@@ -96,10 +96,10 @@ type OAuthConfig = {
 The library merges in `{ client_id, scope, jti }` regardless of what you
 return.
 
-`audit` integrates cleanly with `@atlas/security`'s `AuditLogger`:
+`audit` integrates cleanly with `@wess/atlas/security`'s `AuditLogger`:
 
 ```ts
-import { createAuditLogger } from "@atlas/security"
+import { createAuditLogger } from "@wess/atlas/security"
 const audit = createAuditLogger({ db })
 const cfg: OAuthConfig = { ...rest, audit: audit.log }
 ```
@@ -167,7 +167,7 @@ CREATE TABLE oauth_device_codes (
 ## Sweeps
 
 ```ts
-import { sweepExpired } from "@atlas/oauth"
+import { sweepExpired } from "@wess/atlas/oauth"
 
 setInterval(() => sweepExpired(cfg), 60 * 60 * 1000)  // hourly
 ```
@@ -177,7 +177,7 @@ individually if you want to schedule them differently.
 
 ## Helpers
 
-`@atlas/oauth` re-exports the building blocks:
+`@wess/atlas/oauth` re-exports the building blocks:
 
 ```ts
 import {
@@ -187,7 +187,7 @@ import {
   newUserCode, normalizeUserCode,
   ACCESS_TOKEN_TTL_SECONDS, REFRESH_TOKEN_TTL_SECONDS,
   AUTH_CODE_TTL_SECONDS, DEVICE_CODE_TTL_SECONDS, DEVICE_POLL_INTERVAL_SECONDS,
-} from "@atlas/oauth"
+} from "@wess/atlas/oauth"
 ```
 
 ## Security notes
@@ -204,9 +204,9 @@ import {
 
 ## Dependencies
 
-- `@atlas/auth` — `token.sign` for access-token JWTs
-- `@atlas/db` — query builder
-- `@atlas/server` — route + pipe types
+- `@wess/atlas/auth` — `token.sign` for access-token JWTs
+- `@wess/atlas/db` — query builder
+- `@wess/atlas/server` — route + pipe types
 
 ## Testing
 

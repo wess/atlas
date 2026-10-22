@@ -1,5 +1,5 @@
-import { tool } from "@atlas/ai"
-import type { AgentTool } from "@atlas/ai"
+import { tool } from "@wess/atlas/ai"
+import type { AgentTool } from "@wess/atlas/ai"
 
 export const weatherTool: AgentTool = {
   definition: tool("get_weather", "Get current weather for a city", {

@@ -1,4 +1,4 @@
-import { get, pipe, json } from "@atlas/server"
+import { get, pipe, json } from "@wess/atlas/server"
 
 export const healthRoutes = [
   get("/health", pipe((c) => json(c, 200, { healthy: true }))),

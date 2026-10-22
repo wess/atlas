@@ -141,3 +141,17 @@ test("DB-backed (sqlite) limiter sweep deletes stale rows", async () => {
   expect(remaining.map((r) => r.bucket)).toEqual(["fresh"]);
   await db.close();
 });
+
+test("a trusted edge cannot make the leftmost spoofed address trustworthy", () => {
+  const req = reqWith({ "x-forwarded-for": "1.1.1.1, 203.0.113.9" }, "10.0.0.1");
+  expect(clientIp(req, { trustedProxies: parseTrustedProxies("10.0.0.0/8") })).toBe("203.0.113.9");
+});
+
+test("memory limiter refuses new buckets at capacity without resetting existing limits", async () => {
+  const limiter = createMemoryRateLimit({ maxEntries: 1 });
+  expect((await limiter.check("a", 1, 60)).ok).toBe(true);
+  expect((await limiter.check("b", 1, 60)).ok).toBe(false);
+  expect((await limiter.check("a", 1, 60)).ok).toBe(false);
+  await limiter.reset("a");
+  expect((await limiter.check("b", 1, 60)).ok).toBe(true);
+});

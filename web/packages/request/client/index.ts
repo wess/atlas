@@ -7,7 +7,7 @@ export type RequestOptions = {
   method?: string;
   headers?: Record<string, string>;
   json?: unknown;
-  body?: BodyInit;
+  body?: RequestInit["body"];
   retry?: RetryOptions;
   /** Abort the request after this many milliseconds. Each retry attempt gets its own window. */
   timeout?: number;
@@ -33,7 +33,7 @@ export type Client = {
 
 export const request = async (url: string, opts?: RequestOptions): Promise<Response> => {
   const headers: Record<string, string> = { ...opts?.headers };
-  let body: BodyInit | undefined = opts?.body;
+  let body: RequestInit["body"] = opts?.body;
 
   if (opts?.json !== undefined) {
     headers["content-type"] = "application/json";
@@ -63,7 +63,7 @@ export const createClient = (config: ClientOptions): Client => {
       ...config.headers,
       ...opts?.headers,
     };
-    let body: BodyInit | undefined = opts?.body;
+    let body: RequestInit["body"] = opts?.body;
 
     if (opts?.json !== undefined) {
       headers["content-type"] = "application/json";

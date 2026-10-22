@@ -1,4 +1,4 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, open, rename, unlink } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { Jwk } from "../acme/keys.ts";
 
@@ -18,13 +18,31 @@ export type CertStore = {
 };
 
 export const fileStore = (root: string): CertStore => {
-  const certPath = (key: string) => join(root, "certs", key, "cert.pem");
-  const keyPath = (key: string) => join(root, "certs", key, "key.pem");
-  const metaPath = (key: string) => join(root, "certs", key, "meta.json");
+  const safeKey = (key: string): string => {
+    if (!key || key === "." || key === ".." || /[/\\\0]/.test(key)) throw new Error("Invalid certificate key");
+    return key;
+  };
+  const certPath = (key: string) => join(root, "certs", safeKey(key), "cert.pem");
+  const keyPath = (key: string) => join(root, "certs", safeKey(key), "key.pem");
+  const metaPath = (key: string) => join(root, "certs", safeKey(key), "meta.json");
   const accountPath = join(root, "account.json");
 
   const ensureDir = async (path: string) => {
-    await mkdir(dirname(path), { recursive: true });
+    await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  };
+
+  const writePrivate = async (path: string, value: string): Promise<void> => {
+    const tmp = `${path}.${crypto.randomUUID()}.tmp`;
+    const file = await open(tmp, "wx", 0o600);
+    try {
+      await Bun.write(Bun.file(file.fd), value);
+      await file.sync();
+      await file.close();
+      await rename(tmp, path);
+    } finally {
+      await file.close();
+      await unlink(tmp).catch(() => {});
+    }
   };
 
   return {
@@ -45,9 +63,9 @@ export const fileStore = (root: string): CertStore => {
     },
     save: async (key, record) => {
       await ensureDir(certPath(key));
-      await Bun.write(certPath(key), record.certPem);
-      await Bun.write(keyPath(key), record.keyPem);
-      await Bun.write(
+      await writePrivate(certPath(key), record.certPem);
+      await writePrivate(keyPath(key), record.keyPem);
+      await writePrivate(
         metaPath(key),
         JSON.stringify({
           hosts: record.hosts,
@@ -63,7 +81,7 @@ export const fileStore = (root: string): CertStore => {
     },
     saveAccountJwk: async (jwk) => {
       await ensureDir(accountPath);
-      await Bun.write(accountPath, JSON.stringify(jwk));
+      await writePrivate(accountPath, JSON.stringify(jwk));
     },
   };
 };

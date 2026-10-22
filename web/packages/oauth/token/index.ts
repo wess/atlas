@@ -1,6 +1,6 @@
-import { token as jwt } from "../../auth/index.ts";
-import type { Connection } from "../../db/index.ts";
-import { from } from "../../db/index.ts";
+import * as jwt from "../../auth/token/index.ts";
+import type { Connection } from "../../db/query.ts";
+import { from } from "../../db/query.ts";
 import type { Conn, Route } from "../../server/index.ts";
 import { json, parseForm, parseJson, pipeline, post } from "../../server/index.ts";
 import { findClient, verifyClientCredentials } from "../clients";
@@ -233,13 +233,6 @@ export const oauthTokenRoutes = (cfg: OAuthConfig, basePath = "/oauth"): readonl
       return oauthError(c, 400, "invalid_grant", "Refresh token has been revoked");
     }
 
-    // Rotate: revoke this refresh, mint a new pair.
-    await cfg.db.execute(
-      from(tables.refreshTokens)
-        .where((q) => q("token_hash").equals(tokenHash))
-        .update({ revoked_at: new Date().toISOString() }),
-    );
-
     // Scope down-narrowing only — never widen.
     let scope = row.scope;
     if (requestedScope) {
@@ -255,6 +248,14 @@ export const oauthTokenRoutes = (cfg: OAuthConfig, basePath = "/oauth"): readonl
     const user = await cfg.loadUser(cfg.db, row.user_id);
     if (!user) return oauthError(c, 400, "invalid_grant", "User no longer exists");
 
+    const claimed = await cfg.db.execute(
+      from(tables.refreshTokens)
+        .where((q) => q("token_hash").equals(tokenHash))
+        .where((q) => q("revoked_at").isNull())
+        .update({ revoked_at: new Date().toISOString() })
+        .returning("token_hash"),
+    );
+    if (claimed.length === 0) return oauthError(c, 400, "invalid_grant", "Refresh token already used");
     const tokens = await issueTokens(cfg.db, tables, cfg, user, clientId, scope, { request: c.request }, tokenHash);
     logAudit(cfg, {
       userId: user.id,
@@ -318,11 +319,13 @@ export const oauthTokenRoutes = (cfg: OAuthConfig, basePath = "/oauth"): readonl
     }
 
     // Approved — burn the code (single use) and issue tokens.
-    await cfg.db.execute(
+    const claimed = await cfg.db.execute(
       from(tables.deviceCodes)
         .where((q) => q("device_code").equals(deviceCode))
-        .del(),
+        .del()
+        .returning("device_code"),
     );
+    if (claimed.length === 0) return oauthError(c, 400, "invalid_grant", "Device code already used");
 
     const user = await cfg.loadUser(cfg.db, row.user_id);
     if (!user) return oauthError(c, 400, "invalid_grant", "User no longer exists");
@@ -349,7 +352,14 @@ export const oauthTokenRoutes = (cfg: OAuthConfig, basePath = "/oauth"): readonl
     return oauthError(c, 400, "unsupported_grant_type", `Unknown grant_type: ${grantType ?? "(missing)"}`);
   };
 
-  return [post(`${basePath}/token`, parseBody(handle))];
+  return [
+    post(`${basePath}/token`, async (conn) => {
+      const result = await parseBody(handle)(conn);
+      result.respHeaders.set("cache-control", "no-store");
+      result.respHeaders.set("pragma", "no-cache");
+      return result;
+    }),
+  ];
 };
 
 // Re-export so package consumers can avoid the deep path.

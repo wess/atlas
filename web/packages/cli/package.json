@@ -6,9 +6,11 @@
     "atlas": "./entry.ts"
   },
   "exports": {
-    ".": { "import": "./index.ts" }
+    ".": {
+      "import": "./index.ts"
+    }
   },
   "peerDependencies": {
-    "typescript": ">=5.9"
+    "typescript": ">=7.0.2"
   }
 }

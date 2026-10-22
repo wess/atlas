@@ -1,5 +1,5 @@
-import { tool } from "@atlas/ai"
-import type { AgentTool } from "@atlas/ai"
+import { tool } from "@wess/atlas/ai"
+import type { AgentTool } from "@wess/atlas/ai"
 
 export const calculatorTool: AgentTool = {
   definition: tool("calculate", "Evaluate a math expression", {

@@ -1,4 +1,4 @@
-# @atlas/cli
+# @wess/atlas/cli
 
 CLI framework, Foreman-style process manager, and project scaffolding tool. Zero external dependencies.
 
@@ -39,7 +39,7 @@ Types: `Question`, `Answers`
 
 Project file generators based on user answers.
 
-- `generatePackageJson(answers)` — package.json with selected atlas deps
+- `generatePackageJson(answers)` — package.json selecting exact coordinated Atlas libraries and their required peers
 - `generateEnv(answers)` — .env with db, cache, storage, auth config
 - `generateServerTs(answers)` — working server.ts with selected features
 - `generateTsconfig()` — standard bun tsconfig
@@ -54,11 +54,11 @@ The `atlas init` command. Flags: `--yes/-y` (skip prompts), `--name/-n` (project
 
 ### add/index.ts
 
-The `atlas add` command. Maps short names (auth, db, cache, etc.) to `@atlas/*` packages and runs `bun add`.
+The `atlas add` command validates public module names and installs the facade, selected implementation libraries, and the required external peers using the release catalog. It accepts narrow entries such as `auth/password` and `db/postgres`.
 
 ### entry.ts
 
-CLI bin entry point. Registers init, add, dev, mcp, and docs commands, then calls `cli("atlas", commands)`.
+CLI bin entry point. Registers init, add, check, dev, mcp, and docs commands, then calls `cli("atlas", commands)`.
 
 ## CLI Commands
 
@@ -77,9 +77,16 @@ atlas init -y -n myapp  # defaults with custom name
 Add Atlas packages to an existing project.
 
 ```sh
-atlas add auth cache    # installs @atlas/auth @atlas/cache
+atlas add auth/password cache    # installs only selected libraries and required peers
 atlas add               # lists available packages
 ```
+
+### atlas check
+
+Check an application's manifests, Bun lockfile, installed Atlas links, source imports,
+and TypeScript aliases. Atlas facade and backing libraries must use the same exact
+stable version. Local paths, legacy aliases, and links outside node_modules fail the check.
+Run `bunx --package https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-cli-0.4.0.tgz atlas check` in application CI after a frozen install.
 
 ### atlas dev
 
@@ -113,7 +120,7 @@ The same content is exposed as the `docs.list` / `docs.read` tools by `atlas mcp
 The questions and templates are designed for programmatic access:
 
 ```ts
-import { applyDefaults, generateProject } from "@atlas/cli"
+import { applyDefaults, generateProject } from "@wess/atlas/cli/scaffold"
 
 // Generate a project with specific answers (no interactive prompts)
 const answers = applyDefaults({
@@ -131,7 +138,7 @@ const files = generateProject(answers)
 To inspect available questions:
 
 ```ts
-import { getQuestionSpec } from "@atlas/cli"
+import { getQuestionSpec } from "@wess/atlas/cli/scaffold"
 
 const questions = getQuestionSpec()
 // Returns typed Question[] with id, prompt, type, options, default
@@ -140,7 +147,7 @@ const questions = getQuestionSpec()
 ## Global Installation
 
 ```sh
-bun add -g @atlas/cli
+bun add -g https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-cli-0.4.0.tgz
 atlas init
 ```
 
@@ -149,7 +156,7 @@ atlas init
 ### CLI commands
 
 ```ts
-import { cli, command, flag } from "@atlas/cli"
+import { cli, command, flag } from "@wess/atlas/cli"
 
 cli("myapp", [
   command("serve", {
@@ -168,7 +175,7 @@ cli("myapp", [
 ### Foreman
 
 ```ts
-import { foreman } from "@atlas/cli"
+import { foreman } from "@wess/atlas/cli"
 
 // From a Procfile path
 await foreman("./Procfile")
@@ -199,3 +206,7 @@ bun test packages/cli/
 - Functional style, no classes
 - All file names lowercase, no dashes or underscores
 - Zero external dependencies, Bun APIs only
+
+Scaffolds use public `@wess/atlas/*` imports. The distributed package includes the CLI bin and all ten templates. `atlas init` creates a local `.env` with fresh 32-byte authentication/state secrets; templates reject short auth secrets. Custom servers use the same connection, route, guard, and admin APIs as the library.
+
+The `/cli` root exports only command parsing and process management. Import project generation from `/cli/scaffold` and documentation commands from `/cli/docs`. The CLI executable resolves optional MCP from the consuming project; run `atlas add mcp` before `atlas mcp`.

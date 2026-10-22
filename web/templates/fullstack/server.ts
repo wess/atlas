@@ -1,4 +1,4 @@
-import { router } from "@atlas/server"
+import { router } from "@wess/atlas/server"
 import index from "./index.html"
 import { config } from "./src/config.ts"
 import { userRoutes } from "./src/routes/users.ts"

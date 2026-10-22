@@ -69,3 +69,13 @@ test("router matches POST routes", async () => {
   const res = await app(new Request("http://localhost/users", { method: "POST" }));
   expect(res.status).toBe(201);
 });
+
+test("indexed routes preserve declaration order across dynamic and literal prefixes", async () => {
+  const dynamic = get("/:group/:id", (c) => json(c, 200, { route: "dynamic" }));
+  const literal = get("/users/:id", (c) => json(c, 200, { route: "literal" }));
+  const request = new Request("http://localhost/users/1");
+  expect(await (await router(dynamic, literal)(request)).json()).toEqual({ route: "dynamic" });
+  expect(await (await router(literal, dynamic)(request)).json()).toEqual({ route: "literal" });
+  const wildcard = get("/*", (c) => json(c, 200, { route: "wildcard" }));
+  expect(await (await router(wildcard, literal)(request)).json()).toEqual({ route: "wildcard" });
+});

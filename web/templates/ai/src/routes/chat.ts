@@ -1,6 +1,6 @@
-import type { Message } from "@atlas/ai"
-import { from } from "@atlas/db"
-import { get, internal, json, pipe, post, putHeader, stream } from "@atlas/server"
+import type { Message } from "@wess/atlas/ai"
+import { from } from "@wess/atlas/db/query";
+import { get, internal, json, pipe, post, putHeader, stream } from "@wess/atlas/server"
 import { ai } from "../ai.ts"
 import { db } from "../db.ts"
 import { conversations } from "../schema.ts"

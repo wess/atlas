@@ -9,16 +9,19 @@ const HOP_BY_HOP = new Set([
   "proxy-authenticate",
   "proxy-authorization",
   "te",
+  "trailer",
   "trailers",
   "transfer-encoding",
   "upgrade",
 ]);
 
 const stripHopByHop = (headers: Headers): Headers => {
+  const nominated = new Set((headers.get("connection") ?? "").split(",").map((v) => v.trim().toLowerCase()));
   const out = new Headers();
   headers.forEach((v, k) => {
-    if (!HOP_BY_HOP.has(k.toLowerCase())) out.set(k, v);
+    if (k !== "set-cookie" && !HOP_BY_HOP.has(k.toLowerCase()) && !nominated.has(k.toLowerCase())) out.set(k, v);
   });
+  if (!nominated.has("set-cookie")) for (const cookie of headers.getSetCookie()) out.append("set-cookie", cookie);
   return out;
 };
 
@@ -37,7 +40,10 @@ export const forward = async (req: Request, options: ProxyOptions, ctx: ForwardC
   const incoming = new URL(req.url);
   const target = new URL(options.upstream);
   // Preserve the request's path + query, only swap origin.
-  const finalUrl = new URL(incoming.pathname + incoming.search, target);
+  const finalUrl = new URL(target);
+  finalUrl.pathname = incoming.pathname;
+  finalUrl.search = incoming.search;
+  finalUrl.hash = "";
 
   const headers = stripHopByHop(req.headers);
   headers.set("x-real-ip", ctx.remoteIp);
@@ -46,11 +52,13 @@ export const forward = async (req: Request, options: ProxyOptions, ctx: ForwardC
   headers.set("x-forwarded-host", ctx.host);
   if (!options.preserveHost) headers.set("host", target.host);
 
-  const init: RequestInit = {
+  const init: RequestInit & { decompress: boolean } = {
     method: req.method,
     headers,
     body: req.method === "GET" || req.method === "HEAD" ? undefined : req.body,
     redirect: "manual",
+    signal: req.signal,
+    decompress: false,
   };
 
   // Bun supports streaming request bodies through fetch; ensure duplex hint

@@ -1,4 +1,4 @@
-import { channel, createRooms, type WsConfig, type WsConn } from "@atlas/server/ws"
+import { channel, createRooms, type WsConfig, type WsConn } from "@wess/atlas/server/ws"
 
 const rooms = createRooms()
 const identities = new Map<WsConn, { room: string; user: string }>()

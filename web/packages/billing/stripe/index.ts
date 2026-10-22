@@ -16,12 +16,14 @@ export const identifier = (value: unknown): string | null => {
   return typeof id === "string" && id.length > 0 ? id : null;
 };
 
-export const createStripeClient = (key: string, version?: string): StripeClient => {
+// account scopes every request to a connected account (direct charges, refunds).
+export const createStripeClient = (key: string, version?: string, account?: string): StripeClient => {
   const client = createClient({
     baseUrl: "https://api.stripe.com/v1",
     headers: {
       authorization: `Bearer ${key}`,
       ...(version ? { "Stripe-Version": version } : {}),
+      ...(account ? { "Stripe-Account": account } : {}),
     },
     timeout: 15_000,
   });

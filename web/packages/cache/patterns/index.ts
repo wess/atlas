@@ -1,10 +1,13 @@
 import type { Cache } from "../store/index.ts";
 
-// Encode each key segment so a colon inside an argument can't collide with
-// the segment separator — e.g. cached("user", "1:extra") and cached("user",
-// "1", "extra") used to share a key.
 const buildKey = (prefix: string, args: readonly unknown[]): string =>
-  `${prefix}:${args.map((a) => encodeURIComponent(String(a))).join(":")}`;
+  `${encodeURIComponent(prefix)}:${args
+    .map((value) =>
+      encodeURIComponent(
+        `${typeof value}:${value && typeof value === "object" ? JSON.stringify(value) : String(value)}`,
+      ),
+    )
+    .join(":")}`;
 
 export const cached = <T, A extends unknown[]>(
   cache: Cache,
@@ -12,13 +15,25 @@ export const cached = <T, A extends unknown[]>(
   fn: (...args: A) => Promise<T>,
   opts?: { ttl?: number },
 ) => {
+  const pending = new Map<string, Promise<T>>();
   return async (...args: A): Promise<T> => {
     const key = buildKey(prefix, args);
     const existing = await cache.get<T>(key);
     if (existing !== null) return existing;
-    const result = await fn(...args);
-    await cache.set(key, result, opts);
-    return result;
+    const inflight = pending.get(key);
+    if (inflight) return inflight;
+    const load = async (): Promise<T> => {
+      const result = await fn(...args);
+      await cache.set(key, result, opts);
+      return result;
+    };
+    const result = load();
+    pending.set(key, result);
+    try {
+      return await result;
+    } finally {
+      pending.delete(key);
+    }
   };
 };
 

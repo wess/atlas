@@ -26,9 +26,9 @@ CREATE TABLE invites (
 **Routes**
 
 ```ts
-import { from } from "@atlas/db"
-import { del, get, json, parseJson, pipeline, post } from "@atlas/server"
-import { requireAuth } from "@atlas/auth"
+import { from } from "@wess/atlas/db"
+import { del, get, json, parseJson, pipeline, post } from "@wess/atlas/server"
+import { requireAuth } from "@wess/atlas/auth"
 import { randomBytes, createHash } from "node:crypto"
 
 const randomToken = () => randomBytes(32).toString("base64url")
@@ -102,7 +102,7 @@ export const inviteRoutes = (db, secret: string) => {
 used_by = … WHERE token_hash = … AND used_at IS NULL` inside the same
 transaction that inserts the new user. The atomic check prevents double-use.
 
-Pair with `@atlas/email`'s `inviteEmail` template to send the link.
+Pair with `@wess/atlas/email`'s `inviteEmail` template to send the link.
 
 ---
 
@@ -127,9 +127,9 @@ CREATE INDEX ON invite_requests (email);
 **Route**
 
 ```ts
-import { from } from "@atlas/db"
-import { json, parseJson, pipeline, post } from "@atlas/server"
-import { createDbRateLimit, clientIp } from "@atlas/security"
+import { from } from "@wess/atlas/db"
+import { json, parseJson, pipeline, post } from "@wess/atlas/server"
+import { createDbRateLimit, clientIp } from "@wess/atlas/security"
 
 const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)
 
@@ -171,7 +171,7 @@ process the queue.
 ## Search query DSL
 
 A small parser that lets users type `type:image foo bar` or `ext:pdf invoice`
-and converts the result into something you can pass to `@atlas/db`. It's about
+and converts the result into something you can pass to `@wess/atlas/db`. It's about
 50 lines and is roughly the same in every app, so keep it inline.
 
 ```ts
@@ -226,7 +226,7 @@ export const parseQuery = (input: string): ParsedQuery => {
 **Using it**
 
 ```ts
-import { from, raw } from "@atlas/db"
+import { from, raw } from "@wess/atlas/db"
 
 const { name, types, exts } = parseQuery(qParam)
 const pattern = `%${escapeLike(name)}%`
@@ -258,7 +258,7 @@ the `colon > 0` branch — the rest of the parser stays the same.
 
 ## Typed routes with auth + body validation
 
-`@atlas/server` ships a `route()` helper (and `getR / postR / putR / patchR /
+`@wess/atlas/server` ships a `route()` helper (and `getR / postR / putR / patchR /
 delR` shortcuts) that validates `params`, `body`, and `query` *before* your
 handler runs and types `c.assigns` from your `before` pipes. JSON body parsing
 is automatic when a `body` schema is set — you don't need to add `parseJson` to
@@ -267,9 +267,9 @@ they render as `422` JSON the same way every other `HttpError` does.
 
 ```ts
 import { z } from "zod"
-import { from, type RowOf } from "@atlas/db"
-import { conflict, getR, json, notFound, postR } from "@atlas/server"
-import { requireAuth } from "@atlas/auth"
+import { from, type RowOf } from "@wess/atlas/db"
+import { conflict, getR, json, notFound, postR } from "@wess/atlas/server"
+import { requireAuth } from "@wess/atlas/auth"
 import { posts } from "./schema"
 
 type AuthClaims = { auth: { id: number } }
@@ -333,8 +333,8 @@ the SQL.
 
 ```ts
 // scripts/diff.ts — run after editing src/schema.ts
-import { connect } from "@atlas/db"
-import { migrate } from "@atlas/migrate"
+import { connect } from "@wess/atlas/db"
+import { migrate } from "@wess/atlas/migrate"
 import { posts, users, follows, likes } from "../src/schema"
 
 const db = connect({ driver: "postgres", url: process.env.DATABASE_URL! })
@@ -382,8 +382,8 @@ an `HttpError` and the router renders it as JSON with the right status, code,
 and any custom headers.
 
 ```ts
-import { conflict, getR, json, notFound, tooManyRequests } from "@atlas/server"
-import { from } from "@atlas/db"
+import { conflict, getR, json, notFound, tooManyRequests } from "@wess/atlas/server"
+import { from } from "@wess/atlas/db"
 
 getR("/users/:id", { params: z.object({ id: z.coerce.number() }) }, async (c) => {
   const user = await db.one(from(users).where(q => q("id").equals(c.params.id)))
@@ -414,7 +414,7 @@ pipeline than `throw`.
 
 ## Social login (Google, GitHub, Apple, Microsoft, Facebook, X, TikTok)
 
-`@atlas/auth/social` is the OAuth-*client* side: the user signs into Google/
+`@wess/atlas/auth/social` is the OAuth-*client* side: the user signs into Google/
 GitHub/etc. and your app receives a normalized profile. State + PKCE verifier
 ride in an HttpOnly, signed-JWT cookie (`_atlas_oauth_state`, 10-minute TTL)
 so the flow stays stateless — no server-side session table required.
@@ -424,10 +424,10 @@ Your app still owns the user table. The callback hands you a `SocialProfile`
 session JWT.
 
 ```ts
-import { socialAuth, google, github, apple, microsoft, facebook, twitter, tiktok } from "@atlas/auth/social"
-import { token, requireAuth } from "@atlas/auth"
-import { from } from "@atlas/db"
-import { get, post, redirect, putHeader, json, parseForm, pipeline } from "@atlas/server"
+import { socialAuth, google, github, apple, microsoft, facebook, twitter, tiktok } from "@wess/atlas/auth/social"
+import { token, requireAuth } from "@wess/atlas/auth"
+import { from } from "@wess/atlas/db"
+import { get, post, redirect, putHeader, json, parseForm, pipeline } from "@wess/atlas/server"
 
 const origin = process.env.PUBLIC_ORIGIN!
 
@@ -518,12 +518,12 @@ export const socialAuthRoutes = [
 
 ## Sharing a link (Twitter/X, Facebook, LinkedIn, Reddit, WhatsApp, Telegram, SMS, email)
 
-`@atlas/share` builds the URL the user's browser opens to share to each
+`@wess/atlas/share` builds the URL the user's browser opens to share to each
 channel. URL builders are **pure**: no DOM, no fetch — call them on the
 server while rendering, or in a React component, doesn't matter.
 
 ```ts
-import { share, shareUrl, listChannels, shareEmail } from "@atlas/share"
+import { share, shareUrl, listChannels, shareEmail } from "@wess/atlas/share"
 
 const content = {
   url: "https://example.com/post/123",
@@ -539,20 +539,20 @@ shareUrl("twitter", content)
 share(content)
 // → { twitter, facebook, linkedin, reddit, whatsapp, telegram, sms, email }
 
-// Render a row of "share to X" buttons from the registry:
+// Render a row of "share to X" buttons from the GitHub release:
 listChannels()
 // → [{ channel: "twitter", label: "X (Twitter)" }, … ]
 ```
 
 ### Server-side share-by-email
 
-Pair with `@atlas/email`. Falls back to the console transport in dev like
+Pair with `@wess/atlas/email`. Falls back to the console transport in dev like
 every other Atlas email path, so it's safe to wire before configuring a
 sending domain.
 
 ```ts
-import { createEmailer } from "@atlas/email"
-import { shareEmail } from "@atlas/share"
+import { createEmailer } from "@wess/atlas/email"
+import { shareEmail } from "@wess/atlas/share"
 
 const emailer = createEmailer({
   apiKey: process.env.RESEND_API_KEY,
@@ -572,5 +572,5 @@ await shareEmail({
 
 Use `renderShareEmailMessage(opts)` if you want to preview the
 `{ subject, html, text }` without sending. Untrusted strings are HTML-escaped
-automatically; the body is wrapped in `@atlas/email`'s 560px Outlook-safe
+automatically; the body is wrapped in `@wess/atlas/email`'s 560px Outlook-safe
 card via `layout()`.

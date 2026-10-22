@@ -1,4 +1,5 @@
-import type { Connection } from "../db/index.ts";
+import type { Connection } from "../db/query.ts";
+import { validateIdentifier } from "../db/utils/identifiers.ts";
 
 /**
  * Create the transient state table @atlas/sso uses to bridge the
@@ -6,6 +7,7 @@ import type { Connection } from "../db/index.ts";
  * `mountSso(...)` serves traffic.
  */
 export const ensureSsoStateTable = async (db: Connection, table = "sso_state"): Promise<void> => {
+  validateIdentifier(table);
   const text =
     `CREATE TABLE IF NOT EXISTS ${table} (` +
     `  state TEXT PRIMARY KEY,` +
@@ -13,7 +15,7 @@ export const ensureSsoStateTable = async (db: Connection, table = "sso_state"): 
     `  nonce TEXT NOT NULL,` +
     `  return_to TEXT NOT NULL DEFAULT '/',` +
     `  expires_at TIMESTAMPTZ NOT NULL,` +
-    `  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()` +
+    `  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP` +
     `)`;
   await db.execute({ text, values: [] });
 };

@@ -1,4 +1,4 @@
-import { connect } from "@atlas/db"
+import { connect } from "@wess/atlas/db/sqlite";
 import { config } from "./config.ts"
 
 const path = config.databaseUrl.replace(/^sqlite:\/\//, "")

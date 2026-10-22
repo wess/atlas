@@ -5,7 +5,7 @@
 //! `<SLUG>_DIR` overrides the root, which is how tests get a scratch
 //! directory without stubbing the filesystem.
 
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 #[derive(Clone, Debug)]
 pub struct Paths {
@@ -61,7 +61,36 @@ impl Paths {
     /// Whether `path` sits inside the root. Anything the app writes on a
     /// user-supplied name should be checked with this first.
     pub fn contains(&self, path: &Path) -> bool {
-        path.starts_with(self.root())
+        match (resolved(&self.root()), resolved(path)) {
+            (Some(root), Some(path)) => path.starts_with(root),
+            _ => false,
+        }
+    }
+}
+
+fn resolved(path: &Path) -> Option<PathBuf> {
+    if path.components().any(|part| part == Component::ParentDir) {
+        return None;
+    }
+    let mut current =
+        if path.is_absolute() { path.to_owned() } else { std::env::current_dir().ok()?.join(path) };
+    let mut missing = Vec::new();
+    loop {
+        match current.canonicalize() {
+            Ok(mut root) => {
+                for part in missing.into_iter().rev() {
+                    root.push(part);
+                }
+                return Some(root);
+            }
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+                missing.push(current.file_name()?.to_owned());
+                if !current.pop() {
+                    return None;
+                }
+            }
+            Err(_) => return None,
+        }
     }
 }
 

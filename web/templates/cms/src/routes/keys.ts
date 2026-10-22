@@ -1,5 +1,5 @@
-import { from } from "@atlas/db"
-import { del, get, json, post } from "@atlas/server"
+import { from } from "@wess/atlas/db/query";
+import { del, get, json, post } from "@wess/atlas/server"
 import { db } from "../db.ts"
 import { authed, claims, guard } from "../pipes/auth.ts"
 import { apiKeys } from "../schema.ts"

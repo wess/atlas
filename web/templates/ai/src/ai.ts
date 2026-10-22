@@ -1,4 +1,4 @@
-import { createProvider } from "@atlas/ai"
+import { createProvider } from "@wess/atlas/ai"
 import { config } from "./config.ts"
 
 const providerConfig = () => {

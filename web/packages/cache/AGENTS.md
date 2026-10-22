@@ -1,4 +1,4 @@
-# @atlas/cache
+# @wess/atlas/cache
 
 Thin wrapper around Bun.redis for key-value caching with JSON serialization.
 
@@ -28,8 +28,8 @@ In-memory Cache implementation for testing. Same interface, no Redis needed.
 
 ### `cached(cache, prefix, fn, opts?)`
 Cache-aside helper. Wraps an async function with automatic caching.
-Keys are built as `prefix:arg1:arg2:...`. Returns cached value on hit,
-calls `fn` and stores result on miss.
+Keys encode the prefix and typed argument values; object arguments use JSON serialization. Returns cached value on hit,
+calls `fn` and stores result on miss. Concurrent misses for the same key share one in-flight load; failures release the key for retry.
 
 ### `invalidate(cache, prefix, ...args)`
 Deletes the cache key for the given prefix and args, forcing a fresh fetch
@@ -38,7 +38,7 @@ on the next `cached()` call.
 ## Usage
 
 ```ts
-import { createMemoryCache, cached, invalidate } from "@atlas/cache"
+import { createMemoryCache, cached, invalidate } from "@wess/atlas/cache"
 
 const cache = createMemoryCache()
 

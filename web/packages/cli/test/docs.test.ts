@@ -50,7 +50,7 @@ test("`atlas docs` with no args prints the package + doc index", async () => {
 
 test("`atlas docs <package>` prints the package's AGENTS.md", async () => {
   await docsCommand.run({ args: ["db"], flags: {} });
-  expect(captured.stdout).toContain("# @atlas/db");
+  expect(captured.stdout).toContain("# @wess/atlas/db");
   expect(captured.stdout).toContain("defineSchema");
   expect(captured.stdout).toContain("RowOf");
 });
@@ -58,7 +58,7 @@ test("`atlas docs <package>` prints the package's AGENTS.md", async () => {
 test("`atlas docs <doc>` prints docs/<name>.md", async () => {
   await docsCommand.run({ args: ["api"], flags: {} });
   expect(captured.stdout).toContain("Atlas API Reference");
-  expect(captured.stdout).toContain("@atlas/server");
+  expect(captured.stdout).toContain("@wess/atlas/server");
 });
 
 test("`atlas docs agents` prints the grounding guide", async () => {

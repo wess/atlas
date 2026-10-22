@@ -1,4 +1,4 @@
-# @atlas/config
+# @wess/atlas/config
 
 Typed environment variable access and config resolution for Bun apps.
 
@@ -17,7 +17,7 @@ Typed environment variable access and config resolution for Bun apps.
 ## Usage
 
 ```ts
-import { defineConfig, env } from "@atlas/config"
+import { defineConfig, env } from "@wess/atlas/config"
 
 const config = defineConfig({
   database: {

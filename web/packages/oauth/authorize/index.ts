@@ -1,4 +1,4 @@
-import { from } from "../../db/index.ts";
+import { from } from "../../db/query.ts";
 import type { Route } from "../../server/index.ts";
 import { get, json, parseJson, pipeline, post } from "../../server/index.ts";
 import { findClient } from "../clients";

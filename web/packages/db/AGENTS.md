@@ -1,6 +1,17 @@
-# @atlas/db
+# @wess/atlas/db
 
 Functional query builder, schema definitions, changesets, and database drivers for Postgres and SQLite.
+
+## Entry points
+
+`@wess/atlas/db/query` exports query and schema APIs plus connection types without
+loading a driver. `/db/postgres` exports `connect({ url, pool?, driver? })` and
+`connectPostgres(url, pool?)`; `/db/sqlite` exports `connect({ path, driver? })` and
+`connectSqlite(path)`. Optional `driver` retains the matching literal value only.
+`/db/changeset` exports changeset validation. `/db` is the aggregate API.
+
+Changeset validators use the structural `ChangesetValidator` safeParse contract,
+compatible with Zod, without a mandatory Zod runtime or type dependency.
 
 ## Exports
 
@@ -56,7 +67,7 @@ type ChangesetResult<T> = { valid: boolean, changes: Partial<T>,
 ## Usage
 
 ```ts
-import { connect, defineSchema, column, from, changeset, type RowOf } from "@atlas/db"
+import { connect, defineSchema, column, from, changeset, type RowOf } from "@wess/atlas/db"
 import { z } from "zod"
 
 // 1. define schema — column types thread through to the row type.
@@ -103,4 +114,6 @@ from("users").where(q => q.raw(raw("active = $1", true)))
 
 ## Dependencies
 
-Sibling: none. External: `zod` (changeset validation). Runtime: `Bun.sql` (postgres), `bun:sqlite`.
+Sibling: none. External: none. Runtime: `Bun.sql` (postgres), `bun:sqlite`.
+
+SQLite caches up to 256 prepared statements per connection. Async transactions serialize with other operations on that connection; use the provided `tx` for every operation inside the callback. Nested `tx.transaction` calls use savepoints.

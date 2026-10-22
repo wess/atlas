@@ -1,9 +1,9 @@
-# @atlas/share
+# @wess/atlas/share
 
 Tiny composable helpers for sharing a URL via the channels users actually use:
 the major socials (Twitter/X, Facebook, LinkedIn, Reddit), messengers
 (WhatsApp, Telegram, SMS), and email (both `mailto:` links *and* server-side
-send through `@atlas/email`).
+send through `@wess/atlas/email`).
 
 The URL builders are pure functions — no DOM, no fetch, no SDKs. Render them in
 React, Mantine, server-side templates, anywhere.
@@ -11,8 +11,8 @@ React, Mantine, server-side templates, anywhere.
 ## Quick start
 
 ```ts
-import { share, shareUrl, shareEmail, listChannels } from "@atlas/share"
-import { createEmailer } from "@atlas/email"
+import { share, shareUrl, shareEmail, listChannels } from "@wess/atlas/share"
+import { createEmailer } from "@wess/atlas/email"
 
 const content = {
   url: "https://example.com/post/123",
@@ -31,7 +31,7 @@ share(content)
 listChannels()
 // → [{ channel: "twitter", label: "X (Twitter)" }, ...]
 
-// Server-side share-by-email through any @atlas/email transport
+// Server-side share-by-email through any @wess/atlas/email transport
 const emailer = createEmailer({ apiKey: process.env.RESEND_API_KEY, from: "no-reply@example.com" })
 await shareEmail({
   emailer,
@@ -78,7 +78,7 @@ ignored. Required: `url`.
 ## Server-side email
 
 `shareEmail(opts)` renders a single-column branded HTML email (uses
-`@atlas/email`'s `layout` helper) and dispatches it through whatever
+`@wess/atlas/email`'s `layout` helper) and dispatches it through whatever
 `Emailer` you hand it. Falls back to the console transport in dev exactly
 like `inviteEmail` / `passwordResetEmail`.
 
@@ -120,7 +120,7 @@ union).
 
 ## Dependencies
 
-- `@atlas/email` — used by `shareEmail` for transport + HTML layout. URL
+- `@wess/atlas/email` — used by `shareEmail` for transport + HTML layout. URL
   builders themselves have zero deps and can be tree-shaken if you import
   channels directly.
 

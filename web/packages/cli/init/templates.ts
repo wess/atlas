@@ -1,10 +1,22 @@
 import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { moduleDependencies } from "../modules/index.ts";
 import type { Answers } from "./questions.ts";
 
 // Template scaffolding
 
-const knownTemplates = ["minimal", "api", "fullstack", "admin", "worker", "realtime", "socialnetwork", "cms"];
+const knownTemplates = [
+  "minimal",
+  "api",
+  "fullstack",
+  "admin",
+  "worker",
+  "realtime",
+  "socialnetwork",
+  "cms",
+  "ai",
+  "edge",
+];
 
 export const listTemplates = (): string[] => knownTemplates;
 
@@ -12,10 +24,6 @@ const findTemplateDir = (templateName: string): string | null => {
   // Check relative to this file (monorepo layout: packages/cli/init/templates.ts -> templates/)
   const monorepoPath = join(dirname(import.meta.dir), "..", "..", "templates", templateName);
   if (existsSync(monorepoPath)) return monorepoPath;
-
-  // Check in node_modules (installed package)
-  const nmPath = join(process.cwd(), "node_modules", "@atlas", "cli", "templates", templateName);
-  if (existsSync(nmPath)) return nmPath;
 
   return null;
 };
@@ -42,7 +50,7 @@ export const scaffoldFromTemplate = async (
   projectDir: string,
   projectName: string,
 ): Promise<void> => {
-  const templateDir = findTemplateDir(templateName);
+  const templateDir = knownTemplates.includes(templateName) ? findTemplateDir(templateName) : null;
   if (!templateDir) {
     const available = listTemplates();
     throw new Error(
@@ -63,29 +71,32 @@ export const scaffoldFromTemplate = async (
     await Bun.write(destPath, content);
     console.log(`  created ${file.rel}`);
   }
+  const example = Bun.file(join(projectDir, ".env.example"));
+  if (await example.exists()) {
+    const content = (await example.text()).replace(
+      /^(AUTH_SECRET|OAUTH_STATE_SECRET|ADMIN_SETUP_SECRET)=.*$/gm,
+      (_, name) => `${name}=${Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("hex")}`,
+    );
+    await Bun.write(join(projectDir, ".env"), content);
+  }
 };
 
 // Custom project generation (when template === "custom")
 
 export const generatePackageJson = (answers: Answers): string => {
-  const deps: Record<string, string> = {
-    "@atlas/config": "latest",
-    "@atlas/server": "latest",
-    "@atlas/cli": "latest",
-  };
-
+  const modules = ["server", "config", "cli/entry"];
+  if (answers.database !== "none") modules.push("db/query", `db/${answers.database}`, "migrate");
   const features = answers.features as string[];
-  const db = answers.database as string;
-
-  if (db !== "none") deps["@atlas/db"] = "latest";
-  if (features.includes("auth") || features.includes("social")) deps["@atlas/auth"] = "latest";
-  if (features.includes("storage")) deps["@atlas/storage"] = "latest";
-  if (features.includes("cache")) deps["@atlas/cache"] = "latest";
-  if (features.includes("admin")) deps["@atlas/admin"] = "latest";
-  if (features.includes("migrate")) deps["@atlas/migrate"] = "latest";
-  if (features.includes("email") || features.includes("share")) deps["@atlas/email"] = "latest";
-  if (features.includes("share")) deps["@atlas/share"] = "latest";
-  if (answers.frontend) deps["@atlas/ui"] = "latest";
+  if (features.includes("auth") || features.includes("admin")) modules.push("auth/flows");
+  for (const name of ["storage", "cache", "admin", "email", "share", "ai"]) {
+    if (features.includes(name)) modules.push(name);
+  }
+  if (features.includes("social")) modules.push("auth/social");
+  if (answers.frontend) modules.push("ui/provider");
+  const deps = moduleDependencies(modules);
+  const cliVersion = deps["@wess/atlas-cli"]!;
+  delete deps["@wess/atlas-cli"];
+  if (answers.frontend) deps["react-dom"] = "^19.3.1";
 
   return JSON.stringify(
     {
@@ -102,9 +113,10 @@ export const generatePackageJson = (answers: Answers): string => {
       },
       dependencies: deps,
       devDependencies: {
+        "@wess/atlas-cli": cliVersion,
         "@types/bun": "latest",
         "@biomejs/biome": "latest",
-        typescript: "^5",
+        typescript: "^7.0.2",
       },
     },
     null,
@@ -123,7 +135,7 @@ export const generateEnv = (answers: Answers): string => {
     lines.push(`DB_POOL_SIZE=5`);
   }
   if (db === "sqlite") {
-    lines.push(`DATABASE_PATH=./data/${answers.name}.db`);
+    lines.push(`DATABASE_PATH=./${answers.name}.db`);
   }
 
   const features = answers.features as string[];
@@ -136,11 +148,11 @@ export const generateEnv = (answers: Answers): string => {
   if (features.includes("cache")) {
     lines.push(`REDIS_URL=redis://localhost:6379`);
   }
-  if (features.includes("auth")) {
-    lines.push(`AUTH_SECRET=change-me-in-production`);
+  if (features.includes("auth") || features.includes("admin")) {
+    lines.push(`AUTH_SECRET=${Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("hex")}`);
   }
   if (features.includes("social")) {
-    lines.push(`OAUTH_STATE_SECRET=change-me-in-production`);
+    lines.push(`OAUTH_STATE_SECRET=${Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("hex")}`);
     lines.push(`# Fill in only the providers you want enabled — each requires a developer-console app.`);
     lines.push(`GOOGLE_CLIENT_ID=`);
     lines.push(`GOOGLE_CLIENT_SECRET=`);
@@ -171,62 +183,57 @@ export const generateEnv = (answers: Answers): string => {
 };
 
 export const generateServerTs = (answers: Answers): string => {
-  const imports: string[] = [];
-  const setup: string[] = [];
-  const routes: string[] = [];
-
-  imports.push(`import { config } from "../../config/index.ts"`);
-  imports.push(`import { serve } from "../../server/index.ts"`);
-
-  const db = answers.database as string;
   const features = answers.features as string[];
-
-  if (db !== "none") {
-    imports.push(`import { db } from "../../db/index.ts"`);
-    setup.push(`const database = db(config)`);
+  const database = answers.database as string;
+  if (features.includes("admin") && database === "none") throw new Error("The admin feature requires a database");
+  const imports = [
+    `import { defineConfig, env } from "@wess/atlas/config"`,
+    `import { serve, get, json, pipeline } from "@wess/atlas/server"`,
+  ];
+  const config = [`port: env("PORT", { parse: Number, default: "3000" })`, `host: env("HOST", { default: "0.0.0.0" })`];
+  const setup: string[] = [];
+  const routes = [
+    `get("/", c => json(c, 200, { status: "ok" }))`,
+    `get("/health", c => json(c, 200, { healthy: true }))`,
+  ];
+  if (database !== "none") {
+    imports.push(`import { connect } from "@wess/atlas/db/${database}"`);
+    if (database === "postgres") {
+      config.push(`databaseUrl: env("DATABASE_URL")`);
+      setup.push(`const db = connect({ driver: "postgres", url: config.databaseUrl })`);
+    } else {
+      config.push(`databasePath: env("DATABASE_PATH", { default: "./app.db" })`);
+      setup.push(`const db = connect({ driver: "sqlite", path: config.databasePath })`);
+    }
   }
-
-  if (features.includes("auth")) {
-    imports.push(`import { auth } from "../../auth/index.ts"`);
-    setup.push(`const authentication = auth(config)`);
+  if (features.includes("auth") || features.includes("admin")) {
+    imports.push(`import { requireAuth } from "@wess/atlas/auth/flows"`);
+    config.push(
+      `secret: env("AUTH_SECRET", { parse: value => { if (value.length < 32) throw new Error("AUTH_SECRET must contain at least 32 random characters"); return value } })`,
+    );
+    routes.push(`get("/me", pipeline(requireAuth({ secret: config.secret }))(c => json(c, 200, c.assigns.auth)))`);
   }
-
   if (features.includes("cache")) {
-    imports.push(`import { cache } from "../../cache/index.ts"`);
-    setup.push(`const redis = cache(config)`);
+    imports.push(`import { createCache } from "@wess/atlas/cache"`);
+    config.push(`redisUrl: env("REDIS_URL")`);
+    setup.push(`const cache = createCache({ url: config.redisUrl })`);
   }
-
   if (features.includes("admin")) {
-    imports.push(`import { admin } from "../../admin/index.ts"`);
-    setup.push(`const panel = admin(config)`);
+    imports.push(`import { admin, model } from "@wess/atlas/admin"`, `import { users } from "./src/schema.ts"`);
+    setup.push(
+      `const panel = admin({ db, models: [model({ schema: users })], auth: { secret: config.secret, authorize: claims => claims.role === "admin" } })`,
+    );
+    routes.push(`...panel.routes`);
   }
-
-  routes.push(`  "/": () => new Response("Hello from Atlas!"),`);
-  routes.push(`  "/health": () => Response.json({ status: "ok" }),`);
-
-  if (features.includes("admin")) {
-    routes.push(`  "/admin/*": panel.handler,`);
-  }
-
-  const lines: string[] = [
+  return [
     ...imports,
     "",
-    `const cfg = config()`,
-    "",
+    `const config = defineConfig({ ${config.join(", ")} })`,
     ...setup,
     "",
-    `serve({`,
-    `  port: cfg.port,`,
-    `  routes: {`,
-    ...routes,
-    `  },`,
-    `})`,
+    `serve({ port: config.port, hostname: config.host, routes: [${routes.join(", ")}] })`,
     "",
-    `console.log(\`Server running on port \${cfg.port}\`)`,
-    "",
-  ];
-
-  return lines.join("\n");
+  ].join("\n");
 };
 
 export const generateTsconfig = (): string => {
@@ -234,6 +241,7 @@ export const generateTsconfig = (): string => {
     {
       compilerOptions: {
         lib: ["ESNext"],
+        types: ["bun"],
         target: "ESNext",
         module: "Preserve",
         moduleDetection: "force",
@@ -261,41 +269,17 @@ export const generateGitignore = (): string => {
   return `node_modules/\ndist/\nbuild/\n.env\n*.db\ndata/\n`;
 };
 
-export const generateSchemaTs = (answers: Answers): string => {
-  const db = answers.database as string;
-  if (db === "postgres") {
-    return [
-      `// Define your database schema here`,
-      `// See @atlas/db for schema helpers`,
-      ``,
-      `export const users = {`,
-      `  table: "users",`,
-      `  columns: {`,
-      `    id: "serial primary key",`,
-      `    email: "text unique not null",`,
-      `    name: "text",`,
-      `    created: "timestamp default now()",`,
-      `  },`,
-      `}`,
-      ``,
-    ].join("\n");
-  }
-  return [
-    `// Define your database schema here`,
-    `// See @atlas/db for schema helpers`,
+export const generateSchemaTs = (_answers: Answers): string =>
+  [
+    `import { column, defineSchema } from "@wess/atlas/db/query"`,
     ``,
-    `export const users = {`,
-    `  table: "users",`,
-    `  columns: {`,
-    `    id: "integer primary key autoincrement",`,
-    `    email: "text unique not null",`,
-    `    name: "text",`,
-    `    created: "text default (datetime('now'))",`,
-    `  },`,
-    `}`,
+    `export const users = defineSchema("users", {`,
+    `  id: column.serial().primaryKey(),`,
+    `  email: column.text().unique(),`,
+    `  name: column.text(),`,
+    `})`,
     ``,
   ].join("\n");
-};
 
 export const generateProject = (answers: Answers): { path: string; content: string }[] => {
   const files: { path: string; content: string }[] = [

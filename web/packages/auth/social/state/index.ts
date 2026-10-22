@@ -60,13 +60,14 @@ export const verifyState = async (
   if (!stateParam) {
     throw new Error("Missing 'state' query parameter on the OAuth callback.");
   }
-  if (cookieValue !== stateParam) {
-    throw new Error("OAuth state mismatch. The state cookie and 'state' query parameter must be identical.");
-  }
   const payload = (await token.verify(cookieValue, secret)) as StatePayload & {
     iat?: number;
     exp?: number;
   };
+  if (payload.nonce !== stateParam) throw new Error("OAuth state mismatch");
+  if (typeof payload.codeVerifier !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(payload.codeVerifier)) {
+    throw new Error("Invalid OAuth verifier");
+  }
   if (payload.provider !== expectedProvider) {
     throw new Error(
       `OAuth state provider mismatch: state was issued for '${payload.provider}' but callback hit '${expectedProvider}'.`,

@@ -6,6 +6,9 @@ services:
       APP_PORT: "3000"
     expose:
       - "3000"
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     restart: unless-stopped
 
   edge:
@@ -18,12 +21,15 @@ services:
       CERT_DIR: "/var/atlas/edge"
       ACME_STAGING: ${ACME_STAGING:-}
     ports:
-      - "80:80"
-      - "443:443"
+      - "80:8080"
+      - "443:8443"
     volumes:
       - certs:/var/atlas/edge
     depends_on:
       - app
+    init: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     restart: unless-stopped
 
 volumes:

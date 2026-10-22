@@ -1,16 +1,14 @@
-import { requireAuth } from "../../auth/index.ts";
-import { from, raw } from "../../db/index.ts";
-import type { PipeFn, Route } from "../../server/index.ts";
+import { from, raw } from "../../db/query.ts";
+import type { Route } from "../../server/index.ts";
 import { del, get, json, parseJson, pipe, pipeline, post, put } from "../../server/index.ts";
 import { handleBulkAction } from "../actions/index.ts";
+import { adminAuth } from "../auth/index.ts";
 import type { AdminConfig } from "../config/index.ts";
 
 export const generateRoutes = (config: AdminConfig): Route[] => {
   const routes: Route[] = [];
   const base = config.basePath ?? "/admin";
-  const withAuth = config.auth
-    ? (handler: PipeFn): PipeFn => pipeline(requireAuth(config.auth!))(handler)
-    : (handler: PipeFn): PipeFn => handler;
+  const withAuth = adminAuth(config);
 
   // Schema endpoint
   routes.push(
@@ -56,10 +54,14 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
         withAuth(
           pipe(async (c) => {
             const page = Number(c.query.page ?? "1");
-            const limit = Math.min(Number(c.query.limit ?? "20"), 100);
+            const limit = Number(c.query.limit ?? "20");
+            if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+              return json(c, 400, { error: "Invalid pagination" });
+            }
             const offset = (page - 1) * limit;
             const sort = c.query.sort;
             const order = (c.query.order ?? "asc").toUpperCase() as "ASC" | "DESC";
+            if (order !== "ASC" && order !== "DESC") return json(c, 400, { error: "Invalid sort order" });
             const search = c.query.search;
 
             // Build the where chain once and apply it to both the data query
@@ -85,6 +87,7 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
             let query = applyFilters(from(table));
 
             if (sort) {
+              if (!Object.hasOwn(modelCfg.schema.columns, sort)) return json(c, 400, { error: "Invalid sort field" });
               query = query.orderBy(sort, order);
             }
 

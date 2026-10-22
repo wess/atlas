@@ -1,4 +1,4 @@
-import { createStore, upload } from "@atlas/storage"
+import { createStore, upload } from "@wess/atlas/storage"
 import { config } from "./config.ts"
 
 const store = config.storage.s3Bucket

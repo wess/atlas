@@ -1,5 +1,5 @@
-import { requireAuth } from "@atlas/auth"
-import { parseJson, pipeline } from "@atlas/server"
+import { requireAuth } from "@wess/atlas/auth/flows";
+import { parseJson, pipeline } from "@wess/atlas/server"
 import { config } from "../config.ts"
 
 // Wrap a route handler to require a Bearer JWT signed with AUTH_SECRET.

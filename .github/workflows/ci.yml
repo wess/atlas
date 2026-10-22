@@ -9,6 +9,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   web:
     runs-on: ubuntu-latest
@@ -17,8 +20,10 @@ jobs:
       run:
         working-directory: web
     steps:
-      - uses: actions/checkout@v5
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.4.4"
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: bun run typecheck
@@ -26,6 +31,16 @@ jobs:
       # section that does not exist fails here rather than in a reader's face.
       - run: bun run site:build
       - run: bun test
+      - run: bun run distribution:build
+      - run: bun run distribution:verify
+      - run: bun run fixtures:verify out/distribution /tmp/atlasfixtures
+      - name: Install pinned local S3 test server
+        run: |
+          curl --fail --location --silent --show-error https://github.com/rustfs/rustfs/releases/download/1.0.3/rustfs-linux-x86_64-gnu-v1.0.3.zip --output /tmp/atlasrustfs.zip
+          echo "0cb0924df93734d14f708004eff4b0e48a147fbdc074756ca0d6b8ec919629b8  /tmp/atlasrustfs.zip" | sha256sum --check --status
+          unzip -q /tmp/atlasrustfs.zip -d /tmp/atlasrustfs
+          chmod +x /tmp/atlasrustfs/rustfs
+      - run: bun run storage:verify /tmp/atlasrustfs/rustfs out/distribution
 
   desktop:
     runs-on: macos-latest
@@ -34,11 +49,11 @@ jobs:
       run:
         working-directory: desktop
     steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
         with:
           components: clippy
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           workspaces: desktop
       - run: cargo test --workspace

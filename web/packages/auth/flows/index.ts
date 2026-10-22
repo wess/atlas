@@ -1,5 +1,5 @@
-import type { Connection, Schema, SchemaColumns } from "../../db/index.ts";
-import { from } from "../../db/index.ts";
+import type { Connection, Schema, SchemaColumns } from "../../db/query.ts";
+import { from } from "../../db/query.ts";
 import type { Conn, PipeFn } from "../../server/index.ts";
 import { assign, halt, json } from "../../server/index.ts";
 import { hash, verify as verifyPassword } from "../password/index.ts";

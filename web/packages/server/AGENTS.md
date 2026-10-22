@@ -1,4 +1,4 @@
-# @atlas/server
+# @wess/atlas/server
 
 Bun.serve wrapper with an Elixir Plug-inspired pipe system.
 
@@ -37,8 +37,8 @@ Bun.serve wrapper with an Elixir Plug-inspired pipe system.
 - `TypedConn<P, B, Q, A>` — `Conn` with narrowed `params`, `body`, `query`, `assigns`
 
 ```ts
-import { getR, postR, pipeline } from "@atlas/server"
-import { requireAuth } from "@atlas/auth"
+import { getR, postR, pipeline } from "@wess/atlas/server"
+import { requireAuth } from "@wess/atlas/auth"
 
 postR(
   "/users/:groupId",
@@ -85,7 +85,7 @@ schema is provided — no need to add `parseJson` to `before`.
 ### Throw-style error handling
 
 ```ts
-import { notFound, conflict, get, json, pipe } from "@atlas/server"
+import { notFound, conflict, get, json, pipe } from "@wess/atlas/server"
 
 get("/users/:id", pipe(async (c) => {
   const user = await db.one(from(users).where(q => q("id").equals(c.params.id)))
@@ -103,14 +103,14 @@ logged server-side only.
 - `createAdapter(name, start)` — create a named server adapter
 - `compose(adapters)` — start multiple adapters, returns `ComposedServer` with `stop()`
 
-### WebSocket (`ws/index.ts`) — import from `@atlas/server/ws`
+### WebSocket (`ws/index.ts`) — import from `@wess/atlas/server/ws`
 - `WsConn<T>` — wrapped websocket connection with auto-JSON send
 - `channel(name, handlers)` — define a typed pub/sub channel
 - `createRooms()` — room manager with join/leave/broadcast/members
 - `ws(config)` — build websocket handler + rooms + upgrade helper
 - `wsAdapter` — standalone WS adapter for use with `compose()`
 
-### SSE (`sse/index.ts`) — import from `@atlas/server/sse`
+### SSE (`sse/index.ts`) — import from `@wess/atlas/server/sse`
 - `SseClient` — client with id, send, close
 - `createSseChannel()` — managed SSE channel with broadcast + pipe
 - `eventStream(conn, generator)` — one-off SSE response helper
@@ -118,7 +118,7 @@ logged server-side only.
 ## Usage
 
 ```ts
-import { pipe, pipeline, router, serve, json, assign, parseJson, get, post } from "@atlas/server"
+import { pipe, pipeline, router, serve, json, assign, parseJson, get, post } from "@wess/atlas/server"
 
 const logger = pipe((c) => {
   console.log(`${c.method} ${c.path}`)
@@ -147,3 +147,5 @@ serve({
 - Route builders (`get`, `post`, `put`, etc.) create typed Route objects
 - `router(...routes)` matches requests against Route objects
 - No classes, fully functional
+
+`serve` accepts `development?: boolean` (default false) and `maxRequestBodySize?: number` (default 1 MiB). Raise the body limit explicitly for upload endpoints. Invalid JSON/forms return 400. SSE queues are bounded to 256 KiB per client; slow consumers are disconnected and must reconnect. Generator failures terminate the stream.

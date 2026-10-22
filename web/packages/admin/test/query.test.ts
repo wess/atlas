@@ -29,7 +29,7 @@ beforeEach(async () => {
     values: ["other@test.com", "Other", 25],
   });
 
-  const adm = admin({ db, models: [model({ schema: users })] });
+  const adm = admin({ allowUnauthenticated: true, db, models: [model({ schema: users })] });
   app = router(...adm.routes);
 });
 
@@ -136,4 +136,26 @@ test("POST /admin/api/query supports eq filter", async () => {
   const body = (await res.json()) as any;
   expect(body.data).toHaveLength(1);
   expect(body.data[0].name).toBe("Wess");
+});
+
+test("query endpoints reject SQL expressions, injected directions, and unbounded limits", async () => {
+  for (const path of ["query", "query/preview"]) {
+    for (const payload of [
+      { select: ["(SELECT sql FROM sqlite_master LIMIT 1)"] },
+      { sort: { field: "name", direction: "asc; DROP TABLE users" } },
+      { filters: [{ field: "name) OR 1=1 --", op: "eq", value: "x" }] },
+      { limit: -1 },
+      { limit: 1001 },
+      { filters: [{ field: "id", op: "in", value: "1" }] },
+    ]) {
+      const res = await app(
+        new Request(`http://localhost/admin/api/${path}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ table: "users", ...payload }),
+        }),
+      );
+      expect(res.status).toBe(400);
+    }
+  }
 });

@@ -2,41 +2,41 @@
 
 Atlas is a collection of composable, functional Bun/TypeScript packages for building APIs, full-stack applications, and CLI tools. This document describes the architecture, package relationships, and design philosophy.
 
-## Dependency Graph
+## Distribution and dependency graph
 
-```
-@atlas/config (foundation — typed env loading)
-  ├── @atlas/db
-  ├── @atlas/server
-  ├── @atlas/storage
-  └── @atlas/cli
+Public imports use `@wess/atlas/<module>`. The facade forwards each entry point
+to one implementation library, such as `@wess/atlas-server`; it has no mandatory
+runtime dependencies or aggregate root entry point. A selected-entry dependency
+catalog includes runtime imports, type imports, reexports, and literal dynamic
+imports so isolated consumer builds have the packages needed for typechecking too.
 
-@atlas/migrate (depends on @atlas/db)
-@atlas/auth (depends on @atlas/db, @atlas/server)
-  └── @atlas/auth/social (subpath — OAuth-client side: Google/GitHub/Apple/MS/FB/X/TikTok)
-@atlas/admin (depends on @atlas/db, @atlas/server)
-@atlas/security (depends on @atlas/db, @atlas/auth)
-@atlas/oauth (depends on @atlas/db, @atlas/server, @atlas/auth)
-@atlas/sso (depends on @atlas/db, @atlas/server, @atlas/auth)
-@atlas/edge (standalone — no sibling deps)
-@atlas/email (standalone — no sibling deps)
-@atlas/share (depends on @atlas/email — share URL builders + server-side share-by-email)
+Source modules remain focused folders under `packages/`. Distribution rewrites
+cross-module relative imports to implementation package imports. Implementation
+peers are optional because different entry points use different subsets. The CLI
+installs each selected entry point's complete closure, rather than every peer.
 
-@atlas/cache (optional, can use @atlas/config)
-@atlas/request (standalone — no sibling deps)
-@atlas/mcp (depends on @atlas/db, @atlas/server, @atlas/config)
-@atlas/ai (depends on @atlas/server for the withAi pipe; no external deps)
+| Entry point | Boundary |
+| --- | --- |
+| `auth/password`, `auth/token`, `auth/session` | No database flows, server, or social providers |
+| `auth/flows` | Database queries and server pipes |
+| `auth/social` | Provider flows and server pipes; private cookie keeps PKCE verifier |
+| `db/query` | Query/schema API without either database driver |
+| `db/postgres`, `db/sqlite` | Only the chosen Bun driver |
+| `db/changeset` | Structural safeParse validation; no mandatory Zod dependency |
+| `admin` | Server routes and validation; no browser UI imports |
+| `admin/ui`, `ui/<block>` | Browser components and selected frontend peers |
+| `cli`, `cli/command`, `cli/foreman` | Runtime CLI APIs without scaffolding or docs |
+| `cli/scaffold`, `cli/docs` | Explicit development tooling |
 
-@atlas/ui (frontend, optional browser-side usage)
-```
-
-Packages are shallow — max 1 level of dependencies on siblings. This keeps them lightweight and composable.
+Aggregate module entry points remain available when their whole feature set is
+wanted. Measure installed bytes, browser bundles, startup and sustained memory
+separately; a downloaded file is not necessarily loaded at runtime.
 
 ## Core Packages
 
 ### Config
 
-`@atlas/config` is the foundation. It provides typed environment variable loading that reads `.env` at startup and produces a frozen, immutable config object.
+`@wess/atlas/config` is the foundation. It provides typed environment variable loading that reads `.env` at startup and produces a frozen, immutable config object.
 
 ```ts
 const config = defineConfig({
@@ -49,11 +49,11 @@ All other packages optionally depend on config or accept config values directly.
 
 ### Database
 
-`@atlas/db` is the largest package, with three layers:
+`@wess/atlas/db` is the largest package, with three layers:
 
 1. **Query Builder** — Ecto-inspired fluent chains for SELECT, INSERT, UPDATE, DELETE, JOIN operations. Fully immutable, functional API.
 2. **Drivers** — Uniform interface to Postgres (via `Bun.sql`) and SQLite (via `bun:sqlite`) with transaction support.
-3. **Schemas & Changesets** — Type-safe table definitions and Zod-powered input validation.
+3. **Schemas & Changesets** — Type-safe table definitions and safeParse-compatible input validation.
 
 ```ts
 const users = defineSchema("users", {
@@ -67,12 +67,12 @@ const result = await db.one(query)
 
 ### Server
 
-`@atlas/server` wraps `Bun.serve` with a Plug-inspired pipe system. Requests flow through immutable `Conn` objects that pipes transform.
+`@wess/atlas/server` wraps `Bun.serve` with a Plug-inspired pipe system. Requests flow through immutable `Conn` objects that pipes transform.
 
 Sub-modules:
-- `@atlas/server` — Core HTTP routing with `get()`, `post()`, `put()`, `patch()`, `del()` route builders, plus the adapter pattern (`createAdapter`, `compose`) for running multiple listeners
-- `@atlas/server/ws` — WebSocket support
-- `@atlas/server/sse` — Server-Sent Events
+- `@wess/atlas/server` — Core HTTP routing with `get()`, `post()`, `put()`, `patch()`, `del()` route builders, plus the adapter pattern (`createAdapter`, `compose`) for running multiple listeners
+- `@wess/atlas/server/ws` — WebSocket support
+- `@wess/atlas/server/sse` — Server-Sent Events
 
 ```ts
 const logger = pipe(c => { console.log(c.method); return c })
@@ -92,7 +92,7 @@ Pipes are composable via `pipeline()`, which short-circuits on `halt()`. This ap
 
 ### Edge
 
-`@atlas/edge` is a TLS-terminating reverse proxy with built-in Let's Encrypt automation — the layer that would otherwise be Caddy or nginx in front of a Bun app.
+`@wess/atlas/edge` is a TLS-terminating reverse proxy with built-in Let's Encrypt automation — the layer that would otherwise be Caddy or nginx in front of a Bun app.
 
 - **ACME v2 client** — ECDSA P-256 account, JWS-signed requests, HTTP-01 challenge solver, hand-rolled CSR via a small DER encoder. No external deps.
 - **Reverse proxy** — forwards requests with `X-Real-IP`, `X-Forwarded-For` (appended), `X-Forwarded-Proto`, `X-Forwarded-Host`. Hop-by-hop headers stripped. Host rewritten unless `preserveHost: true`.
@@ -100,7 +100,7 @@ Pipes are composable via `pipeline()`, which short-circuits on `halt()`. This ap
 - **Localhost dev** — when every site host matches `isLocalHost`, the edge runs plain HTTP on a non-privileged port. No certs, no sudo. The same `edge.ts` runs in dev and prod.
 
 ```ts
-import { defineEdge, proxy } from "@atlas/edge"
+import { defineEdge, proxy } from "@wess/atlas/edge"
 
 defineEdge({
   acme: { email: "you@example.com", storage: "/var/atlas/edge" },
@@ -116,11 +116,11 @@ The `templates/edge` scaffold ships a complete deploy pattern: Procfile for loca
 
 ### Auth
 
-`@atlas/auth` provides:
+`@wess/atlas/auth` provides:
 
 - **Primitives** — `hash()`, `verify()`, `token.sign()`, `token.verify()` built on Bun's crypto
-- **Flows** — Prebuilt pipes like `signup()`, `login()`, `requireAuth()`, `passwordReset()` that work with `@atlas/server` and `@atlas/db`
-- **Social login** (`@atlas/auth/social` subpath) — pluggable OAuth-*client* for Google, GitHub, Apple, Microsoft, Facebook, X (Twitter), and TikTok. PKCE-S256 mandatory, state + verifier held in a signed HttpOnly cookie so the flow stays stateless. Your app owns the user table — `onSuccess` receives a normalized `SocialProfile` and you decide upsert/link.
+- **Flows** — Prebuilt pipes like `signup()`, `login()`, `requireAuth()`, `passwordReset()` that work with `@wess/atlas/server` and `@wess/atlas/db`
+- **Social login** (`@wess/atlas/auth/social` subpath) — pluggable OAuth-*client* for Google, GitHub, Apple, Microsoft, Facebook, X (Twitter), and TikTok. PKCE-S256 mandatory, state + verifier held in a signed HttpOnly cookie so the flow stays stateless. Your app owns the user table — `onSuccess` receives a normalized `SocialProfile` and you decide upsert/link.
 
 ```ts
 const signupPipe = signup({
@@ -148,23 +148,23 @@ get("/auth/google/callback", social.callback("google", {
 
 ### Security
 
-`@atlas/security` ships hardening primitives most apps end up writing themselves:
+`@wess/atlas/security` ships hardening primitives most apps end up writing themselves:
 
 - `withSecurityHeaders()` — strict default headers (HSTS, COOP/CORP, Permissions-Policy) and a CSP that defaults to `'self'`-only with no inline script in production. Also stashes the real Bun socket peer onto `req.peerIp` so downstream rate-limit / audit code does not have to trust client-supplied `X-Forwarded-For`.
 - `createDbRateLimit()` / `createMemoryRateLimit()` — atomic UPSERT on Postgres, transactional read-modify-write on SQLite, in-memory for tests.
 - `clientIp(req, { trustedProxies })` — only honors forwarded headers when the request actually arrived from a configured trusted proxy.
-- `createSessionStore()` — DB-backed, revocable JWT sessions with `last_used_at` tracking and a sweep helper. Pair with `@atlas/auth#requireAuth`.
+- `createSessionStore()` — DB-backed, revocable JWT sessions with `last_used_at` tracking and a sweep helper. Pair with `@wess/atlas/auth#requireAuth`.
 - `generateSecret` / `verifyTotp` / `otpauthUrl` / `generateBackupCodes` — pure `node:crypto` TOTP with backup codes.
 - `decideInline()` — safe-MIME allowlist for `Content-Disposition: inline` (never inlines SVG).
 - `createAuditLogger()` — fire-and-forget audit-event recorder; never throws, never blocks the response.
 
 ### OAuth
 
-`@atlas/oauth` is an OAuth 2.1 server: PKCE-required authorization code, refresh-token rotation, device-code flow, RFC 8414 discovery, RFC 7009 revoke, and admin client management.
+`@wess/atlas/oauth` is an OAuth 2.1 server: PKCE-required authorization code, refresh-token rotation, device-code flow, RFC 8414 discovery, RFC 7009 revoke, and admin client management.
 
 ```ts
-import { oauthRoutes } from "@atlas/oauth"
-import { requireAuth } from "@atlas/auth"
+import { oauthRoutes } from "@wess/atlas/oauth"
+import { requireAuth } from "@wess/atlas/auth"
 
 serve({
   routes: [
@@ -186,10 +186,10 @@ serve({
 
 ### Email
 
-`@atlas/email` is a provider-agnostic transport plus a small HTML shell and two stock templates.
+`@wess/atlas/email` is a provider-agnostic transport plus a small HTML shell and two stock templates.
 
 ```ts
-import { createEmailer, inviteEmail } from "@atlas/email"
+import { createEmailer, inviteEmail } from "@wess/atlas/email"
 
 const emailer = createEmailer({ apiKey: process.env.RESEND_API_KEY, from: process.env.RESEND_FROM })
 await emailer.send({ to: "user@example.com", ...inviteEmail({ inviterName, product, signupUrl }) })
@@ -199,10 +199,10 @@ await emailer.send({ to: "user@example.com", ...inviteEmail({ inviterName, produ
 
 ### Share
 
-`@atlas/share` is the smallest practical layer for "share this link" UX. Pure URL builders for the eight channels users actually use, plus a server-side `shareEmail` that dispatches through any `@atlas/email` transport.
+`@wess/atlas/share` is the smallest practical layer for "share this link" UX. Pure URL builders for the eight channels users actually use, plus a server-side `shareEmail` that dispatches through any `@wess/atlas/email` transport.
 
 ```ts
-import { share, shareUrl, shareEmail } from "@atlas/share"
+import { share, shareUrl, shareEmail } from "@wess/atlas/share"
 
 shareUrl("twitter", { url, title, hashtags: ["atlas"] })
 // → https://twitter.com/intent/tweet?url=…&text=…&hashtags=atlas
@@ -222,7 +222,7 @@ The URL builders have zero dependencies; `shareEmail` reuses the same `layout()`
 
 ### Storage
 
-`@atlas/storage` provides S3-compatible object storage with:
+`@wess/atlas/storage` provides S3-compatible object storage with:
 
 - `upload()` — PUT file to bucket
 - `download()` — GET file from bucket
@@ -233,7 +233,7 @@ Uses AWS Signature V4 (implemented from scratch, ~250 lines) with no external de
 
 ### Cache
 
-`@atlas/cache` wraps `Bun.redis` with:
+`@wess/atlas/cache` wraps `Bun.redis` with:
 
 - `createCache()` — Redis-backed cache
 - `createMemoryCache()` — In-memory (for testing)
@@ -248,16 +248,16 @@ const getUser = cached(cache, "user", async (id) => {
 
 ### Request
 
-`@atlas/request` is an HTTP client built on `fetch` with:
+`@wess/atlas/request` is an HTTP client built on `fetch` with:
 
 - `request()` — One-off requests
 - `createClient()` — Preconfigured clients with base URL, headers, retries
-- Providers — Drop-in configs for GitHub, Stripe, OpenAI, Resend (import from `@atlas/request/providers`)
+- Providers — Drop-in configs for GitHub, Stripe, OpenAI, Resend (import from `@wess/atlas/request/providers`)
 - Retry logic with exponential backoff
 - Request/response interceptors
 
 ```ts
-import { github } from "@atlas/request/providers"
+import { github } from "@wess/atlas/request/providers"
 
 const gh = github({ token: process.env.GITHUB_TOKEN! })
 const repos = await (await gh.get("/user/repos")).json()
@@ -265,7 +265,7 @@ const repos = await (await gh.get("/user/repos")).json()
 
 ### CLI
 
-`@atlas/cli` provides:
+`@wess/atlas/cli` provides:
 
 - **Command parser** — Define commands, flags, subcommands; parse argv
 - **Foreman** — Procfile parser and concurrent process runner with colored output
@@ -284,7 +284,7 @@ await foreman({ web: "bun run server.ts", worker: "bun run worker.ts" })
 
 ### Migrate
 
-`@atlas/migrate` manages timestamped SQL migrations with up/down support.
+`@wess/atlas/migrate` manages timestamped SQL migrations with up/down support.
 
 ```ts
 migrate.create("./migrations", "add_users")
@@ -296,22 +296,22 @@ Tracks applied migrations in `schema_migrations` table. Works with Postgres and 
 
 ### UI
 
-`@atlas/ui` is a modular React + Mantine package with independent blocks:
+`@wess/atlas/ui` is a modular React + Mantine package with independent blocks:
 
-- `@atlas/ui/provider` — Theme and layout shell
-- `@atlas/ui/forms` — Form primitives and helpers
-- `@atlas/ui/table` — Data tables with sort/filter/pagination
-- `@atlas/ui/auth` — Login, signup, password reset pages
-- `@atlas/ui/storage` — File upload and image preview
-- `@atlas/ui/nav` — Navigation components
-- `@atlas/ui/cache` — Cache inspector and status badge
-- `@atlas/ui/ai` — Chat panel, message list, streaming display
+- `@wess/atlas/ui/provider` — Theme and layout shell
+- `@wess/atlas/ui/forms` — Form primitives and helpers
+- `@wess/atlas/ui/table` — Data tables with sort/filter/pagination
+- `@wess/atlas/ui/auth` — Login, signup, password reset pages
+- `@wess/atlas/ui/storage` — File upload and image preview
+- `@wess/atlas/ui/nav` — Navigation components
+- `@wess/atlas/ui/cache` — Cache inspector and status badge
+- `@wess/atlas/ui/ai` — Chat panel, message list, streaming display
 
 Each block is independently importable and tree-shakeable.
 
 ### Admin
 
-`@atlas/admin` auto-generates a Django-style admin panel from `@atlas/db` schemas. Provides:
+`@wess/atlas/admin` auto-generates a Django-style admin panel from `@wess/atlas/db` schemas. Provides:
 
 - **API routes** — CRUD endpoints for each model
 - **Admin SPA** — React UI with list, detail, create views, search, filters, bulk actions, custom actions, query builder
@@ -337,10 +337,10 @@ Serves SPA at `/admin` with full CRUD UI.
 
 ### MCP
 
-`@atlas/mcp` provides a Model Context Protocol server for AI/LLM debugging and introspection. It exposes your app's database, routes, config, and logs to AI agents through the standard MCP protocol.
+`@wess/atlas/mcp` provides a Model Context Protocol server for AI/LLM debugging and introspection. It exposes your app's database, routes, config, and logs to AI agents through the standard MCP protocol.
 
 ```ts
-import { collectTools, createContext, createMcpServer } from "@atlas/mcp"
+import { collectTools, createContext, createMcpServer } from "@wess/atlas/mcp"
 
 const ctx = createContext({ db, routes: myRoutes, config })
 const mcp = createMcpServer(collectTools(ctx), ctx)
@@ -352,7 +352,7 @@ Launch via CLI: `atlas mcp`. AI agents can then query your database, inspect rou
 
 ### AI
 
-`@atlas/ai` provides a unified interface for AI/LLM operations with zero external dependencies — it calls provider REST APIs directly via `fetch`.
+`@wess/atlas/ai` provides a unified interface for AI/LLM operations with zero external dependencies — it calls provider REST APIs directly via `fetch`.
 
 - **Providers** — `createProvider({ provider, key })` returns an `AiProvider` for `"openai"`, `"anthropic"`, or `"ollama"`
 - **Chat** — `provider.chat(opts)` for completions, `provider.chatStream(opts)` for streaming `StreamChunk`s
@@ -363,7 +363,7 @@ Launch via CLI: `atlas mcp`. AI agents can then query your database, inspect rou
 - **Server pipe** — `withAi(provider)` attaches the provider to `conn.assigns.ai`
 
 ```ts
-import { createProvider, send, createConversation, runAgent, tool } from "@atlas/ai"
+import { createProvider, send, createConversation, runAgent, tool } from "@wess/atlas/ai"
 
 const openai = createProvider({ provider: "openai", key: process.env.OPENAI_API_KEY! })
 
@@ -421,11 +421,11 @@ serve({
 
 ### Full Stack
 
-Use `@atlas/ui` blocks on the client:
+Use `@wess/atlas/ui` blocks on the client:
 
 ```tsx
 // server.ts
-import { get, halt, pipe, putHeader, serve } from "@atlas/server"
+import { get, halt, pipe, putHeader, serve } from "@wess/atlas/server"
 
 const page = await Bun.file("./admin.html").text() // HTML file that loads the React SPA
 const spa = pipe((c) => putHeader(halt(c, 200, page), "content-type", "text/html; charset=utf-8"))
@@ -451,7 +451,7 @@ serve({
 
 ```tsx
 // admin.tsx
-import { AdminApp } from "@atlas/admin"
+import { AdminApp } from "@wess/atlas/admin"
 import { createRoot } from "react-dom/client"
 
 const root = createRoot(document.getElementById("root")!)

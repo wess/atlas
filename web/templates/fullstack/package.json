@@ -11,23 +11,22 @@
     "migrate:new": "atlas migrate new"
   },
   "dependencies": {
-    "@atlas/config": "latest",
-    "@atlas/server": "latest",
-    "@atlas/db": "latest",
-    "@atlas/auth": "latest",
-    "@atlas/migrate": "latest",
-    "@atlas/ui": "latest",
-    "@atlas/cli": "latest",
-    "@mantine/core": "^9.6.1",
-    "@mantine/hooks": "^9.6.1",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "@mantine/core": "^9.7.3",
+    "@mantine/hooks": "^9.7.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "@wess/atlas": "https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-0.4.0.tgz",
+    "@wess/atlas-server": "https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-server-0.4.0.tgz",
+    "@wess/atlas-db": "https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-db-0.4.0.tgz",
+    "@wess/atlas-config": "https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-config-0.4.0.tgz",
+    "@wess/atlas-ui": "https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-ui-0.4.0.tgz"
   },
   "devDependencies": {
-    "@types/bun": "^1.4.2",
+    "@types/bun": "^1.4.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@biomejs/biome": "2.5.14",
-    "typescript": "^7.0.2"
+    "@biomejs/biome": "2.6.2",
+    "typescript": "^7.0.2",
+    "@wess/atlas-cli": "https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-cli-0.4.0.tgz"
   }
 }

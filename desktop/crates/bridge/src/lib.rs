@@ -71,21 +71,22 @@ pub fn spawn(fut: impl Future<Output = ()> + Send + 'static) {
 
 /// Run a streaming producer on the tokio runtime, delivering each item to
 /// `on_item` on the gpui main thread as it arrives, then `on_done` when the
-/// producer finishes.
+/// producer finishes. The bounded queue applies backpressure; producers await
+/// `SinkExt::send` instead of buffering indefinitely while the UI is busy.
 ///
 /// The producer is handed the sender. When the receiving side goes away the
 /// sender's `send` starts failing, which is how a closed view cancels a log or
 /// token stream — there is no separate abort registry to keep in sync.
 pub fn stream<T, Fut>(
     cx: &mut App,
-    producer: impl FnOnce(mpsc::UnboundedSender<T>) -> Fut + Send + 'static,
+    producer: impl FnOnce(mpsc::Sender<T>) -> Fut + Send + 'static,
     mut on_item: impl FnMut(T, &mut App) + 'static,
     on_done: impl FnOnce(&mut App) + 'static,
 ) where
     T: Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
 {
-    let (tx, mut rx) = mpsc::unbounded();
+    let (tx, mut rx) = mpsc::channel(64);
     runtime().spawn(producer(tx));
     cx.spawn(async move |cx| {
         while let Some(item) = rx.next().await {

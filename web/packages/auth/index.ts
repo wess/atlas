@@ -5,6 +5,7 @@ export { createMemoryStore } from "./session/index.ts";
 export type {
   AppleConfig,
   AuthorizeParams,
+  CallbackErrorContext,
   CallbackOptions,
   CallbackResult,
   CookieOptions,
@@ -15,6 +16,7 @@ export type {
   MicrosoftConfig,
   SocialAuth,
   SocialAuthConfig,
+  SocialIntentStore,
   SocialProfile,
   SocialProvider,
   StartOptions,
@@ -22,7 +24,17 @@ export type {
   TokenSet,
   TwitterConfig,
 } from "./social/index.ts";
-export { apple, facebook, github, google, microsoft, socialAuth, tiktok, twitter } from "./social/index.ts";
+export {
+  apple,
+  createMemoryIntentStore,
+  facebook,
+  github,
+  google,
+  microsoft,
+  socialAuth,
+  tiktok,
+  twitter,
+} from "./social/index.ts";
 export type { Jwk, Jwks, Rs256KeyPair, TokenPayload } from "./token/index.ts";
 export * as token from "./token/index.ts";
 export { generateRs256KeyPair, publicJwkOf } from "./token/index.ts";

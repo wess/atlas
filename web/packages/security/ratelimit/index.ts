@@ -1,4 +1,5 @@
-import type { Connection } from "../../db/index.ts";
+import { isIP } from "node:net";
+import type { Connection } from "../../db/query.ts";
 
 export type RateLimitResult = {
   readonly ok: boolean;
@@ -20,7 +21,9 @@ export type RateLimit = {
 // In-memory limiter. Single-process only — fine for dev / tests / single-node
 // services, but not suitable for horizontally-scaled deployments where every
 // instance would track its own counters.
-export const createMemoryRateLimit = (): RateLimit => {
+export const createMemoryRateLimit = (opts?: { maxEntries?: number }): RateLimit => {
+  const maxEntries = opts?.maxEntries ?? 10_000;
+  if (!Number.isSafeInteger(maxEntries) || maxEntries < 1) throw new Error("Invalid rate limit capacity");
   const buckets = new Map<string, { count: number; startedAt: number; windowSeconds: number }>();
   let opsSinceSweep = 0;
 
@@ -35,6 +38,9 @@ export const createMemoryRateLimit = (): RateLimit => {
 
   return {
     check: async (bucket, max, windowSeconds) => {
+      if (!Number.isSafeInteger(max) || max < 1 || !Number.isSafeInteger(windowSeconds) || windowSeconds < 0) {
+        throw new Error("Rate limit must be positive and window must be nonnegative integers");
+      }
       const now = Math.floor(Date.now() / 1000);
       opsSinceSweep += 1;
       if (opsSinceSweep >= 4096) {
@@ -43,6 +49,8 @@ export const createMemoryRateLimit = (): RateLimit => {
       }
       const existing = buckets.get(bucket);
       if (!existing || now - existing.startedAt >= windowSeconds) {
+        if (!existing && buckets.size >= maxEntries) sweep(now);
+        if (!existing && buckets.size >= maxEntries) return { ok: false, count: 0, retryAfterSeconds: windowSeconds };
         buckets.set(bucket, { count: 1, startedAt: now, windowSeconds });
         return { ok: true, count: 1, retryAfterSeconds: 0 };
       }
@@ -200,6 +208,7 @@ const ipv4ToInt = (ip: string): number | null => {
   if (parts.length !== 4) return null;
   let n = 0;
   for (const p of parts) {
+    if (!/^\d{1,3}$/.test(p)) return null;
     const v = Number(p);
     if (!Number.isInteger(v) || v < 0 || v > 255) return null;
     n = n * 256 + v;
@@ -258,12 +267,16 @@ export const clientIp = (req: Request, opts: ClientIpOptions = {}): string => {
   if (ipInTrusted(peer, trusted)) {
     const fwd = req.headers.get("x-forwarded-for");
     if (fwd) {
-      // Left-most address is the original client per RFC 7239.
-      const first = fwd.split(",")[0]?.trim();
-      if (first) return first;
+      const chain = fwd.split(",").map((ip) => ip.trim());
+      for (let i = chain.length - 1; i >= 0; i--) {
+        const ip = chain[i]!;
+        if (!isIP(ip)) return peer;
+        if (!ipInTrusted(ip, trusted)) return ip;
+      }
+      return chain[0] ?? peer;
     }
     const real = req.headers.get("x-real-ip");
-    if (real) return real;
+    if (real && isIP(real)) return real;
   }
   return peer;
 };

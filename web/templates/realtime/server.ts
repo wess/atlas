@@ -1,4 +1,4 @@
-import { get, json, pipe, putHeader, serve, text } from "@atlas/server"
+import { get, json, pipe, putHeader, serve, text } from "@wess/atlas/server"
 import { wsConfig } from "./src/channels/chat.ts"
 import { config } from "./src/config.ts"
 import { notifications } from "./src/events/notifications.ts"

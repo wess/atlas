@@ -1,5 +1,5 @@
-import { createVectorStore, embed } from "@atlas/ai"
-import type { VectorStore } from "@atlas/ai"
+import { createVectorStore, embed } from "@wess/atlas/ai"
+import type { VectorStore } from "@wess/atlas/ai"
 import { ai } from "../ai.ts"
 
 export const vectorStore: VectorStore = createVectorStore()

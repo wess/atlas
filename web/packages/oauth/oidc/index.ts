@@ -1,4 +1,4 @@
-import { token as jwt } from "../../auth/index.ts";
+import * as jwt from "../../auth/token/index.ts";
 import { ID_TOKEN_TTL_SECONDS, randomId } from "../helpers";
 import type { OAuthUser, OidcConfig } from "../types.ts";
 

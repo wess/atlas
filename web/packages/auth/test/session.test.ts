@@ -35,3 +35,12 @@ test("no ttl keeps sessions alive", async () => {
   await Bun.sleep(80);
   expect(await store.get(id)).toEqual({ userId: 1 });
 });
+
+test("memory sessions refuse excess entries and reclaim destroyed slots", async () => {
+  const store = createMemoryStore({ maxEntries: 1 });
+  const first = await store.create({ userId: 1 });
+  await expect(store.create({ userId: 2 })).rejects.toThrow("capacity");
+  expect((await store.get(first))?.userId).toBe(1);
+  await store.destroy(first);
+  expect(await store.get(await store.create({ userId: 2 }))).toEqual({ userId: 2 });
+});

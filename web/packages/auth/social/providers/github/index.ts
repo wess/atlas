@@ -36,6 +36,7 @@ export const github = (cfg: GithubConfig): SocialProvider<GithubConfig> => ({
   authorizeUrl: (params) => {
     const scopes = (params.scopes ?? DEFAULT_SCOPES).join(" ");
     const query = buildQuery({
+      ...params.extraParams,
       client_id: cfg.clientId,
       redirect_uri: cfg.redirectUri,
       scope: scopes,
@@ -43,7 +44,6 @@ export const github = (cfg: GithubConfig): SocialProvider<GithubConfig> => ({
       code_challenge: params.codeChallenge,
       code_challenge_method: "S256",
       allow_signup: cfg.allowSignup === false ? "false" : undefined,
-      ...params.extraParams,
     });
     return `${AUTHORIZE_URL}?${query}`;
   },

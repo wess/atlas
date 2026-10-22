@@ -5,7 +5,7 @@ Social network with users, posts, follows, likes, feeds, file uploads, and real-
 ## Setup
 
 ```sh
-cp .env.example .env
+test -f .env || cp .env.example .env
 bun install
 atlas migrate up
 bun run server.ts
@@ -46,7 +46,7 @@ bun run server.ts
 
 ## Admin
 
-An auto-generated admin panel (from `@atlas/admin`) is mounted at `/admin`,
+An auto-generated admin panel (from `@wess/atlas/admin`) is mounted at `/admin`,
 covering all tables. It uses the same JWT secret as the API.
 
 ## WebSocket
@@ -61,11 +61,13 @@ ws.onmessage = (e) => console.log(JSON.parse(e.data)) // { type: "like" | "follo
 
 ## Packages
 
-- `@atlas/server` — routing, middleware pipes
-- `@atlas/db` — database queries
-- `@atlas/auth` — password hashing, JWT tokens
-- `@atlas/storage` — file uploads (local or S3)
-- `@atlas/admin` — admin dashboard
-- `@atlas/cache` — caching layer
-- `@atlas/migrate` — database migrations
-- `@atlas/config` — environment config
+- `@wess/atlas/server` — routing, middleware pipes
+- `@wess/atlas/db` — database queries
+- `@wess/atlas/auth` — password hashing, JWT tokens
+- `@wess/atlas/storage` — file uploads (local or S3)
+- `@wess/atlas/admin` — admin dashboard
+- `@wess/atlas/cache` — caching layer
+- `@wess/atlas/migrate` — database migrations
+- `@wess/atlas/config` — environment config
+
+`atlas init` creates `.env` with fresh authentication secrets. Preserve that file. When copying this template manually, fill each authentication/setup secret with at least 32 random characters before starting.

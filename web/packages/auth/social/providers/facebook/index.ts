@@ -36,6 +36,7 @@ export const facebook = (cfg: FacebookConfig): SocialProvider<FacebookConfig> =>
     authorizeUrl: (params) => {
       const scopes = (params.scopes ?? DEFAULT_SCOPES).join(",");
       const query = buildQuery({
+        ...params.extraParams,
         response_type: "code",
         client_id: cfg.clientId,
         redirect_uri: cfg.redirectUri,
@@ -43,7 +44,6 @@ export const facebook = (cfg: FacebookConfig): SocialProvider<FacebookConfig> =>
         state: params.state,
         code_challenge: params.codeChallenge,
         code_challenge_method: "S256",
-        ...params.extraParams,
       });
       return `${authorize}?${query}`;
     },

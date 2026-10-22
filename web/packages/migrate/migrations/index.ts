@@ -1,4 +1,4 @@
-import type { Connection } from "../../db/index.ts";
+import type { Connection } from "../../db/query.ts";
 import { readSql, scanMigrations } from "../files/index.ts";
 
 export type MigrationStatus = {

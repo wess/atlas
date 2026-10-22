@@ -62,7 +62,7 @@ Each depends only on those below it.
   override), `json` (atomic write, corrupt-file backup), `Keychain`
   (single-line JSON — the macOS keychain hex-encodes a value containing a
   newline and silently corrupts it). gpui-free.
-- **`atlas-bridge`** (`atlasbridge`) — `runtime`, `run`, `stream`. One tokio
+- **`atlas-bridge`** (`atlasbridge`) — `runtime`, `run`, `stream` (bounded sender; await `SinkExt::send`). One tokio
   runtime per process; the handoff is a `futures` oneshot because the receiving
   half is awaited on gpui's executor, which is not a tokio context.
 - **`atlas-shell`** (`atlasshell`) — everything that draws: `theme`, `menu`,

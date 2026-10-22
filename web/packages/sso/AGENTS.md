@@ -1,4 +1,4 @@
-# @atlas/sso
+# @wess/atlas/sso
 
 Drop-in OIDC relying-party. Any Atlas app gains "Sign in with $IdP" by calling
 `mountSso(cfg)` and providing two callbacks: `onAuthenticated` (claims → local
@@ -58,9 +58,9 @@ DiscoveryDoc { issuer, authorization_endpoint, token_endpoint, jwks_uri, userinf
 ## Wire up
 
 ```ts
-import { connect, from } from "@atlas/db"
-import { router, serve } from "@atlas/server"
-import { ensureSsoStateTable, mountSso, type IdTokenClaims, type SsoConfig } from "@atlas/sso"
+import { connect, from } from "@wess/atlas/db"
+import { router, serve } from "@wess/atlas/server"
+import { ensureSsoStateTable, mountSso, type IdTokenClaims, type SsoConfig } from "@wess/atlas/sso"
 
 const db = connect({ driver: "sqlite", path: "./app.db" })
 await ensureSsoStateTable(db)
@@ -104,17 +104,19 @@ setInterval(() => sweepExpiredSsoState(db), 60 * 60 * 1000)  // hourly
 
 ## Discovery
 
-`@atlas/sso` fetches the IdP's discovery doc lazily on the first request
+`@wess/atlas/sso` fetches the IdP's discovery doc lazily on the first request
 (and caches it). Tests can call `clearDiscoveryCache()` between runs.
 
 ## Dependencies
 
-- `@atlas/auth` — JWT verification for id_tokens
-- `@atlas/db` — state-row persistence
-- `@atlas/server` — `mountSso` returns `Route[]` you spread into your router
+- `@wess/atlas/auth` — JWT verification for id_tokens
+- `@wess/atlas/db` — state-row persistence
+- `@wess/atlas/server` — `mountSso` returns `Route[]` you spread into your router
 - External: none. Uses `fetch` and Web Crypto.
 
-## Compared to `@atlas/auth/social`
+## Compared to `@wess/atlas/auth/social`
 
-- `@atlas/auth/social` — provider-specific factories (Google, GitHub, Apple, …). Best for consumer apps with named providers.
-- `@atlas/sso` — generic OIDC relying-party. Best for enterprise SSO (Keycloak, Auth0, Okta, Castle, anything OIDC-conformant).
+- `@wess/atlas/auth/social` — provider-specific factories (Google, GitHub, Apple, …). Best for consumer apps with named providers.
+- `@wess/atlas/sso` — generic OIDC relying-party. Best for enterprise SSO (Keycloak, Auth0, Okta, Castle, anything OIDC-conformant).
+
+Login state is bound to an HttpOnly SameSite=Lax browser cookie and consumed once. Post-login destinations must be local paths. Discovery validates the issuer and HTTPS endpoints (HTTP is permitted on loopback), shares concurrent fetches, and bounds its cache. ID tokens require issuer, audience, subject, expiry, issued-at, and nonce bindings. Back-channel logout validates issuer/audience, rejects tokens older than five minutes, and tracks replays in process memory. Hosts with multiple instances should also deduplicate logout `jti` values in shared storage.

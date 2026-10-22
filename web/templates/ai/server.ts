@@ -1,4 +1,4 @@
-import { get, pipe, putHeader, serve, text } from "@atlas/server"
+import { get, pipe, putHeader, serve, text } from "@wess/atlas/server"
 import { config } from "./src/config.ts"
 import { agentRoutes } from "./src/routes/agent.ts"
 import { chatRoutes } from "./src/routes/chat.ts"

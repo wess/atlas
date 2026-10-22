@@ -1,5 +1,5 @@
-import { from } from "@atlas/db"
-import { request } from "@atlas/request"
+import { from } from "@wess/atlas/db/query";
+import { request } from "@wess/atlas/request"
 import { db } from "../db.ts"
 import { webhooks } from "../schema.ts"
 

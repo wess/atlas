@@ -17,3 +17,4 @@ serde_json = { workspace = true }
 dirs = { workspace = true }
 keyring = { workspace = true }
 tracing = { workspace = true }
+tempfile = "3"

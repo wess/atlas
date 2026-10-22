@@ -10,14 +10,16 @@ export type SessionStore = {
  * processes. Expired entries are dropped lazily on `get` plus an opportunistic
  * sweep, so no timer keeps the process alive.
  */
-export const createMemoryStore = (opts?: { ttl?: number }): SessionStore => {
+export const createMemoryStore = (opts?: { ttl?: number; maxEntries?: number }): SessionStore => {
+  const maxEntries = opts?.maxEntries ?? 10_000;
+  if (!Number.isSafeInteger(maxEntries) || maxEntries < 1) throw new Error("Invalid session capacity");
   const ttlMs = opts?.ttl != null ? opts.ttl * 1000 : null;
   const sessions = new Map<string, { data: Record<string, unknown>; expiresAt: number | null }>();
   let opsSinceSweep = 0;
 
   const sweep = (now: number): void => {
     for (const [id, s] of sessions) {
-      if (s.expiresAt !== null && now > s.expiresAt) sessions.delete(id);
+      if (s.expiresAt !== null && now >= s.expiresAt) sessions.delete(id);
     }
   };
 
@@ -30,13 +32,15 @@ export const createMemoryStore = (opts?: { ttl?: number }): SessionStore => {
         opsSinceSweep = 0;
         sweep(now);
       }
+      if (sessions.size >= maxEntries) sweep(now);
+      if (sessions.size >= maxEntries) throw new Error("Session store capacity reached");
       sessions.set(id, { data, expiresAt: ttlMs !== null ? now + ttlMs : null });
       return id;
     },
     get: async (id) => {
       const s = sessions.get(id);
       if (!s) return null;
-      if (s.expiresAt !== null && Date.now() > s.expiresAt) {
+      if (s.expiresAt !== null && Date.now() >= s.expiresAt) {
         sessions.delete(id);
         return null;
       }

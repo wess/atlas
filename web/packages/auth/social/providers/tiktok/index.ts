@@ -42,6 +42,7 @@ export const tiktok = (cfg: TiktokConfig): SocialProvider<TiktokConfig> => ({
   authorizeUrl: (params) => {
     const scopes = (params.scopes ?? DEFAULT_SCOPES).join(",");
     const query = buildQuery({
+      ...params.extraParams,
       client_key: cfg.clientKey,
       response_type: "code",
       scope: scopes,
@@ -49,7 +50,6 @@ export const tiktok = (cfg: TiktokConfig): SocialProvider<TiktokConfig> => ({
       state: params.state,
       code_challenge: params.codeChallenge,
       code_challenge_method: "S256",
-      ...params.extraParams,
     });
     return `${AUTHORIZE_URL}?${query}`;
   },

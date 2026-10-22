@@ -1,4 +1,4 @@
-import { from } from "../../db/index.ts";
+import { from } from "../../db/query.ts";
 import { type OAuthConfig, resolveTables } from "../types.ts";
 
 /**

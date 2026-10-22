@@ -1,5 +1,5 @@
-import { from } from "@atlas/db"
-import { del, get, internal, json, pipe, post } from "@atlas/server"
+import { from } from "@wess/atlas/db/query";
+import { del, get, internal, json, pipe, post } from "@wess/atlas/server"
 import { db } from "../db.ts"
 import { documents } from "../schema.ts"
 import { indexDocument } from "../vectors/index.ts"

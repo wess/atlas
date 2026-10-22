@@ -1,4 +1,4 @@
-import { connect } from "@atlas/db"
+import { connect } from "@wess/atlas/db";
 import { config } from "./config.ts"
 
 const options = config.databaseUrl.startsWith("postgres")

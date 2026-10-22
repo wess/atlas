@@ -1,5 +1,5 @@
-import { from } from "@atlas/db"
-import { del, get, halt, json, pipe, post, putHeader, stream } from "@atlas/server"
+import { from } from "@wess/atlas/db/query";
+import { del, get, halt, json, pipe, post, putHeader, stream } from "@wess/atlas/server"
 import { config } from "../config.ts"
 import { db } from "../db.ts"
 import { claims, guard, uploads } from "../pipes/auth.ts"

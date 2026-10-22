@@ -1,4 +1,4 @@
-# @atlas/request
+# @wess/atlas/request
 
 HTTP client for outbound API/web requests, built on fetch.
 
@@ -9,7 +9,7 @@ HTTP client for outbound API/web requests, built on fetch.
 One-off HTTP request. Accepts `RequestOptions` with optional `method`, `headers`, `json`, `body`, `retry`, and `timeout` (ms; each retry attempt gets its own window).
 
 ```ts
-import { request } from "@atlas/request"
+import { request } from "@wess/atlas/request"
 
 const res = await request("https://api.example.com/data", {
   method: "POST",
@@ -24,7 +24,7 @@ When `json` is provided, the body is serialized and `content-type: application/j
 Returns a `Client` with preconfigured `baseUrl`, default `headers`, optional `retry`, and `interceptors`.
 
 ```ts
-import { createClient } from "@atlas/request"
+import { createClient } from "@wess/atlas/request"
 
 const api = createClient({
   baseUrl: "https://api.example.com",
@@ -54,7 +54,7 @@ const created = await api.post("/users", { json: { name: "Wess" } })
 Wraps a fetch call with retry logic. Options: `attempts` (default 3), `delay` (default 1000ms), `backoff` (default 2x), `retryOn` (default: status >= 500).
 
 ```ts
-import { withRetry } from "@atlas/request"
+import { withRetry } from "@wess/atlas/request"
 
 const res = await withRetry(() => fetch("https://api.example.com/health"), {
   attempts: 5,
@@ -67,7 +67,7 @@ const res = await withRetry(() => fetch("https://api.example.com/health"), {
 Request and response interceptors transform the url/init or response in sequence.
 
 ```ts
-import { createClient } from "@atlas/request"
+import { createClient } from "@wess/atlas/request"
 
 const client = createClient({
   baseUrl: "https://api.example.com",
@@ -80,10 +80,10 @@ const client = createClient({
 
 ### Providers
 
-Preconfigured clients for common APIs. Import from `@atlas/request/providers`.
+Preconfigured clients for common APIs. Import from `@wess/atlas/request/providers`.
 
 ```ts
-import { github, stripe, openai, resend } from "@atlas/request/providers"
+import { github, stripe, openai, resend } from "@wess/atlas/request/providers"
 
 const gh = github({ token: process.env.GITHUB_TOKEN! })
 const res = await gh.get("/user")
@@ -114,7 +114,7 @@ Available providers: `github`, `stripe`, `openai`, `resend`.
 
 ## Dependencies
 
-- Sibling packages: none — `@atlas/request` is standalone.
+- Sibling packages: none — `@wess/atlas/request` is standalone.
 - External: none. Built on the platform `fetch`.
 
 ## Testing

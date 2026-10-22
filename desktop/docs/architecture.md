@@ -43,7 +43,9 @@ The handoff is a `futures` oneshot rather than a tokio one because the receiving
 half is awaited on gpui's executor, which is not a tokio context.
 
 `stream` is the same shape for a producer that yields many items — logs, tokens,
-an event firehose. Cancellation is implicit: when the view goes away the
+an event firehose. It hands the producer a bounded `futures::channel::mpsc::Sender`
+with capacity 64; import `futures::SinkExt` and await `sender.send(item)` to apply
+backpressure while the UI is busy. Cancellation is implicit: when the view goes away the
 receiver drops, the producer's `send` starts failing, and it stops. There is no
 abort registry to keep in sync.
 

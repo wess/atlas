@@ -1,4 +1,5 @@
-import { buildQuery, decodeIdTokenPayload, postForm, toTokenSet } from "../../http/index.ts";
+import { buildQuery, postForm, toTokenSet } from "../../http/index.ts";
+import { verifyIdToken } from "../../http/oidc.ts";
 import type { SocialProfile, SocialProvider, TokenSet } from "../index.ts";
 
 export type GoogleConfig = {
@@ -20,6 +21,7 @@ export const google = (cfg: GoogleConfig): SocialProvider<GoogleConfig> => ({
   authorizeUrl: (params) => {
     const scopes = (params.scopes ?? DEFAULT_SCOPES).join(" ");
     const query = buildQuery({
+      ...params.extraParams,
       response_type: "code",
       client_id: cfg.clientId,
       redirect_uri: cfg.redirectUri,
@@ -31,7 +33,6 @@ export const google = (cfg: GoogleConfig): SocialProvider<GoogleConfig> => ({
       include_granted_scopes: "true",
       prompt: cfg.prompt,
       hd: cfg.hostedDomain,
-      ...params.extraParams,
     });
     return `${AUTHORIZE_URL}?${query}`;
   },
@@ -47,7 +48,14 @@ export const google = (cfg: GoogleConfig): SocialProvider<GoogleConfig> => ({
     return toTokenSet(raw);
   },
   profile: async (tokens: TokenSet) => {
-    const claims = tokens.idToken ? decodeIdTokenPayload(tokens.idToken) : {};
+    if (!tokens.idToken) throw new Error("Google token response missing id_token");
+    const claims = await verifyIdToken(
+      tokens.idToken,
+      cfg.clientId,
+      "https://www.googleapis.com/oauth2/v3/certs",
+      (claims) => claims.iss === "https://accounts.google.com" || claims.iss === "accounts.google.com",
+    );
+    if (cfg.hostedDomain && claims.hd !== cfg.hostedDomain) throw new Error("Google hosted domain mismatch");
     const sub = claims.sub as string | undefined;
     if (!sub) {
       throw new Error("Google id_token missing 'sub' claim; cannot derive user id.");

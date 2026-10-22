@@ -1,7 +1,8 @@
-import type { Connection } from "@atlas/db"
-import { from } from "@atlas/db"
-import { pipeline, parseJson, json, post } from "@atlas/server"
-import { signup, login, token } from "@atlas/auth"
+import type { Connection } from "@wess/atlas/db/query";
+import { from } from "@wess/atlas/db/query";
+import { pipeline, parseJson, json, post } from "@wess/atlas/server"
+import * as token from "@wess/atlas/auth/token";
+import { signup, login } from "@wess/atlas/auth/flows";
 import { users } from "../schema/index.ts"
 
 export const authRoutes = (db: Connection, secret: string) => {

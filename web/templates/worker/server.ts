@@ -1,4 +1,4 @@
-import { get, json, parseJson, pipe, pipeline, post, serve } from "@atlas/server"
+import { get, json, parseJson, pipe, pipeline, post, serve } from "@wess/atlas/server"
 import { cache } from "./src/cache.ts"
 import { config } from "./src/config.ts"
 import { enqueue } from "./src/queue.ts"

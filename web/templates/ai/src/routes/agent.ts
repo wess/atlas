@@ -1,5 +1,5 @@
-import { post, pipe, json } from "@atlas/server"
-import { runAgent } from "@atlas/ai"
+import { post, pipe, json } from "@wess/atlas/server"
+import { runAgent } from "@wess/atlas/ai"
 import { ai } from "../ai.ts"
 import { tools } from "../tools/index.ts"
 

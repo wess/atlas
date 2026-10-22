@@ -1,7 +1,7 @@
-import { defineConfig, env } from "@atlas/config"
-import { connect } from "@atlas/db"
-import { migrate } from "@atlas/migrate"
-import { router } from "@atlas/server"
+import { defineConfig, env } from "@wess/atlas/config"
+import { connect } from "@wess/atlas/db/sqlite";
+import { migrate } from "@wess/atlas/migrate"
+import { router } from "@wess/atlas/server"
 import index from "./web/index.html"
 import { authRoutes } from "./routes/auth.ts"
 import { postRoutes } from "./routes/posts.ts"
@@ -10,7 +10,10 @@ import { socialRoutes } from "./routes/social.ts"
 
 const config = defineConfig({
   port: env("PORT", { parse: Number, default: "3000" }),
-  secret: env("SECRET", { default: "dev-secret" }),
+  secret: env("SECRET", { parse: (value) => {
+    if (value.length < 32) throw new Error("SECRET must contain at least 32 random characters");
+    return value;
+  } }),
 })
 
 const isDev = (process.env.NODE_ENV ?? "development") === "development"

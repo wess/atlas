@@ -1,10 +1,12 @@
 import { createHash, createHmac } from "node:crypto";
+import { canonicalPath, uriEncode } from "../url/index.ts";
 
 export type SigningOptions = {
   method: string;
   url: URL;
   headers: Headers;
   body?: Uint8Array | string | null;
+  payloadHash?: string;
   accessKey: string;
   secretKey: string;
   region?: string;
@@ -29,16 +31,6 @@ const getSigningKey = (secretKey: string, dateStamp: string, region: string, ser
   return hmacSha256(kService, "aws4_request");
 };
 
-const uriEncode = (str: string, encodeSlash = true): string => {
-  const encoded = encodeURIComponent(str)
-    .replace(/!/g, "%21")
-    .replace(/'/g, "%27")
-    .replace(/\(/g, "%28")
-    .replace(/\)/g, "%29")
-    .replace(/\*/g, "%2A");
-  return encodeSlash ? encoded : encoded.replace(/%2F/g, "/");
-};
-
 const getCanonicalQueryString = (url: URL): string => {
   const params = [...url.searchParams.entries()];
   if (params.length === 0) return "";
@@ -60,7 +52,8 @@ export const signRequest = (opts: SigningOptions): SigningResult => {
   const amzDate = `${now.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
   const dateStamp = amzDate.slice(0, 8);
 
-  const contentHash = sha256(body ?? "");
+  const contentHash = opts.payloadHash ?? sha256(body ?? "");
+  if (!/^[a-f0-9]{64}$/.test(contentHash)) throw new Error("payloadHash must be a SHA-256 hex digest");
 
   headers.set("x-amz-date", amzDate);
   headers.set("x-amz-content-sha256", contentHash);
@@ -73,12 +66,11 @@ export const signRequest = (opts: SigningOptions): SigningResult => {
   const signedHeadersStr = signedHeaderKeys.join(";");
   const canonicalHeaders = getCanonicalHeaders(headers, signedHeaderKeys);
 
-  const canonicalPath = uriEncode(url.pathname, false) || "/";
   const canonicalQueryString = getCanonicalQueryString(url);
 
   const canonicalRequest = [
     method.toUpperCase(),
-    canonicalPath,
+    service === "s3" ? canonicalPath(url) : uriEncode(url.pathname).replace(/%2F/g, "/"),
     canonicalQueryString,
     canonicalHeaders,
     signedHeadersStr,

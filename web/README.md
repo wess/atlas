@@ -12,84 +12,75 @@ No framework lock-in. No classes. Just functions and immutable data flowing thro
 
 ## Install
 
-```bash
-bun add github:wess/atlas
+The modular release candidate is `0.4.0`. These GitHub release commands become available
+once all release artifacts have been published.
+
+```sh
+bunx --package https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-cli-0.4.0.tgz atlas add server config db/query db/postgres
 ```
 
-Every package is a subpath export, so you can import directly:
+The installer records exact GitHub release URLs and the dependency closure for
+only the selected entry points. Public imports stay under `@wess/atlas`:
 
 ```ts
 import { defineConfig, env } from "@wess/atlas/config"
-import { connect } from "@wess/atlas/db"
-import { serve, router, get, json } from "@wess/atlas/server"
+import { connect } from "@wess/atlas/db/postgres"
+import { column, defineSchema, from } from "@wess/atlas/db/query"
+import { serve, get, json } from "@wess/atlas/server"
 ```
 
-Prefer the `@atlas/<pkg>` spelling used throughout these docs? Map it via
-`tsconfig.json` `paths` (bun reads tsconfig paths at runtime):
+`@wess/atlas` is a small facade with optional implementation peers such as
+`@wess/atlas-server`. Installing the facade alone does not install implementations.
+Use `atlas add` to select modules and their required peers; `atlas add` without
+arguments lists the public entry points. No consumer path aliases or local Atlas
+checkout are required. Keep application lockfiles and update the selected Atlas
+libraries together.
 
-```json
-{
-  "compilerOptions": {
-    "paths": {
-      "@atlas/auth":        ["./node_modules/@wess/atlas/web/packages/auth/index.ts"],
-      "@atlas/auth/social": ["./node_modules/@wess/atlas/web/packages/auth/social/index.ts"],
-      "@atlas/cache":       ["./node_modules/@wess/atlas/web/packages/cache/index.ts"],
-      "@atlas/cli":         ["./node_modules/@wess/atlas/web/packages/cli/index.ts"],
-      "@atlas/config":      ["./node_modules/@wess/atlas/web/packages/config/index.ts"],
-      "@atlas/db":          ["./node_modules/@wess/atlas/web/packages/db/index.ts"],
-      "@atlas/edge":        ["./node_modules/@wess/atlas/web/packages/edge/index.ts"],
-      "@atlas/email":       ["./node_modules/@wess/atlas/web/packages/email/index.ts"],
-      "@atlas/mcp":         ["./node_modules/@wess/atlas/web/packages/mcp/index.ts"],
-      "@atlas/migrate":     ["./node_modules/@wess/atlas/web/packages/migrate/index.ts"],
-      "@atlas/oauth":       ["./node_modules/@wess/atlas/web/packages/oauth/index.ts"],
-      "@atlas/request":     ["./node_modules/@wess/atlas/web/packages/request/index.ts"],
-      "@atlas/request/providers": ["./node_modules/@wess/atlas/web/packages/request/providers/index.ts"],
-      "@atlas/security":    ["./node_modules/@wess/atlas/web/packages/security/index.ts"],
-      "@atlas/server":      ["./node_modules/@wess/atlas/web/packages/server/index.ts"],
-      "@atlas/server/ws":   ["./node_modules/@wess/atlas/web/packages/server/ws/index.ts"],
-      "@atlas/server/sse":  ["./node_modules/@wess/atlas/web/packages/server/sse/index.ts"],
-      "@atlas/share":       ["./node_modules/@wess/atlas/web/packages/share/index.ts"],
-      "@atlas/sso":         ["./node_modules/@wess/atlas/web/packages/sso/index.ts"],
-      "@atlas/storage":     ["./node_modules/@wess/atlas/web/packages/storage/index.ts"],
-      "@atlas/ai":          ["./node_modules/@wess/atlas/web/packages/ai/index.ts"],
-      "@atlas/admin":       ["./node_modules/@wess/atlas/web/packages/admin/index.ts"],
-      "@atlas/ui":          ["./node_modules/@wess/atlas/web/packages/ui/index.ts"],
-      "@atlas/ui/*":        ["./node_modules/@wess/atlas/web/packages/ui/*/index.tsx"]
-    }
-  }
-}
+To prepare and validate a release from this source workspace:
+
+```sh
+bun install --frozen-lockfile
+bun run check
+bun run typecheck
+bun test
+bun run distribution:build
+bun run distribution:verify
+bun run distribution:dryrun
 ```
 
-GitHub installs use the root manifest, which exports the web workspace. The npm
-package is packed from `web/`; it has the same subpath exports but no `web/` prefix
-on internal filesystem paths. Prefer subpath imports so the install layout stays
-an implementation detail.
-
-Bump atlas with `bun update @wess/atlas`.
+Artifacts and the entry-point dependency catalog are written to
+`out/distribution/`. The GitHub release contains those exact tarballs and their
+integrity catalog. No npm publication or registry token is needed.
 
 ## Packages
 
+For a clean production dependency tree, use
+`bun install --production --omit=peer --frozen-lockfile`. The installer records the
+selected module closure and required peers as explicit application dependencies.
+Build browser assets first with development dependencies available. The release
+fixture verifies that the minimal runtime excludes the CLI and frontend tooling.
+
 | Package | Description | External deps |
 |---------|-------------|---|
-| `@atlas/config` | Typed environment variables and config resolution | none |
-| `@atlas/db` | Query builder, schemas, changesets, drivers (Postgres/SQLite) | `zod` |
-| `@atlas/migrate` | Database migration manager | none |
-| `@atlas/server` | Bun.serve with Plug-inspired pipe system | none |
-| `@atlas/edge` | TLS-terminating reverse proxy with built-in Let's Encrypt | none |
-| `@atlas/auth` | Password hashing, JWT, session management, auth flows | none |
-| `@atlas/security` | CSP/headers, rate limit, audit log, TOTP, revocable DB-backed sessions | none |
-| `@atlas/oauth` | OAuth 2.1 server: PKCE, refresh rotation, device flow, RFC 8414 discovery | none |
-| `@atlas/sso` | OIDC relying-party (Sign in with $IdP): discovery, PKCE, state, code exchange, id_token verify | none |
-| `@atlas/email` | Provider-agnostic transport (Resend) + invite/reset templates | none |
-| `@atlas/share` | Share-URL builders (socials, messengers, mailto) + server-side share-by-email | none |
-| `@atlas/storage` | S3-compatible object storage with presigned URLs | none |
-| `@atlas/cache` | Redis-backed caching with TTL and cache-aside patterns | none |
-| `@atlas/request` | HTTP client with retries, interceptors, provider configs | none |
-| `@atlas/cli` | CLI framework and Foreman process manager | none |
-| `@atlas/ui` | React + Mantine frontend blocks (forms, tables, auth UI) | `react`, `@mantine/*`, `@tanstack/*` |
-| `@atlas/admin` | Django-style auto-generated admin panel | `react`, `@mantine/*`, `@tanstack/*` |
-| `@atlas/mcp` | MCP server for AI/LLM debugging and introspection | none |
-| `@atlas/ai` | AI providers, chat, embeddings, RAG, agents, streaming | none |
+| `@wess/atlas/config` | Typed environment variables and config resolution | none |
+| `@wess/atlas/db` | Query builder, schemas, changesets, drivers (Postgres/SQLite) | none |
+| `@wess/atlas/migrate` | Database migration manager | none |
+| `@wess/atlas/server` | Bun.serve with Plug-inspired pipe system | none |
+| `@wess/atlas/edge` | TLS-terminating reverse proxy with built-in Let's Encrypt | none |
+| `@wess/atlas/auth` | Password hashing, JWT, session management, auth flows | none |
+| `@wess/atlas/security` | CSP/headers, rate limit, audit log, TOTP, revocable DB-backed sessions | none |
+| `@wess/atlas/oauth` | OAuth 2.1 server: PKCE, refresh rotation, device flow, RFC 8414 discovery | none |
+| `@wess/atlas/sso` | OIDC relying-party (Sign in with $IdP): discovery, PKCE, state, code exchange, id_token verify | none |
+| `@wess/atlas/email` | Provider-agnostic transport (Resend) + invite/reset templates | none |
+| `@wess/atlas/share` | Share-URL builders (socials, messengers, mailto) + server-side share-by-email | none |
+| `@wess/atlas/storage` | S3-compatible object storage with presigned URLs | none |
+| `@wess/atlas/cache` | Redis-backed caching with TTL and cache-aside patterns | none |
+| `@wess/atlas/request` | HTTP client with retries, interceptors, provider configs | none |
+| `@wess/atlas/cli` | CLI framework and Foreman process manager | none |
+| `@wess/atlas/ui` | React + Mantine frontend blocks (forms, tables, auth UI) | `react`, `@mantine/*`, `@tanstack/*` |
+| `@wess/atlas/admin` | Django-style auto-generated admin panel | `react`, `@mantine/*`, `@tanstack/*` |
+| `@wess/atlas/mcp` | MCP server for AI/LLM debugging and introspection | none |
+| `@wess/atlas/ai` | AI providers, chat, embeddings, RAG, agents, streaming | none |
 
 ## Quick Start
 
@@ -98,10 +89,10 @@ Build a user API with authentication in 60 lines.
 ```bash
 mkdir myapp && cd myapp
 bun init -y
-bun add github:wess/atlas
+bunx --package https://github.com/wess/atlas/releases/download/v0.4.0/wess-atlas-cli-0.4.0.tgz atlas add server config db/sqlite db/query migrate auth/flows auth/token
 ```
 
-The example below uses the `@atlas/<pkg>` aliases from the Install section.
+The example below uses public `@wess/atlas/<pkg>` exports from the selected libraries.
 
 Create `.env`:
 ```
@@ -112,7 +103,7 @@ SECRET="your-secret-key-here"
 
 Create `schema.ts`:
 ```ts
-import { defineSchema, column } from "@atlas/db"
+import { defineSchema, column } from "@wess/atlas/db/query"
 
 export const users = defineSchema("users", {
   id: column.serial().primaryKey(),
@@ -124,11 +115,12 @@ export const users = defineSchema("users", {
 
 Create `server.ts`:
 ```ts
-import { defineConfig, env } from "@atlas/config"
-import { connect } from "@atlas/db"
-import { migrate } from "@atlas/migrate"
-import { serve, router, pipeline, parseJson, json, get, post } from "@atlas/server"
-import { signup, login, requireAuth, token } from "@atlas/auth"
+import { defineConfig, env } from "@wess/atlas/config"
+import { connect } from "@wess/atlas/db/sqlite"
+import { migrate } from "@wess/atlas/migrate"
+import { serve, router, pipeline, parseJson, json, get, post } from "@wess/atlas/server"
+import { signup, login, requireAuth } from "@wess/atlas/auth/flows"
+import * as token from "@wess/atlas/auth/token"
 
 const config = defineConfig({
   database: env("DATABASE_URL"),

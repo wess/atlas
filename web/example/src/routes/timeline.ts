@@ -1,7 +1,7 @@
-import type { Connection } from "@atlas/db"
-import { from, raw } from "@atlas/db"
-import { pipeline, json, get } from "@atlas/server"
-import { requireAuth } from "@atlas/auth"
+import type { Connection } from "@wess/atlas/db/query";
+import { from, raw } from "@wess/atlas/db/query";
+import { pipeline, json, get } from "@wess/atlas/server"
+import { requireAuth } from "@wess/atlas/auth/flows";
 
 export const timelineRoutes = (db: Connection, secret: string) => {
   const guard = pipeline(requireAuth({ secret }))

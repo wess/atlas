@@ -1,6 +1,6 @@
-import { from, raw } from "@atlas/db"
-import { get } from "@atlas/server"
-import { eventStream } from "@atlas/server/sse"
+import { from, raw } from "@wess/atlas/db/query";
+import { get } from "@wess/atlas/server"
+import { eventStream } from "@wess/atlas/server/sse"
 import { db } from "../db.ts"
 import { currentUserId, guard } from "../pipes/auth.ts"
 

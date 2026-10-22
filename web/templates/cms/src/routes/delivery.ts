@@ -1,5 +1,5 @@
-import { from } from "@atlas/db"
-import { get, halt, json, options, pipeline } from "@atlas/server"
+import { from } from "@wess/atlas/db/query";
+import { get, halt, json, options, pipeline } from "@wess/atlas/server"
 import { db } from "../db.ts"
 import { apiKeyAuth, keyPermissions } from "../pipes/apikey.ts"
 import { cors } from "../pipes/cors.ts"

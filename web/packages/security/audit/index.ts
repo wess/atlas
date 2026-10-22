@@ -1,5 +1,5 @@
-import type { Connection } from "../../db/index.ts";
-import { from } from "../../db/index.ts";
+import type { Connection } from "../../db/query.ts";
+import { from } from "../../db/query.ts";
 
 export type AuditEvent = {
   readonly userId?: number | string | null;

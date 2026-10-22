@@ -1,6 +1,7 @@
 {
   "name": "@wess/atlas",
-  "version": "0.3.2",
+  "private": true,
+  "version": "0.4.0",
   "description": "Composable Bun/TypeScript packages for building APIs, full-stack apps, and CLI tools",
   "license": "MIT",
   "repository": {
@@ -33,7 +34,8 @@
   "files": [
     "packages",
     "docs",
-    "llms.txt"
+    "llms.txt",
+    "templates"
   ],
   "exports": {
     "./admin": "./packages/admin/index.ts",
@@ -53,6 +55,7 @@
     "./request": "./packages/request/index.ts",
     "./request/providers": "./packages/request/providers/index.ts",
     "./security": "./packages/security/index.ts",
+    "./social": "./packages/social/index.ts",
     "./server": "./packages/server/index.ts",
     "./server/sse": "./packages/server/sse/index.ts",
     "./server/ws": "./packages/server/ws/index.ts",
@@ -61,36 +64,55 @@
     "./storage": "./packages/storage/index.ts",
     "./ui": "./packages/ui/index.ts",
     "./ui/*": "./packages/ui/*/index.tsx",
-    "./packages/*": "./packages/*"
-  },
-  "publishConfig": {
-    "access": "public"
+    "./packages/*": "./packages/*",
+    "./admin/ui": "./packages/admin/ui/index.ts",
+    "./auth/password": "./packages/auth/password/index.ts",
+    "./auth/token": "./packages/auth/token/index.ts",
+    "./auth/session": "./packages/auth/session/index.ts",
+    "./auth/flows": "./packages/auth/flows/index.ts",
+    "./db/query": "./packages/db/query.ts",
+    "./db/postgres": "./packages/db/postgres/index.ts",
+    "./db/sqlite": "./packages/db/sqlite/index.ts",
+    "./db/changeset": "./packages/db/changeset/index.ts",
+    "./storage/signing": "./packages/storage/signing/index.ts",
+    "./cli/command": "./packages/cli/command/index.ts",
+    "./cli/foreman": "./packages/cli/foreman/index.ts",
+    "./cli/scaffold": "./packages/cli/scaffold/index.ts",
+    "./cli/docs": "./packages/cli/docs/index.ts",
+    "./cli/entry": "./packages/cli/entry.ts",
+    "./mcp/entry": "./packages/mcp/entry.ts"
   },
   "scripts": {
     "test": "bun test",
     "lint": "bunx biome lint packages/ site/",
     "format": "bunx biome format packages/ site/",
-    "check": "bunx biome check packages/ site/",
+    "check": "bunx biome check packages/ site/ distribution/ validation/",
     "lint:fix": "bunx biome lint --write packages/ site/",
     "format:fix": "bunx biome format --write packages/ site/",
     "check:fix": "bunx biome check --write packages/ site/",
     "tidy": "bun run check:fix",
     "typecheck": "bunx tsc --noEmit",
     "site:build": "bun site/generator/index.ts",
-    "site:dev": "bun --hot site/serve.ts"
+    "site:dev": "bun --hot site/serve.ts",
+    "distribution:build": "bun distribution/build.ts",
+    "distribution:verify": "bun distribution/verify.ts",
+    "distribution:dryrun": "bun distribution/publish.ts",
+    "consumers:verify": "bun validation/consumers.ts",
+    "fixtures:verify": "bun validation/fixtures.ts",
+    "storage:verify": "bun validation/s3/index.ts"
   },
   "dependencies": {
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "peerDependencies": {
-    "typescript": ">=5.9",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "lucide-react": "^1.47.0",
-    "@mantine/core": "^9.6.1",
-    "@mantine/hooks": "^9.6.1",
-    "@mantine/form": "^9.6.1",
-    "@tanstack/react-table": "^9.2.4"
+    "typescript": ">=7.0.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "lucide-react": "^1.61.0",
+    "@mantine/core": "^9.7.3",
+    "@mantine/hooks": "^9.7.3",
+    "@mantine/form": "^9.7.3",
+    "@tanstack/react-table": "^9.3.1"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -116,10 +138,13 @@
     }
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
-    "@types/bun": "^1.4.2",
+    "@biomejs/biome": "2.6.2",
+    "@types/bun": "^1.4.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "typescript": "^7.0.2"
+  },
+  "bin": {
+    "atlas": "./packages/cli/entry.ts"
   }
 }

@@ -1,6 +1,6 @@
-import { admin, model } from "@atlas/admin"
-import { migrate } from "@atlas/migrate"
-import { get, pipe, putHeader, serve, text } from "@atlas/server"
+import { admin, model } from "@wess/atlas/admin"
+import { migrate } from "@wess/atlas/migrate"
+import { get, pipe, putHeader, serve, text } from "@wess/atlas/server"
 import { config } from "./src/config.ts"
 import { db } from "./src/db.ts"
 import { authRoutes } from "./src/routes/auth.ts"
@@ -16,7 +16,7 @@ import { apiKeys, contentTypes, entries, media, revisions, users, webhooks } fro
 
 await migrate.up(db, "./migrations")
 
-// Auto-generated CRUD panel from @atlas/admin, mounted away from the CMS's own
+// Auto-generated CRUD panel from @wess/atlas/admin, mounted away from the CMS's own
 // /admin/api/* routes so the two APIs never collide.
 const panel = admin({
   db,
@@ -30,7 +30,7 @@ const panel = admin({
     model({ schema: revisions }),
     model({ schema: webhooks }),
   ],
-  auth: { secret: config.auth.secret },
+  auth: { secret: config.auth.secret, authorize: (claims) => claims.role === "admin" },
 })
 
 const page = await Bun.file(new URL("./index.html", import.meta.url).pathname).text()
@@ -40,6 +40,7 @@ const home = get(
 )
 
 serve({
+  maxRequestBodySize: 16 * 1024 * 1024,
   port: config.port,
   hostname: config.host,
   routes: [
