@@ -22,6 +22,20 @@ const gh: Gh = async (args) => {
   throw new Error(`GitHub release command failed: ${stderr}`);
 };
 
+export async function tagRevision(tag: string, command: Gh = gh): Promise<string | undefined> {
+  const ref = await command(["api", `repos/${repository}/git/ref/tags/${tag}`]);
+  if (ref === undefined) return undefined;
+  let object: { type: string; sha: string } = JSON.parse(ref).object;
+  for (let depth = 0; depth < 8; depth++) {
+    if (object.type === "commit") return object.sha;
+    if (object.type !== "tag") break;
+    const annotated = await command(["api", `repos/${repository}/git/tags/${object.sha}`]);
+    if (annotated === undefined) break;
+    object = JSON.parse(annotated).object;
+  }
+  throw new Error(`Cannot resolve release tag ${tag} to a commit`);
+}
+
 export async function uploadRelease(
   directory: string,
   version: string,
@@ -40,7 +54,7 @@ export async function uploadRelease(
     if (result === undefined) throw new Error(`Missing GitHub resource: ${args.join(" ")}`);
     return result;
   };
-  const revision = await command(["api", `${api}/commits/${tag}`, "--jq", ".sha"]);
+  const revision = await tagRevision(tag, command);
   if (revision !== undefined && revision.trim() !== commit)
     throw new Error(`${tag} belongs to another commit; bump the version instead`);
   const existing = await command(["api", `${api}/releases/tags/${tag}`]);

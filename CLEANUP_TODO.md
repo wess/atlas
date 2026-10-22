@@ -18,7 +18,7 @@ original dependency declarations; it is not a claim about deployed versions.
 
 ## Current validation and release status
 
-The modular **0.4.1 candidate is not published**. Distribution uses versioned
+The modular **0.4.2 candidate is not published**. Distribution uses versioned
 GitHub release artifacts from `wess/atlas`, per the repository-only requirement.
 Each selected library is installed from its release asset URL; imports remain
 `@wess/atlas/<package>`. Consumer release manifests are prepared in isolated candidates;
@@ -69,7 +69,7 @@ GitHub release installs pass. No production deployment or rollback has been veri
   downloads, and multipart upload/download integrity. Anonymous access and invalid
   signatures are rejected. The native server archive is SHA-256 checked; CI and
   release workflows now require this gate without depending on Docker.
-- Atlas's full suite passes 669 tests; its five S3 integration cases are additionally
+- Atlas's full suite passes 670 tests; its five S3 integration cases are additionally
   run by the service gate above. Source typechecks, formatting checks, and workflow
   lint pass. Existing lint warnings remain and are not represented as resolved.
 - Cubeplane, Bypath, Pluck, and StandingHere's browser builds pass with the upgraded

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { uploadRelease } from "../release.ts";
+import { tagRevision, uploadRelease } from "../release.ts";
 
 const commit = "a".repeat(40);
 const names = ["catalog.json", "wess-atlas-server-0.4.0.tgz"];
@@ -13,7 +13,8 @@ const fixture = async (options: { draft?: boolean; assets?: string[]; corrupt?: 
   const calls: string[][] = [];
   const command = async (args: string[]): Promise<string | undefined> => {
     calls.push(args);
-    if (args[0] === "api" && args[1]?.includes("/commits/")) return options.revision;
+    if (args[0] === "api" && args[1]?.includes("/git/ref/tags/"))
+      return options.revision ? JSON.stringify({ object: { type: "commit", sha: options.revision } }) : undefined;
     if (args[0] === "api" && args[1]?.includes("/releases/tags/")) {
       return options.draft === undefined
         ? undefined
@@ -96,4 +97,11 @@ test("an incomplete public release cannot gain replacement assets", async () => 
   } finally {
     await f.cleanup();
   }
+});
+
+test("annotated release tags resolve to their commit", async () => {
+  const revision = await tagRevision("v0.4.0", async (args) =>
+    JSON.stringify({ object: { type: args[1]?.includes("/git/ref/") ? "tag" : "commit", sha: commit } }),
+  );
+  expect(revision).toBe(commit);
 });
