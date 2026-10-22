@@ -25,7 +25,7 @@ Isolated 0.4.3 application suites passed; 0.4.4 changes dependency closure and t
 CLI guard, with a new isolated production UI render gate. Inkling's actual 0.4.4
 PostgreSQL suite also passes all 397 cases.
 Original files and lockfiles are retained in the private migration backup recorded
-by the local migration receipt. The 0.4.5 candidate preserves native credential
+by the local migration receipt. The 0.4.6 candidate preserves native credential
 backends and Linux entry names after the keyring upgrade. Old/new macOS credential
 interoperability passed with a disposable test entry; Linux and Windows checks
 must pass before this candidate is released or native clients advance to it.

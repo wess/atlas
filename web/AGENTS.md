@@ -6,7 +6,7 @@ Composable, functional Bun/TypeScript building blocks. No classes, no mutation, 
 
 Consumers import public `@wess/atlas/<module>` entry points. The modular release
 uses a thin facade and separately distributed implementation libraries. After the
-release is published, use `bunx --package https://github.com/wess/atlas/releases/download/v0.4.5/wess-atlas-cli-0.4.5.tgz atlas add server db/postgres db/query`
+release is published, use `bunx --package https://github.com/wess/atlas/releases/download/v0.4.6/wess-atlas-cli-0.4.6.tgz atlas add server db/postgres db/query`
 to record only selected modules and their dependencies. See README.md for release
 status and installation commands. Do not configure aliases into node_modules or
 require a neighboring Atlas checkout.
