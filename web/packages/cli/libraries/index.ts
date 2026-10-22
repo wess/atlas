@@ -46,7 +46,7 @@ export const checkLibraries = async (directory: string): Promise<string[]> => {
   if (!(await lock.exists())) issues.push("bun.lock is required for a reproducible application install");
   else {
     const text = await lock.text();
-    if (/"(?:atlas|@atlas\/[^"\n]+)"\s*:/.test(text)) issues.push("bun.lock retains a legacy Atlas dependency");
+    if (/"(?:atlas|@atlas\/[^"\n]+)"\s*:\s*\[/.test(text)) issues.push("bun.lock retains a legacy Atlas dependency");
     for (const match of text.matchAll(/"(@wess\/atlas(?:-[^"/]+)?)"\s*:\s*\[\s*"([^"\n]+)"/g)) {
       const expected = `${match[1]}@`;
       if (!match[2]!.startsWith(expected) || !releaseVersion(match[1]!, match[2]!.slice(expected.length))) {

@@ -13,12 +13,12 @@ This applies to all inventoried applications and downstream sites, including the
 build scripts, CI configuration, and deployment images.
 
 This inventory reflects local manifests and source imports under `~/Desktop/Dev`.
-Production deployment status has not been verified. The inventory below records
+Production deployment status is partly verified. The inventory below records
 original dependency declarations; it is not a claim about deployed versions.
 
 ## Current validation and release status
 
-The modular **0.4.2 candidate is not published**. Distribution uses versioned
+The modular **0.4.3 candidate is not published**. Distribution uses versioned
 GitHub release artifacts from `wess/atlas`, per the repository-only requirement.
 Each selected library is installed from its release asset URL; imports remain
 `@wess/atlas/<package>`. Consumer release manifests are prepared in isolated candidates;
@@ -157,10 +157,13 @@ applications' APIs need compatibility checks even without direct Atlas imports.
 | 803media | `803media` | 1.15.1 |
 | School | `inkling-site` | 1.22.0 |
 | Warren | `warrenpublishing` | 1.22.0; also directly consumes Atlas 0.3.0 |
-| AAA | source directory missing | unresolved |
+| AAA | retired archive under `~/Desktop/backups/aaa-retired-2026-10-09/` | retired; excluded from rollout |
 
 - [ ] Validate each downstream site against the new Inkling and Atlas releases.
-- [ ] Locate AAA's authoritative source and deployment mapping before fleet completion.
+- [x] Account for AAA before fleet completion: retired on 2026-10-09 per
+  `devops/docs/hosts/gohan.md`; its archive is under `~/Desktop/backups/aaa-retired-2026-10-09/`.
+  On 2026-10-22 its live URL returned HTTP 301 to `https://wess.dev/`, and no AAA
+  container was running on gohan. Retained databases and archives are not rollout targets.
 
 ## Proposed public module layout
 

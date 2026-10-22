@@ -19,10 +19,20 @@ test("library checks accept pinned GitHub releases and reject local paths, alias
     );
     await Bun.write(
       join(root, "bun.lock"),
-      JSON.stringify({ packages: { "@wess/atlas": [`@wess/atlas@${releaseUrl("@wess/atlas", "0.4.0")}`, "", {}] } }),
+      JSON.stringify({
+        packages: {
+          "@wess/atlas": [`@wess/atlas@${releaseUrl("@wess/atlas", "0.4.0")}`, "", {}],
+          "@wess/atlas-cli": [
+            `@wess/atlas-cli@${releaseUrl("@wess/atlas-cli", "0.4.0")}`,
+            { bin: { atlas: "./entry.ts" } },
+          ],
+        },
+      }),
     );
     await Bun.write(join(root, "src/server.ts"), 'import { serve } from "@wess/atlas/server";');
     expect(await checkLibraries(root)).toEqual([]);
+    await Bun.write(join(root, "bun.lock"), '{"packages":{"atlas":["atlas@github:wess/atlas#v0.3.0", {}]}}');
+    expect((await checkLibraries(root)).some((value) => value.includes("legacy Atlas dependency"))).toBe(true);
     await Bun.write(join(root, "bun.lock"), '{"packages":{"@wess/atlas":["@wess/atlas@/tmp/atlas.tgz", {}]}}');
     expect((await checkLibraries(root)).some((value) => value.includes("pinned GitHub release"))).toBe(true);
     await Bun.write(
