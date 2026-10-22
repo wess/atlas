@@ -431,7 +431,7 @@ dependencies = [
 
 [[package]]
 name = "atlas-bridge"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "futures",
  "gpui",
@@ -440,11 +440,11 @@ dependencies = [
 
 [[package]]
 name = "atlas-build"
-version = "0.1.3"
+version = "0.1.4"
 
 [[package]]
 name = "atlas-core"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "chrono",
  "uuid",
@@ -452,7 +452,7 @@ dependencies = [
 
 [[package]]
 name = "atlas-desktop"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "atlas-bridge",
  "atlas-core",
@@ -464,7 +464,7 @@ dependencies = [
 
 [[package]]
 name = "atlas-shell"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "gpui",
  "guise-ui",
@@ -472,7 +472,7 @@ dependencies = [
 
 [[package]]
 name = "atlas-store"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "apple-native-keyring-store",
  "dirs 7.0.0",

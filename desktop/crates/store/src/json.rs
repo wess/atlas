@@ -58,8 +58,10 @@ pub fn write<T: Serialize>(path: &Path, value: &T) -> std::io::Result<()> {
         writer.flush()?;
     }
     tmp.as_file().sync_all()?;
-    // close the handle before replacement so another Windows writer can replace it
-    tmp.into_temp_path().persist(path).map_err(|e| e.error)?;
+    // std handles open destination readers on Windows; tempfile's persist does not
+    let mut tmp = tmp.into_temp_path();
+    std::fs::rename(&tmp, path)?;
+    tmp.disable_cleanup(true);
     Ok(())
 }
 
