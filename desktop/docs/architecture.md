@@ -102,6 +102,12 @@ Secrets go to the keychain, never into the JSON. The values are written as
 single-line JSON because **the macOS keychain hex-encodes a value containing a
 newline**, which silently corrupts it on read.
 
+The native provider is explicit: macOS login Keychain, Windows Credential Manager,
+and Linux kernel keyutils. Linux retains the existing `keyring-rs:<key>@<service>`
+description when dependencies change. Provider entries are built directly, without
+changing another library's process-wide credential store. No credential migration
+or Secret Service dependency is required.
+
 ## The chrome
 
 `atlas-shell` is everything that draws and is not the product:

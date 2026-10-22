@@ -18,14 +18,17 @@ original dependency declarations; it is not a claim about deployed versions.
 
 ## Current validation and release status
 
-The modular **0.4.3 release is published** with all 22 library artifacts and its
-integrity catalog. All 11 direct applications have been migrated in their local
-working trees to GitHub release URLs and canonical imports after isolated
-0.4.3 installs, typechecks, audits, CLI checks, and application tests passed.
+The modular **0.4.4 release is published** with all 22 library artifacts and its
+integrity catalog. All 11 direct applications use it in their local working trees,
+with frozen GitHub installs, typechecks, and the shipped CLI guard passing.
+Isolated 0.4.3 application suites passed; 0.4.4 changes dependency closure and the
+CLI guard, with a new isolated production UI render gate. Inkling's actual 0.4.4
+PostgreSQL suite also passes all 397 cases.
 Original files and lockfiles are retained in the private migration backup recorded
-by the local migration receipt. The 0.4.4 candidate adds explicit required external
-peers for production UI installs and excludes hidden checkouts from source checks;
-it must pass release verification before applications advance to it.
+by the local migration receipt. The 0.4.5 candidate preserves native credential
+backends and Linux entry names after the keyring upgrade. Old/new macOS credential
+interoperability passed with a disposable test entry; Linux and Windows checks
+must pass before this candidate is released or native clients advance to it.
 Distribution stays in `wess/atlas`; no npm token or local Atlas checkout is required.
 Production has only been inspected read-only; no application deployment has changed.
 

@@ -9,12 +9,15 @@
 //! — so every document is written as single-line JSON, and that is asserted
 //! rather than assumed.
 //!
-//! Every operation degrades to `None`/`false` rather than panicking. A machine
-//! with no keychain (a headless Linux box with no secret service running) must
-//! still start the app; it just cannot remember a password.
+//! Every operation degrades to `None`/`false` rather than panicking when the
+//! native store is unavailable. macOS uses the login keychain, Windows uses
+//! Credential Manager, and Linux keeps kernel keyutils and its existing key names.
 
+use keyring_core as keyring;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+
+mod store;
 
 #[derive(Clone, Debug)]
 pub struct Keychain {
@@ -31,7 +34,7 @@ impl Keychain {
     }
 
     fn entry(&self, key: &str) -> Option<keyring::Entry> {
-        match keyring::Entry::new(&self.service, key) {
+        match store::entry(&self.service, key) {
             Ok(entry) => Some(entry),
             Err(e) => {
                 tracing::warn!("keychain unavailable for {key}: {e}");

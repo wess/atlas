@@ -13,7 +13,7 @@ members = [
 exclude = ["templates"]
 
 [workspace.package]
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 license = "MIT"
 authors = ["Wess Cope <opensource@wess.io>"]
@@ -41,7 +41,7 @@ chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4"] }
 dirs = "7.0.0"
 tracing = "0.1"
-keyring = "4.2.0"
+keyring-core = "1.0.1"
 
 # The Atlas crates themselves.
 atlas-core = { version = "0.1.0", path = "crates/core" }
