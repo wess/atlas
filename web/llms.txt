@@ -33,6 +33,7 @@ When generating Atlas code:
 - [oauth](https://wess.io/atlas/docs/oauth/index.md): OAuth 2.1 authorization server.
 - [sso](https://wess.io/atlas/docs/sso/index.md): OIDC relying party.
 - [email](https://wess.io/atlas/docs/email/index.md): Provider-neutral delivery and account templates.
+- [notify](https://wess.io/atlas/docs/notify/index.md): APNs and FCM push delivery with service and subprocess modes.
 - [billing](https://wess.io/atlas/docs/billing/index.md): Stripe checkout, subscription state, customer portal, Connect marketplace payments, and verified webhooks.
 - [share](https://wess.io/atlas/docs/share/index.md): Share URLs and server-side share-by-email.
 - [social](packages/social/AGENTS.md): Visibility, comment review, and photo validation primitives.

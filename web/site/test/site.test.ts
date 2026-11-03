@@ -16,7 +16,7 @@ const outputPath = (url: string): string => {
 
 describe("documentation site", () => {
   test("builds every guide and package reference", async () => {
-    expect(packages).toHaveLength(21);
+    expect(packages).toHaveLength(22);
     for (const doc of docs) expect(await Bun.file(`${dist}/docs/${doc.slug}/index.html`).exists()).toBe(true);
   });
 

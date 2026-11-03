@@ -77,7 +77,7 @@ export async function validateFixtures(artifacts: string, destination: string): 
         for (const library of selection.packages) manifest.dependencies[library] = releaseUrl(library, catalog.version);
         Object.assign(manifest.dependencies, selection.externals);
       }
-      Object.assign(manifest.devDependencies, { "@types/bun": "^1.4.3", typescript: "7.0.2" });
+      Object.assign(manifest.devDependencies, { "@types/bun": "^1.4.4", typescript: "7.0.2" });
       await Bun.write(join(directory, "package.json"), JSON.stringify(manifest, null, 2));
       const config = scaffold
         .generateProject({ name: "example", database: "none", features: [], frontend: false })

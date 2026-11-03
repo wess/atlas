@@ -12,11 +12,11 @@ No framework lock-in. No classes. Just functions and immutable data flowing thro
 
 ## Install
 
-Install the coordinated `0.4.9` libraries from this repository's GitHub release
+Install the coordinated `0.4.10` libraries from this repository's GitHub release
 assets. The release workflow verifies all artifacts before making them available.
 
 ```sh
-bunx --package https://github.com/wess/atlas/releases/download/v0.4.9/wess-atlas-cli-0.4.9.tgz atlas add server config db/query db/postgres
+bunx --package https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-cli-0.4.10.tgz atlas add server config db/query db/postgres
 ```
 
 The installer records exact GitHub release URLs, tested external versions, and the dependency closure for
@@ -72,6 +72,7 @@ fixture verifies that the minimal runtime excludes the CLI and frontend tooling.
 | `@wess/atlas/oauth` | OAuth 2.1 server: PKCE, refresh rotation, device flow, RFC 8414 discovery | none |
 | `@wess/atlas/sso` | OIDC relying-party (Sign in with $IdP): discovery, PKCE, state, code exchange, id_token verify | none |
 | `@wess/atlas/email` | Provider-agnostic transport (Resend) + invite/reset templates | none |
+| `@wess/atlas/notify` | APNs and FCM push delivery, authenticated service, optional subprocess isolation | none |
 | `@wess/atlas/share` | Share-URL builders (socials, messengers, mailto) + server-side share-by-email | none |
 | `@wess/atlas/storage` | S3-compatible object storage with presigned URLs | none |
 | `@wess/atlas/cache` | Redis-backed caching with TTL and cache-aside patterns | none |
@@ -89,7 +90,7 @@ Build a user API with authentication in 60 lines.
 ```bash
 mkdir myapp && cd myapp
 bun init -y
-bunx --package https://github.com/wess/atlas/releases/download/v0.4.9/wess-atlas-cli-0.4.9.tgz atlas add server config db/sqlite db/query migrate auth/flows auth/token
+bunx --package https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-cli-0.4.10.tgz atlas add server config db/sqlite db/query migrate auth/flows auth/token
 ```
 
 The example below uses public `@wess/atlas/<pkg>` exports from the selected libraries.

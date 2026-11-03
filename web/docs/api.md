@@ -255,6 +255,21 @@ layout({ title, body, brand?, footer?, accent? }) → string
 escapeHtml(s) → string                          always wrap untrusted input
 ```
 
+## @wess/atlas/notify
+```
+createConfiguredNotifier({ apns?, fcm?, console? }) → Notifier
+createNotifier(providers) → Notifier
+Notifier: { send(message), sendMany(messages) } → NotifyResult | NotifyResult[]
+NotifyMessage: { to, title?, body, data?, badge?, sound?, imageUrl?, collapseKey?, ttlSeconds?, priority? }
+createApnsProvider({ teamId, keyId, privateKey, topic, production? }) → NotifyProvider
+createFcmProvider({ projectId, clientEmail, privateKey }) → NotifyProvider
+serveNotify({ notifier, token, hostname?, port?, maxBodyBytes? }) → NotifyServer
+createNotifySubprocess({ config, bun? }) → NotifySubprocess
+```
+
+APNs uses token authentication; FCM uses the HTTP v1 API and service-account OAuth. The HTTP service requires a
+bearer token. Subprocess configuration travels over stdin rather than command arguments.
+
 ## @wess/atlas/oauth
 ```
 oauthRoutes(cfg, { basePath?, adminBasePath? }) → Route[]   all OAuth endpoints

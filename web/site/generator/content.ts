@@ -243,6 +243,15 @@ export const packages: readonly PackageDoc[] = [
     y: 84,
   },
   {
+    slug: "notify",
+    title: "@wess/atlas/notify",
+    description: "APNs and FCM push delivery with service and subprocess isolation.",
+    source: "packages/notify/AGENTS.md",
+    group: "service",
+    x: 63,
+    y: 70,
+  },
+  {
     slug: "share",
     title: "@wess/atlas/share",
     description: "Social share URLs and server-side share-by-email.",

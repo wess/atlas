@@ -504,6 +504,7 @@ LLMs can read `packages/db/AGENTS.md` instead of traversing 20+ source files. Th
 | oauth | none |
 | edge | none |
 | email | none |
+| notify | none |
 | share | none |
 | storage | none |
 | cache | none |

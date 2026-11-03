@@ -6,7 +6,7 @@ Composable, functional Bun/TypeScript building blocks. No classes, no mutation, 
 
 Consumers import public `@wess/atlas/<module>` entry points. The modular release
 uses a thin facade and separately distributed implementation libraries. After the
-release is published, use `bunx --package https://github.com/wess/atlas/releases/download/v0.4.9/wess-atlas-cli-0.4.9.tgz atlas add server db/postgres db/query`
+release is published, use `bunx --package https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-cli-0.4.10.tgz atlas add server db/postgres db/query`
 to record only selected modules and their dependencies. See README.md for release
 status and installation commands. Do not configure aliases into node_modules or
 require a neighboring Atlas checkout.
@@ -40,6 +40,7 @@ The source catalog and template dependencies must match the current package vers
 | `@wess/atlas/oauth` | OAuth 2.1 server (PKCE, refresh rotation, device flow, discovery) |
 | `@wess/atlas/sso` | OIDC relying-party (Sign in with $IdP): discovery, PKCE, state, code exchange, id_token verify |
 | `@wess/atlas/email` | Provider-agnostic email transport + invite/reset templates |
+| `@wess/atlas/notify` | APNs/FCM push delivery + optional service or subprocess isolation |
 | `@wess/atlas/billing` | Stripe checkout, customer portal, subscription state, Connect marketplace payments, verified webhooks |
 | `@wess/atlas/share` | Share-URL builders (Twitter/X, FB, LinkedIn, Reddit, WhatsApp, Telegram, SMS, mailto) + server-side share-by-email |
 | `@wess/atlas/social` | Public/private visibility, owner moderation, image signatures, comment text rules |

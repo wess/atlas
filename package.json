@@ -1,7 +1,11 @@
 {
   "name": "@wess/atlas",
   "private": true,
-  "version": "0.4.9",
+  "version": "0.4.10",
+  "packageManager": "bun@1.4.4",
+  "engines": {
+    "bun": ">=1.4.4"
+  },
   "description": "Composable Bun/TypeScript packages for building APIs, full-stack apps, and CLI tools",
   "license": "MIT",
   "repository": {
@@ -47,6 +51,7 @@
     "./email": "./web/packages/email/index.ts",
     "./mcp": "./web/packages/mcp/index.ts",
     "./migrate": "./web/packages/migrate/index.ts",
+    "./notify": "./web/packages/notify/index.ts",
     "./oauth": "./web/packages/oauth/index.ts",
     "./request": "./web/packages/request/index.ts",
     "./request/providers": "./web/packages/request/providers/index.ts",
@@ -85,10 +90,10 @@
     "typescript": ">=7.0.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "lucide-react": "^1.61.0",
-    "@mantine/core": "^9.7.3",
-    "@mantine/hooks": "^9.7.3",
-    "@mantine/form": "^9.7.3",
+    "lucide-react": "^1.67.0",
+    "@mantine/core": "^9.7.4",
+    "@mantine/hooks": "^9.7.4",
+    "@mantine/form": "^9.7.4",
     "@tanstack/react-table": "^9.3.1"
   },
   "peerDependenciesMeta": {

@@ -60,7 +60,7 @@ export async function validateFleet(
     const app = await Bun.file(path).json();
     Object.assign(app.devDependencies, {
       typescript: "7.0.2",
-      "@types/bun": "^1.4.3",
+      "@types/bun": "^1.4.4",
       "@types/react": "^19.3.0",
       "@types/react-dom": "^19.3.0",
     });
