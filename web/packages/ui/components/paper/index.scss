@@ -1,0 +1,32 @@
+@use "../../styles/mixins" as *;
+
+.atlas-paper {
+  background: var(--atlas-surface);
+
+  @each $name, $_ in $radius {
+    &[data-radius="#{$name}"] {
+      border-radius: var(--atlas-radius-#{$name});
+    }
+  }
+
+  &[data-withborder] {
+    border: 1px solid var(--atlas-border);
+  }
+
+  &[data-interactive] {
+    display: block;
+    width: 100%;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 120ms ease;
+
+    &:hover {
+      border-color: var(--atlas-primary);
+    }
+
+    @include focusring;
+  }
+}

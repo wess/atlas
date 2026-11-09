@@ -1,0 +1,11 @@
+.atlas-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--atlas-space-md);
+
+  &[data-grow] > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

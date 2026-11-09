@@ -2,6 +2,8 @@
 
 AI-powered application with chatbot, document RAG, agent tools, and streaming responses.
 
+Screens live at `/app/chat`, `/app/rag`, `/app/agent`, and `/app/documents`.
+
 ## Features
 
 - **Chat** with streaming responses via SSE

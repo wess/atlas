@@ -1,0 +1,91 @@
+@use "sass:map";
+@use "sass:list";
+
+$space: (xs: 0.625rem, sm: 0.75rem, md: 1rem, lg: 1.25rem, xl: 2rem);
+$font: (xs: 0.75rem, sm: 0.875rem, md: 1rem, lg: 1.125rem, xl: 1.375rem);
+$radius: (sm: 4px, md: 6px, lg: 10px);
+$control: (xs: 1.875rem, sm: 2.25rem, md: 2.625rem, lg: 3rem, xl: 3.5rem);
+$tones: (primary, danger, success, accent, neutral);
+
+// nord: https://www.nordtheme.com. its frost and aurora colors miss text contrast on nord's own
+// light surfaces, so the light tones are darkened from the same hues.
+// atlas: the marketing site's ink navy, limestone, cyan and magenta.
+// test/styles.test.ts holds every pairing here to wcag aa.
+$schemes: (
+  nord: (
+    light: (
+      ink: #2e3440, dimmed: #4c566a, surface: #f4f6f9, ground: #eceff4, sunken: #e1e6ee, border: #b6bfce,
+      primary: (#456593, #dde6f1, #ffffff),
+      danger: (#a23f49, #f5e3e5, #ffffff),
+      success: (#4a6a33, #e4eddc, #ffffff),
+      accent: (#7a5375, #eee3ec, #ffffff),
+      neutral: (#4c566a, #dfe4ec, #ffffff),
+    ),
+    dark: (
+      ink: #eceff4, dimmed: #c3cad7, surface: #3b4252, ground: #2e3440, sunken: #434c5e, border: #5a657c,
+      primary: (#88c0d0, #2f4450, #2e3440),
+      danger: (#eba3aa, #4d363e, #2e3440),
+      success: (#a3be8c, #36443a, #2e3440),
+      accent: (#d0adc9, #463a4b, #2e3440),
+      neutral: (#d8dee9, #4c566a, #2e3440),
+    ),
+  ),
+  atlas: (
+    light: (
+      ink: #0b1c31, dimmed: #566676, surface: #ffffff, ground: #faf8f4, sunken: #f2eee7, border: #d8d0c5,
+      primary: (#0b6a8c, #e1eff4, #ffffff),
+      danger: (#b3261e, #fbe9e7, #ffffff),
+      success: (#18713f, #e3f3e9, #ffffff),
+      accent: (#ad1560, #fbe6f0, #ffffff),
+      neutral: (#4d5a68, #ede8e0, #ffffff),
+    ),
+    dark: (
+      ink: #eee5d8, dimmed: #91a9bb, surface: #071426, ground: #000818, sunken: #0b1c31, border: #264b60,
+      primary: (#53c7ee, #0d3147, #000818),
+      danger: (#ff8a80, #3d1a22, #000818),
+      success: (#6fd39a, #0f3329, #000818),
+      accent: (#f0448f, #3a1231, #000818),
+      neutral: (#c3b5a7, #2a3440, #000818),
+    ),
+  ),
+);
+
+@mixin palette($scheme, $mode) {
+  $palette: map.get($schemes, $scheme, $mode);
+  color-scheme: $mode;
+  @each $name in (ink, dimmed, surface, ground, sunken, border) {
+    --atlas-#{$name}: #{map.get($palette, $name)};
+  }
+  @each $tone in $tones {
+    $set: map.get($palette, $tone);
+    --atlas-#{$tone}: #{list.nth($set, 1)};
+    --atlas-#{$tone}-soft: #{list.nth($set, 2)};
+    --atlas-#{$tone}-contrast: #{list.nth($set, 3)};
+  }
+}
+
+:root {
+  @each $name, $value in $space { --atlas-space-#{$name}: #{$value}; }
+  @each $name, $value in $font { --atlas-font-#{$name}: #{$value}; }
+  @each $name, $value in $radius { --atlas-radius-#{$name}: #{$value}; }
+  --atlas-font-body: Optima, Candara, "Segoe UI", system-ui, sans-serif;
+  --atlas-font-mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", monospace;
+}
+
+// an unmarked document is nord following the system, so the sheet works with no provider at all
+@each $scheme, $_ in $schemes {
+  $root: if(sass($scheme == nord): ':root:not([data-atlas-scheme]), :root[data-atlas-scheme="nord"]'; else: ':root[data-atlas-scheme="#{$scheme}"]');
+  #{$root} {
+    @include palette($scheme, light);
+
+    &[data-atlas-mode="dark"] {
+      @include palette($scheme, dark);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      &:not([data-atlas-mode="light"]) {
+        @include palette($scheme, dark);
+      }
+    }
+  }
+}

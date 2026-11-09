@@ -103,20 +103,45 @@ Frontend React SPA in `ui/`:
 | `ui/components/filter.tsx` | `FilterBuilder` | Row-based filter builder |
 | `ui/components/bulkbar.tsx` | `BulkBar` | Bulk action toolbar (appears when rows selected) |
 | `ui/shell.ts` | `adminHtml` | Generates the HTML shell for serving the SPA |
+| `ui/paths.ts` | `parseRoute`, `paths`, `hrefFor` | The screen URLs, in one place |
+| `ui/assets.ts` | `loadAdminAssets`, `bundleAdmin` | Prebuilt browser bundle in a release, built on demand in a source checkout |
 | `ui/entry.tsx` | — | Browser entry point, mounts AdminApp |
 | `ui/index.html` | — | HTML template for Bun HTML imports |
 | `ui/styles.css` | — | Base styles |
 
-The admin SPA is served at `GET {basePath}` and `GET {basePath}/*`. Uses React, Mantine, TanStack Table, and lucide-react.
+The admin SPA is served at `GET {basePath}` and `GET {basePath}/*`, with its bundle at `GET {basePath}/assets/entry.js` and `entry.css`. Screens are real paths through the History API: `{basePath}`, `/query`, `/models/:table`, `/models/:table/new`, `/models/:table/records/:id`. List page, search, sort, and filters live in the query string, and a record's relation tab in `?tab=`, so back, forward, and reload return to the same view. Query builder inputs stay in component state. Serving admin needs no React in the app's dependencies, because releases ship the built bundle. Uses React, `@wess/atlas/ui`, TanStack Table, and lucide-react.
 
 ## Dependencies
 
 - `@wess/atlas/db` — schema, query builder, connection
 - `@wess/atlas/server` — pipe, pipeline, router, json, parseJson
 - `@wess/atlas/auth` — requireAuth (optional, when auth config provided)
-- `@mantine/core`, `@mantine/hooks`, `@mantine/form` — UI components and hooks
+- `@wess/atlas/ui` — UI components, hooks, and the compiled stylesheet
 - `@tanstack/react-table` — table with sorting, selection, pagination
 - `react`, `react-dom` — rendering
 - `lucide-react` — icons
 
-Query payloads accept registered schema fields only, including sort/filter/group fields. Limits default to 100 and must be integers from 1 to 1000. List pages accept positive integer page/limit values, with at most 100 rows. When auth is configured, `auth.authorize(claims)` is required and must explicitly grant administrator access. Missing auth is rejected by default. Tests and local development can opt in with `allowUnauthenticated: true`; production always requires auth. Import browser components from `@wess/atlas/admin/ui`; the server entry point does not load React or Mantine.
+## Signing in
+
+Give `auth` a `login` function and the admin has a sign-in screen at `{basePath}/login`:
+
+```ts
+admin({
+  db,
+  models,
+  auth: {
+    secret,
+    authorize: (claims) => claims.role === "admin",
+    login: async ({ email, password }) => {
+      const user = await db.one(from(users).where((q) => q("email").equals(email)))
+      return user && (await verify(password, user.passwordHash)) ? { userId: user.id, role: user.role } : null
+    },
+  },
+})
+```
+
+`POST`, `GET`, and `DELETE {basePath}/session` sign in, report state, and sign out. A successful login sets a signed `HttpOnly`, `SameSite=Strict` cookie scoped to `basePath`, `Secure` in production, lasting `sessionSeconds` (default 8 hours). Claims must pass `authorize` before a cookie is issued, and again on every request.
+
+Cookie-authenticated writes must carry an `Origin` matching the `Host` header, or one listed in `trustedOrigins` for a proxy that rewrites `Host`. `Authorization: Bearer` keeps working and takes precedence, without the origin check. Attempts are limited to 10 per email per 15 minutes, in memory by default; pass `rateLimit: createDbRateLimit({ db })` when running more than one process. Signing out clears the cookie but cannot revoke the token, so a copied cookie stays valid until it expires. Without `login`, the screen explains that sign-in isn't set up and Bearer tokens still work.
+
+Query payloads accept registered schema fields only, including sort/filter/group fields. Limits default to 100 and must be integers from 1 to 1000. List pages accept positive integer page/limit values, with at most 100 rows. When auth is configured, `auth.authorize(claims)` is required and must explicitly grant administrator access. Missing auth is rejected by default. Tests and local development can opt in with `allowUnauthenticated: true`; production always requires auth. Import browser components from `@wess/atlas/admin/ui`; the server entry point does not load React.

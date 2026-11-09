@@ -1,0 +1,24 @@
+body {
+  margin: 0;
+  background: var(--atlas-ground);
+  color: var(--atlas-ink);
+  font-family: var(--atlas-font-body);
+  font-size: var(--atlas-font-md);
+  line-height: 1.5;
+}
+
+[class*="atlas-"],
+[class*="atlas-"]::before,
+[class*="atlas-"]::after {
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="atlas-"] {
+    transition: none !important;
+  }
+}
+
+.atlas-root {
+  display: contents;
+}

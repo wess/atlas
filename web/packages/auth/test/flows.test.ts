@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { column, connect, defineSchema } from "../../db/index.ts";
-import { createConn, json } from "../../server/index.ts";
-import { requireAuth, signup } from "../flows/index.ts";
+import { type Conn, createConn, json } from "../../server/index.ts";
+import { login, requireAuth, signup } from "../flows/index.ts";
 import * as token from "../token/index.ts";
 
 test("requireAuth adds auth to assigns", async () => {
@@ -84,5 +84,27 @@ test("signup accepts a defineSchema table", async () => {
 
   const row = await db.one<{ email: string }>({ text: "SELECT email FROM users", values: [] });
   expect(row?.email).toBe("a@b.c");
+  await db.close();
+});
+
+test("signup and login give onSuccess the row with its id and without the password hash", async () => {
+  const db = connect({ driver: "sqlite", path: ":memory:" });
+  await db.execute({
+    text: "CREATE TABLE people (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL, password TEXT NOT NULL)",
+    values: [],
+  });
+  const seen: Record<string, unknown>[] = [];
+  const record = (c: Conn, user: Record<string, unknown>) => {
+    seen.push(user);
+    return json(c, 200, user);
+  };
+  const body = { email: "a@b.c", password: "secret-password" };
+  const conn = () => ({ ...createConn(new Request("http://x", { method: "POST" })), body });
+  await signup({ db, table: "people", fields: ["email", "password"], onSuccess: record })(conn());
+  await login({ db, table: "people", identity: "email", password: "password", onSuccess: record })(conn());
+  expect(seen).toEqual([
+    { id: 1, email: "a@b.c" },
+    { id: 1, email: "a@b.c" },
+  ]);
   await db.close();
 });

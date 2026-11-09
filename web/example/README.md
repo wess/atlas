@@ -9,6 +9,10 @@ A lightweight Twitter clone built with Atlas packages.
 - `@atlas/server` — HTTP server with pipes
 - `@atlas/auth` — signup, login, JWT auth
 
+## Routes
+
+`/login`, `/signup`, `/mine`, and `/timeline` are real paths; the server sends the app for all of them.
+
 ## Run
 
 ```bash

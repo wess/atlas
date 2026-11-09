@@ -1,0 +1,51 @@
+.atlas-colormodecontrol {
+  display: inline-flex;
+  margin: 0;
+  border: 1px solid var(--atlas-border);
+  border-radius: var(--atlas-radius-md);
+  background: var(--atlas-surface);
+  padding: 2px;
+
+  legend {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  label {
+    display: inline-flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    border-radius: var(--atlas-radius-sm);
+    color: var(--atlas-dimmed);
+    padding: 0.25rem 0.5rem;
+    font-size: var(--atlas-font-xs);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--atlas-ink);
+    }
+
+    &:has(input:checked) {
+      background: var(--atlas-primary-soft);
+      color: var(--atlas-primary);
+      font-weight: 600;
+    }
+
+    &:has(input:focus-visible) {
+      outline: 2px solid var(--atlas-primary);
+      outline-offset: 1px;
+    }
+  }
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+}

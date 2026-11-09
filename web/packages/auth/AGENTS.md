@@ -33,10 +33,10 @@ the server pipes; `/auth/social` provides social login. `/auth` is the aggregate
 
 - `signup({ db, table, fields, onSuccess })` - Registration pipe; `table` is a name string or a `defineSchema` object
   - Reads body fields, hashes password, inserts into DB
-  - Calls onSuccess with conn and new user record
+  - Calls onSuccess with conn and the new row, without its password
 - `login({ db, table, identity, password, onSuccess })` - Login pipe
   - Looks up user by identity field, verifies password
-  - Calls onSuccess or halts 401
+  - Calls onSuccess with the row, without its password, or halts 401
 - `requireAuth({ secret })` - JWT guard pipe
   - Reads Bearer token from Authorization header
   - Puts decoded payload into `conn.assigns.auth`

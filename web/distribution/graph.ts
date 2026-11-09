@@ -73,6 +73,8 @@ export async function createGraph(config: SourceConfig): Promise<Graph> {
     if (source.jsx) {
       if (!config.versions.react) throw new Error(`Undeclared JSX runtime react in ${file}`);
       edges.push({ name: "react/jsx-runtime", external: "react", start: -1, end: -1 });
+      // nothing imports react-dom in a leaf, but an app cannot mount one without it
+      if (config.versions["react-dom"]) edges.push({ name: "react-dom", external: "react-dom", start: -1, end: -1 });
     }
     graph.set(file, { ...source, edges });
   }

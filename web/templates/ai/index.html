@@ -48,16 +48,16 @@
   <header>
     <h1>{{name}}</h1>
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('chat')">Chat</button>
-      <button class="tab" onclick="switchTab('rag')">RAG</button>
-      <button class="tab" onclick="switchTab('agent')">Agent</button>
-      <button class="tab" onclick="switchTab('documents')">Documents</button>
+      <button class="tab" data-screen="chat" onclick="go('chat')">Chat</button>
+      <button class="tab" data-screen="rag" onclick="go('rag')">RAG</button>
+      <button class="tab" data-screen="agent" onclick="go('agent')">Agent</button>
+      <button class="tab" data-screen="documents" onclick="go('documents')">Documents</button>
     </div>
   </header>
 
   <main>
     <!-- Chat Panel -->
-    <div id="panel-chat" class="panel active">
+    <div id="panel-chat" class="panel">
       <div id="chat-messages" class="messages"></div>
       <div class="input-area">
         <div class="input-row">
@@ -105,13 +105,27 @@
   <script>
     let conversationId = null
 
-    function switchTab(name) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'))
-      document.querySelector(`#panel-${name}`).classList.add('active')
-      event.target.classList.add('active')
-      if (name === 'documents') loadDocuments()
+    const screens = ["chat", "rag", "agent", "documents"]
+
+    function renderRoute() {
+      const name = location.pathname.split("/")[2]
+      const screen = screens.includes(name) ? name : "chat"
+      if (screen !== name) history.replaceState(null, "", "/app/chat")
+      document.querySelectorAll(".tab").forEach((button) => {
+        button.classList.toggle("active", button.dataset.screen === screen)
+      })
+      document.querySelectorAll(".panel").forEach((panel) => {
+        panel.classList.toggle("active", panel.id === "panel-" + screen)
+      })
+      if (screen === "documents") loadDocuments()
     }
+
+    function go(screen) {
+      history.pushState(null, "", "/app/" + screen)
+      renderRoute()
+    }
+
+    window.addEventListener("popstate", renderRoute)
 
     async function sendChat() {
       const input = document.getElementById('chat-input')
@@ -277,6 +291,7 @@
       d.textContent = s
       return d.innerHTML
     }
+    renderRoute()
   </script>
 </body>
 </html>

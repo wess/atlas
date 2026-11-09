@@ -1,0 +1,15 @@
+@use "../../styles/mixins" as *;
+
+.atlas-simplegrid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: var(--atlas-space-md);
+
+  @media (min-width: $sm) {
+    grid-template-columns: repeat(var(--cols-sm), minmax(0, 1fr));
+  }
+
+  @media (min-width: $lg) {
+    grid-template-columns: repeat(var(--cols-lg), minmax(0, 1fr));
+  }
+}

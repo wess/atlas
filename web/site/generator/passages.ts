@@ -491,7 +491,7 @@ import { users, uploads } from "./schema"
 const panel = admin({
   db,
   basePath: "/admin",
-  auth: { secret: config.secret },   // not optional in production
+  auth: { secret: config.secret, authorize: (claims) => claims.role === "admin" },   // not optional in production
   models: [
     model({ schema: users, searchFields: ["email", "name"], filterFields: ["createdAt"] }),
     model({ schema: uploads, searchFields: ["filename"], readOnly: true }),
@@ -565,7 +565,7 @@ const feedRoute = get("/feed", (c) => feed.pipe(c))
     title: "The full-stack app",
     lede: "Pages and forms, which is what most software is, and what most stacks make disproportionately hard.",
     body: [
-      "The server renders and serves; React appears where interaction earns it, not by default. `@atlas/ui` is Mantine blocks — forms, tables, auth pages, navigation — so the parts every app has are already built and the parts that are yours are the ones you write.",
+      "The server renders and serves; React appears where interaction earns it, not by default. `@atlas/ui` is our own components and blocks — forms, tables, auth pages, navigation — so the parts every app has are already built and the parts that are yours are the ones you write.",
       "When someone other than you needs to edit a row, turn to §59 and add the admin. It is configuration over the schemas you already have.",
     ],
     stack: [
@@ -578,25 +578,33 @@ const feedRoute = get("/feed", (c) => feed.pipe(c))
     snippet: {
       file: "src/app.tsx",
       language: "tsx",
-      source: `import { AtlasProvider, AppShell } from "@atlas/ui/provider"
-import { createForm, TextField, SubmitButton } from "@atlas/ui/forms"
-import { createTable, TextColumn, DateColumn } from "@atlas/ui/table"
+      source: `import "@wess/atlas/ui/styles.css"
+import { AtlasProvider, AppShell } from "@wess/atlas/ui/provider"
+import { createForm, TextField, SubmitButton } from "@wess/atlas/ui/forms"
+import { createTable, TextColumn, DateColumn } from "@wess/atlas/ui/table"
 
-const PostForm = createForm({ fields: { title: "", body: "" } })
-const PostTable = createTable([
-  TextColumn("title", "Title"),
-  DateColumn("createdAt", "Published"),
-])
+const usePost = createForm({
+  initial: { title: "" },
+  onSubmit: (values) => post("/posts", values),
+})
+const Posts = createTable({
+  data: posts,
+  columns: [
+    TextColumn({ key: "title", label: "Title" }),
+    DateColumn({ key: "createdAt", label: "Published" }),
+  ],
+})
 
-export default function App({ posts }) {
+export default function App() {
+  const { form, handleSubmit } = usePost()
   return (
     <AtlasProvider>
       <AppShell>
-        <PostForm onSubmit={(values) => post("/posts", values)}>
-          <TextField name="title" label="Title" />
+        <form onSubmit={handleSubmit}>
+          <TextField form={form} name="title" label="Title" />
           <SubmitButton>Publish</SubmitButton>
-        </PostForm>
-        <PostTable rows={posts} />
+        </form>
+        <Posts />
       </AppShell>
     </AtlasProvider>
   )

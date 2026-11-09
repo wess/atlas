@@ -191,7 +191,7 @@ export const packages: readonly PackageDoc[] = [
   {
     slug: "ui",
     title: "@wess/atlas/ui",
-    description: "React and Mantine blocks for forms, tables, auth, and more.",
+    description: "React components and blocks for forms, tables, auth, and more.",
     source: "packages/ui/AGENTS.md",
     group: "interface",
     x: 45,

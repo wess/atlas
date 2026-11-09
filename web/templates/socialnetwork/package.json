@@ -9,19 +9,20 @@
     "migrate:down": "atlas migrate down"
   },
   "dependencies": {
-    "@wess/atlas": "https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-0.4.10.tgz",
-    "@wess/atlas-admin": "https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-admin-0.4.10.tgz",
-    "@wess/atlas-auth": "https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-auth-0.4.10.tgz",
-    "@wess/atlas-db": "https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-db-0.4.10.tgz",
-    "@wess/atlas-server": "https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-server-0.4.10.tgz",
+    "@wess/atlas": "https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-0.5.0.tgz",
+    "@wess/atlas-admin": "https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-admin-0.5.0.tgz",
+    "@wess/atlas-auth": "https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-auth-0.5.0.tgz",
+    "@wess/atlas-security": "https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-security-0.5.0.tgz",
+    "@wess/atlas-db": "https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-db-0.5.0.tgz",
+    "@wess/atlas-server": "https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-server-0.5.0.tgz",
     "zod": "^4.6.7",
-    "@wess/atlas-migrate": "https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-migrate-0.4.10.tgz",
-    "@wess/atlas-storage": "https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-storage-0.4.10.tgz",
-    "@wess/atlas-config": "https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-config-0.4.10.tgz"
+    "@wess/atlas-migrate": "https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-migrate-0.5.0.tgz",
+    "@wess/atlas-storage": "https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-storage-0.5.0.tgz",
+    "@wess/atlas-config": "https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-config-0.5.0.tgz"
   },
   "devDependencies": {
     "@types/bun": "^1.4.4",
     "typescript": "^7.0.2",
-    "@wess/atlas-cli": "https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-cli-0.4.10.tgz"
+    "@wess/atlas-cli": "https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz"
   }
 }

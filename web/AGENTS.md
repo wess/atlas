@@ -6,7 +6,7 @@ Composable, functional Bun/TypeScript building blocks. No classes, no mutation, 
 
 Consumers import public `@wess/atlas/<module>` entry points. The modular release
 uses a thin facade and separately distributed implementation libraries. After the
-release is published, use `bunx --package https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-cli-0.4.10.tgz atlas add server db/postgres db/query`
+release is published, use `bunx --package https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz atlas add server db/postgres db/query`
 to record only selected modules and their dependencies. See README.md for release
 status and installation commands. Do not configure aliases into node_modules or
 require a neighboring Atlas checkout.
@@ -48,7 +48,7 @@ The source catalog and template dependencies must match the current package vers
 | `@wess/atlas/cache` | Redis caching with TTL, cache-aside |
 | `@wess/atlas/request` | HTTP client, retries, interceptors |
 | `@wess/atlas/cli` | CLI framework, Foreman, scaffolding |
-| `@wess/atlas/ui/*` | React + Mantine blocks (provider/forms/table/auth/storage/nav/cache/ai) |
+| `@wess/atlas/ui/*` | React + Sass components: blocks (provider/forms/table/auth/storage/nav/cache/ai), primitives (`components`), behavior (`headless`), builder (`factory`), compiled sheet (`styles.css`) |
 | `@wess/atlas/admin` | Auto-generated CRUD admin from schemas |
 | `@wess/atlas/mcp` | MCP server for AI debugging |
 | `@wess/atlas/ai` | AI providers, chat, embeddings, RAG, agents, streaming |
@@ -62,19 +62,26 @@ Path aliases in `tsconfig.json` resolve `@wess/atlas/*` to source during local d
 - Small focused files, one concern each
 - Immutable data, return new objects
 - Pipes compose via `pipeline()`, `halt()` short-circuits
-- Zero external runtime deps except `zod` (in `@wess/atlas/db`) and React/Mantine (in `@wess/atlas/ui`, `@wess/atlas/admin`) — wrap Bun/Web APIs, not packages
+- Web apps route with real paths through the History API, never `#` routes or in-memory view state
+- Zero external runtime deps except `zod` (in `@wess/atlas/db`) and React (in `@wess/atlas/ui`, `@wess/atlas/admin`) — wrap Bun/Web APIs, not packages
 
 ## Scripts
 
 - `bun test` — run suite (tests live in `packages/*/test/`)
 - `bun run check` — biome lint + format check
 - `bun run tidy` — biome auto-fix (format + lint + organize imports via `biome check --write`)
+- `bun run skills:verify` — typecheck every skill snippet against the source
+- `bun run distribution:catalog` — regenerate `packages/cli/modules/catalog.json` after entry points or dependencies change
 - biome only; no prettier, no eslint
 
 ## Examples & Templates
 
 - `example/` — Chirp, a working Twitter-like demo (auth, posts, follows, likes); `bun run dev`
 - `templates/` — 10 scaffolds: `minimal`, `api`, `edge`, `admin`, `realtime`, `ai`, `fullstack`, `worker`, `socialnetwork`, `cms`
+
+## Skills
+
+`skills/<name>/SKILL.md` — small task instructions for agents, shipped with the CLI (`atlas skills`, `atlas skills install`). Start at `skills/atlas`; they cost less context than the references below. When an export changes, update its skill too.
 
 ## Reference (read in this order)
 

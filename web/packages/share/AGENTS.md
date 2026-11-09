@@ -6,7 +6,7 @@ the major socials (Twitter/X, Facebook, LinkedIn, Reddit), messengers
 send through `@wess/atlas/email`).
 
 The URL builders are pure functions — no DOM, no fetch, no SDKs. Render them in
-React, Mantine, server-side templates, anywhere.
+React, server-side templates, anywhere.
 
 ## Quick start
 

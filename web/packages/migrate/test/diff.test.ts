@@ -224,3 +224,104 @@ test("defaultRaw columns emit DEFAULT in generated DDL", async () => {
 
   await db.close();
 });
+
+test("unique columns get a constraint, and new ones on an existing table get an index", async () => {
+  const db = connect({ driver: "sqlite", path: ":memory:" });
+  const users = defineSchema("users", { id: column.serial().primaryKey(), email: column.text().unique() });
+  const created = await diffPlan(db, [users]);
+  expect(created.up).toContain("email TEXT NOT NULL UNIQUE");
+  await db.execute({ text: created.up, values: [] });
+  await db.execute({ text: "INSERT INTO users (email) VALUES ('a')", values: [] });
+  await expect(db.execute({ text: "INSERT INTO users (email) VALUES ('a')", values: [] })).rejects.toThrow();
+  expect((await diffPlan(db, [users])).ops).toEqual([]);
+
+  const added = defineSchema("users", {
+    id: column.serial().primaryKey(),
+    email: column.text().unique(),
+    handle: column.text().nullable().unique(),
+  });
+  const step = await diffPlan(db, [added]);
+  expect(step.up).toContain("ALTER TABLE users ADD COLUMN handle TEXT;");
+  expect(step.up).toContain("CREATE UNIQUE INDEX users_handle_key ON users (handle);");
+  expect(step.up).not.toContain("handle TEXT UNIQUE");
+  for (const sql of step.up.split("\n")) await db.execute({ text: sql, values: [] });
+  expect((await diffPlan(db, [added])).ops).toEqual([]);
+  for (const sql of step.down.split("\n")) await db.execute({ text: sql, values: [] });
+  expect((await diffPlan(db, [users])).ops).toEqual([]);
+  await db.close();
+});
+
+test("a table migrated before unique was generated gets repaired by an index", async () => {
+  const db = connect({ driver: "sqlite", path: ":memory:" });
+  await db.execute({ text: "CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL)", values: [] });
+  const users = defineSchema("users", { id: column.serial().primaryKey(), email: column.text().unique() });
+  const repair = await diffPlan(db, [users]);
+  expect(repair.ops).toEqual([{ kind: "add_unique", table: "users", column: "email" }]);
+  expect(repair.up).toBe("CREATE UNIQUE INDEX users_email_key ON users (email);");
+  expect(repair.down).toBe("DROP INDEX users_email_key;");
+  await db.execute({ text: repair.up, values: [] });
+  expect((await diffPlan(db, [users])).ops).toEqual([]);
+  await db.close();
+});
+
+test("removing unique from a schema is flagged for review, and composite indexes don't count", async () => {
+  const db = connect({ driver: "sqlite", path: ":memory:" });
+  await db.execute({
+    text: "CREATE TABLE users (id INTEGER PRIMARY KEY, email TEXT NOT NULL UNIQUE, a TEXT NOT NULL, b TEXT NOT NULL)",
+    values: [],
+  });
+  await db.execute({ text: "CREATE UNIQUE INDEX ab ON users (a, b)", values: [] });
+  const users = defineSchema("users", {
+    id: column.serial().primaryKey(),
+    email: column.text(),
+    a: column.text(),
+    b: column.text(),
+  });
+  const result = await diffPlan(db, [users]);
+  expect(result.ops).toHaveLength(1);
+  expect(result.up).toContain("-- ALTER users.email (unique true → false)");
+  await db.close();
+});
+
+test(".default(value) is written as a safe sql literal and applied by the database", async () => {
+  const db = connect({ driver: "sqlite", path: ":memory:" });
+  const items = defineSchema("items", {
+    id: column.serial().primaryKey(),
+    active: column.boolean().default(true),
+    hidden: column.boolean().default(false),
+    count: column.integer().default(3),
+    label: column.text().default("it's"),
+    meta: column.json<{ a: number }>().default({ a: 1 }),
+    note: column.text().nullable(),
+  });
+  const result = await diffPlan(db, [items]);
+  expect(result.up).toContain("active INTEGER NOT NULL DEFAULT TRUE");
+  expect(result.up).toContain("label TEXT NOT NULL DEFAULT 'it''s'");
+  expect(result.up).toContain(`meta TEXT NOT NULL DEFAULT '{"a":1}'`);
+  await db.execute({ text: result.up, values: [] });
+  await db.execute({ text: "INSERT INTO items DEFAULT VALUES", values: [] });
+  expect(await db.one({ text: "SELECT active, hidden, count, label, meta, note FROM items", values: [] })).toEqual({
+    active: 1,
+    hidden: 0,
+    count: 3,
+    label: "it's",
+    meta: '{"a":1}',
+    note: null,
+  });
+  await db.close();
+});
+
+test("sqlite booleans and other stored-alike types settle into a no-op after migrating", async () => {
+  const db = connect({ driver: "sqlite", path: ":memory:" });
+  const items = defineSchema("items", {
+    id: column.serial().primaryKey(),
+    active: column.boolean(),
+    big: column.bigint(),
+    meta: column.json(),
+    key: column.uuid(),
+    at: column.timestamp(),
+  });
+  await db.execute({ text: (await diffPlan(db, [items])).up, values: [] });
+  expect((await diffPlan(db, [items])).ops).toEqual([]);
+  await db.close();
+});

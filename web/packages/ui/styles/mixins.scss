@@ -1,0 +1,55 @@
+@use "tokens";
+
+@forward "tokens";
+
+$sm: 48em;
+$lg: 75em;
+
+@mixin focusring {
+  &:focus-visible {
+    outline: 2px solid var(--atlas-primary);
+    outline-offset: 2px;
+  }
+}
+
+// components read --tone*; data-color swaps the set without another selector per variant
+@mixin toned($default: primary) {
+  --tone: var(--atlas-#{$default});
+  --tone-soft: var(--atlas-#{$default}-soft);
+  --tone-contrast: var(--atlas-#{$default}-contrast);
+
+  @each $name in tokens.$tones {
+    &[data-color="#{$name}"] {
+      --tone: var(--atlas-#{$name});
+      --tone-soft: var(--atlas-#{$name}-soft);
+      --tone-contrast: var(--atlas-#{$name}-contrast);
+    }
+  }
+}
+
+@mixin toneVariants {
+  background: var(--tone);
+  color: var(--tone-contrast);
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--tone) 86%, black);
+  }
+
+  &[data-variant="light"] {
+    background: var(--tone-soft);
+    color: var(--tone);
+
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--tone-soft) 90%, var(--tone));
+    }
+  }
+
+  &[data-variant="subtle"] {
+    background: transparent;
+    color: var(--tone);
+
+    &:hover:not(:disabled) {
+      background: var(--tone-soft);
+    }
+  }
+}

@@ -10,13 +10,17 @@ Atlas is an à la carte set of functional, minimal-dependency packages that snap
 
 No framework lock-in. No classes. Just functions and immutable data flowing through pipes.
 
+## Agents
+
+`skills/` holds small, task-focused instructions for coding agents, so they can build with Atlas without loading the full docs. Run `atlas skills install` to copy them into `.claude/skills`, or pass `--dir` for another tool. See [skills/README.md](skills/README.md).
+
 ## Install
 
-Install the coordinated `0.4.10` libraries from this repository's GitHub release
+Install the coordinated `0.5.0` libraries from this repository's GitHub release
 assets. The release workflow verifies all artifacts before making them available.
 
 ```sh
-bunx --package https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-cli-0.4.10.tgz atlas add server config db/query db/postgres
+bunx --package https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz atlas add server config db/query db/postgres
 ```
 
 The installer records exact GitHub release URLs, tested external versions, and the dependency closure for
@@ -78,8 +82,8 @@ fixture verifies that the minimal runtime excludes the CLI and frontend tooling.
 | `@wess/atlas/cache` | Redis-backed caching with TTL and cache-aside patterns | none |
 | `@wess/atlas/request` | HTTP client with retries, interceptors, provider configs | none |
 | `@wess/atlas/cli` | CLI framework and Foreman process manager | none |
-| `@wess/atlas/ui` | React + Mantine frontend blocks (forms, tables, auth UI) | `react`, `@mantine/*`, `@tanstack/*` |
-| `@wess/atlas/admin` | Django-style auto-generated admin panel | `react`, `@mantine/*`, `@tanstack/*` |
+| `@wess/atlas/ui` | React components and blocks (forms, tables, auth UI) with Nord and Atlas color schemes | `react`, `react-dom`, `lucide-react`, `@tanstack/*` |
+| `@wess/atlas/admin` | Django-style auto-generated admin panel | `react`, `react-dom`, `lucide-react`, `@tanstack/*` |
 | `@wess/atlas/mcp` | MCP server for AI/LLM debugging and introspection | none |
 | `@wess/atlas/ai` | AI providers, chat, embeddings, RAG, agents, streaming | none |
 
@@ -90,7 +94,7 @@ Build a user API with authentication in 60 lines.
 ```bash
 mkdir myapp && cd myapp
 bun init -y
-bunx --package https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-cli-0.4.10.tgz atlas add server config db/sqlite db/query migrate auth/flows auth/token
+bunx --package https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz atlas add server config db/sqlite db/query migrate auth/flows auth/token
 ```
 
 The example below uses public `@wess/atlas/<pkg>` exports from the selected libraries.

@@ -11,6 +11,8 @@ atlas migrate up
 bun run server.ts
 ```
 
+Screens live at `/app/feed` and `/app/profile`.
+
 ## API Endpoints
 
 ### Auth
@@ -48,6 +50,8 @@ bun run server.ts
 
 An auto-generated admin panel (from `@wess/atlas/admin`) is mounted at `/admin`,
 covering all tables. It uses the same JWT secret as the API.
+
+Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` to sign in at `/admin/login`.
 
 ## WebSocket
 

@@ -102,7 +102,9 @@ migrate.diff(db, schemas, { name?, dir? }) → DiffWriteResult
                                      introspect live DB, write a new migration
                                      folder with up/down SQL — { noop: true }
                                      when in sync. Type/nullability mismatches
-                                     emit `-- ALTER` comments for review.
+                                     emit `-- ALTER` comments for review. .unique()
+                                     and .default() are written; a unique column
+                                     on an existing table becomes CREATE UNIQUE INDEX.
 ```
 
 ## @wess/atlas/server
@@ -197,8 +199,8 @@ verify(password, hashed) → Promise<bool>
 token.sign(payload, secret, opts?) → Promise<string>   opts: { expiresIn: seconds }
 token.verify(jwt, secret) → Promise<TokenPayload>
 createMemoryStore({ ttl?, maxEntries? }) → SessionStore dev/testing session store; ttl seconds expires entries
-signup({ db, table, fields, onSuccess }) → PipeFn
-login({ db, table, identity, password, onSuccess }) → PipeFn
+signup({ db, table, fields, onSuccess }) → PipeFn      onSuccess gets the new row without its password
+login({ db, table, identity, password, onSuccess }) → PipeFn  same; the password column must be named as given
 requireAuth({ secret }) → PipeFn           reads Bearer token, sets conn.assigns.auth
 passwordReset({ db, table, secret, transport, expiresIn? }) → PipeFn
 ```
@@ -368,25 +370,39 @@ CLI surface:
   atlas dev                             foreman → Procfile
   atlas mcp                             start MCP server
   atlas docs [<pkg>|<doc>|<root>]      print canonical documentation to stdout
+  atlas skills [<name>]                list or print agent skills
+  atlas skills install [names] [-d dir]  copy skills into a project (default .claude/skills)
 ```
 
 ## @wess/atlas/ui
 ```
-@wess/atlas/ui/provider:  AtlasProvider, AppShell
-@wess/atlas/ui/forms:     createForm, TextField, SelectField, SubmitButton
-@wess/atlas/ui/table:     createTable, TextColumn, DateColumn, ActionColumn
-@wess/atlas/ui/auth:      LoginPage, SignupPage, ResetPasswordPage
-@wess/atlas/ui/storage:   FileUpload, ImagePreview
-@wess/atlas/ui/nav:       Sidebar, NavLink, Breadcrumb
-@wess/atlas/ui/cache:     CacheInspector, CacheStatus
-@wess/atlas/ui/ai:        ChatWindow, MessageBubble, PromptInput, AiSearch, GenerateButton
+@wess/atlas/ui/styles.css  compiled stylesheet; import once
+@wess/atlas/ui/components  ActionIcon Alert Anchor AppShell Badge Breadcrumbs Button Checkbox Code Collapse
+                           ColorModeControl Divider Group Loader MultiSelect NavLink NumberInput Pagination Paper
+                           PasswordInput ScrollArea Select SimpleGrid Stack Table Tabs Text Textarea TextInput Title
+@wess/atlas/ui/headless    useLocation navigate isPlainClick useColorMode ColorModeProvider useTabs useListbox colorModeScript
+                           useForm useField useDisclosure useControllable useDebounced pageRange normalizeOptions
+@wess/atlas/ui/factory     component({ name, element?, variants?, defaults? }) compound(root, parts)
+                           createField(kind, (control, props) => node) colors sizes cx splitSystem
+@wess/atlas/ui/provider    AtlasProvider({ theme?, defaultMode?, defaultScheme? }) AppShell({ nav?, header? })
+@wess/atlas/ui/forms       createForm({ initial?, schema?, onSubmit }) TextField SelectField SubmitButton
+@wess/atlas/ui/table       createTable TextColumn DateColumn ActionColumn
+@wess/atlas/ui/auth        LoginPage SignupPage ResetPasswordPage
+@wess/atlas/ui/storage     FileUpload ImagePreview
+@wess/atlas/ui/nav         Sidebar NavLink Breadcrumb
+@wess/atlas/ui/cache       CacheInspector CacheStatus
+@wess/atlas/ui/ai          ChatWindow MessageBubble PromptInput AiSearch GenerateButton
 ```
+`color` props take tones: `primary`, `danger`, `success`, `accent`, `neutral`. Schemes are `nord` (default) and `atlas`; modes are `light`, `dark`, and `system` (default). Navigation uses real paths through the History API, never `#` routes or view state. Sass is a repository dev dependency; releases ship compiled CSS. See `packages/ui/AGENTS.md`.
 
 ## @wess/atlas/admin
 ```
-admin({ db, models, basePath?, auth? }) → { mount, routes }
+admin({ db, models, basePath?, auth?, allowUnauthenticated? }) → { mount, routes }
+  auth: { secret, authorize(claims), login?({ email, password }) → claims | null, sessionSeconds?, rateLimit?, trustedOrigins? }
 model({ schema, listFields?, searchFields?, filterFields?, relations?, actions?, bulkActions?, readOnly? }) → ModelConfig
-Components: AdminApp, AdminSidebar, Dashboard, ModelList, Detail, Create, FilterBuilder, QueryBuilder, BulkBar
+@wess/atlas/admin/ui: AdminApp AdminSidebar Dashboard ModelList Detail Create FilterBuilder QueryBuilder BulkBar
+Screens: {base} {base}/login {base}/query {base}/models/:table {base}/models/:table/new {base}/models/:table/records/:id
+Server: {base}/api/* {base}/session (POST sign in, GET state, DELETE sign out) {base}/assets/entry.js|entry.css
 ```
 
 ## @wess/atlas/mcp
@@ -427,7 +443,7 @@ withAi(provider) → PipeFn                  adds ai to conn.assigns
 
 ## Dependency baseline
 
-Atlas 0.4 uses Zod 4, React 19.3, Mantine 9, and TanStack Table 9.
+Atlas 0.5 uses Zod 4, React 19.3, and TanStack Table 9.
 Table column helpers return TanStack v9 column definitions. Pass object or array
 rows to `createTable`; its search, sorting, and pagination options are unchanged.
 
@@ -445,4 +461,4 @@ after success, failure, or cancellation. Keys preserve reserved characters and U
 dot path segments are rejected. `/storage/signing#signRequest` accepts a precomputed
 `payloadHash` when signing a body hashed by the caller.
 
-Admin auth requires `{ secret, authorize: claims => boolean | Promise<boolean> }`; authenticated users without permission receive 403. Anonymous admin configuration requires explicit `allowUnauthenticated: true` for local development and is rejected in production. Browser admin components are exported from `@wess/atlas/admin/ui`, keeping UI dependencies out of server startup. CMS administrator registration requires the generated `ADMIN_SETUP_SECRET` via `X-Setup-Token`.
+Admin auth requires `{ secret, authorize: claims => boolean | Promise<boolean> }`; authenticated users without permission receive 403. Add `login` to enable the sign-in screen, which issues an `HttpOnly`, `SameSite=Strict` session cookie; cookie writes must be same-origin and attempts are limited to 10 per email per 15 minutes (`rateLimit` shares the count across processes). The browser bundle ships prebuilt, so serving admin needs no React in the application. Anonymous admin configuration requires explicit `allowUnauthenticated: true` for local development and is rejected in production. Browser admin components are exported from `@wess/atlas/admin/ui`, keeping UI dependencies out of server startup. CMS administrator registration requires the generated `ADMIN_SETUP_SECRET` via `X-Setup-Token`.

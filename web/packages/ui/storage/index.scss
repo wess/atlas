@@ -1,0 +1,13 @@
+.atlas-preview__image {
+  display: block;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.atlas-preview__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  color: var(--atlas-dimmed);
+}

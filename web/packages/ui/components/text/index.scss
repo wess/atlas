@@ -1,0 +1,21 @@
+@use "../../styles/mixins" as *;
+
+.atlas-text {
+  margin: 0;
+
+  @each $name, $_ in $font {
+    &[data-size="#{$name}"] {
+      font-size: var(--atlas-font-#{$name});
+    }
+  }
+
+  &[data-c="dimmed"] {
+    color: var(--atlas-dimmed);
+  }
+
+  &[data-truncate] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

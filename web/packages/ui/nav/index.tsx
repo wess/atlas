@@ -1,5 +1,5 @@
-import { Anchor, Breadcrumbs, NavLink as MantineNavLink, Stack } from "@mantine/core";
 import type React from "react";
+import { Anchor, Breadcrumbs, NavLink as NavLinkBase, Stack } from "../components/index.tsx";
 
 export { FileText, Home, LayoutDashboard, Settings, Users } from "lucide-react";
 
@@ -12,7 +12,7 @@ export type NavLinkProps = {
 };
 
 export const NavLink = ({ to, label, icon, active, onClick }: NavLinkProps) => (
-  <MantineNavLink href={to} label={label} leftSection={icon} active={active} onClick={onClick} />
+  <NavLinkBase href={to} label={label} leftSection={icon} active={active} onClick={onClick} />
 );
 
 export type SidebarProps = {

@@ -98,6 +98,7 @@ export const generatePackageJson = (answers: Answers): string => {
   if (answers.database !== "none") modules.push("db/query", `db/${answers.database}`, "migrate");
   const features = answers.features as string[];
   if (features.includes("auth") || features.includes("admin")) modules.push("auth/flows");
+  if (features.includes("admin")) modules.push("auth/password");
   for (const name of ["storage", "cache", "admin", "email", "share", "ai"]) {
     if (features.includes(name)) modules.push(name);
   }
@@ -159,6 +160,9 @@ export const generateEnv = (answers: Answers): string => {
   }
   if (features.includes("auth") || features.includes("admin")) {
     lines.push(`AUTH_SECRET=${Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("hex")}`);
+  }
+  if (features.includes("admin")) {
+    lines.push(`# Sign-in for the admin panel. It stays off until both are set.`, `ADMIN_EMAIL=`, `ADMIN_PASSWORD=`);
   }
   if (features.includes("social")) {
     lines.push(`OAUTH_STATE_SECRET=${Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("hex")}`);
@@ -228,9 +232,19 @@ export const generateServerTs = (answers: Answers): string => {
     setup.push(`const cache = createCache({ url: config.redisUrl })`);
   }
   if (features.includes("admin")) {
-    imports.push(`import { admin, model } from "@wess/atlas/admin"`, `import { users } from "./src/schema.ts"`);
+    imports.push(
+      `import { admin, model } from "@wess/atlas/admin"`,
+      `import { hash, verify } from "@wess/atlas/auth/password"`,
+      `import { users } from "./src/schema.ts"`,
+    );
+    config.push(
+      `adminEmail: env("ADMIN_EMAIL", { default: "" })`,
+      `adminPassword: env("ADMIN_PASSWORD", { default: "" })`,
+    );
     setup.push(
-      `const panel = admin({ db, models: [model({ schema: users })], auth: { secret: config.secret, authorize: claims => claims.role === "admin" } })`,
+      `// set ADMIN_EMAIL and ADMIN_PASSWORD to turn on the sign-in screen at /admin/login`,
+      `const adminPassword = config.adminEmail && config.adminPassword ? await hash(config.adminPassword) : null`,
+      `const panel = admin({ db, models: [model({ schema: users })], auth: { secret: config.secret, authorize: claims => claims.role === "admin", login: adminPassword ? async ({ email, password }) => (email === config.adminEmail && (await verify(password, adminPassword)) ? { role: "admin" } : null) : undefined } })`,
     );
     routes.push(`...panel.routes`);
   }

@@ -4,6 +4,7 @@ import {
   Group,
   NumberInput,
   Paper,
+  ScrollArea,
   Stack,
   Table,
   Tabs,
@@ -11,9 +12,12 @@ import {
   Textarea,
   TextInput,
   Title,
-} from "@mantine/core";
+} from "@atlas/ui/components";
+import { navigate, useLocation } from "@atlas/ui/headless";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { adminFetch } from "./api.ts";
+import { paths } from "./paths.ts";
 
 type SchemaColumn = {
   name: string;
@@ -96,17 +100,19 @@ export const Detail = ({ table, id, schema, basePath, onNavigate }: DetailProps)
   const [record, setRecord] = useState<Record<string, unknown>>({});
   const [relations, setRelations] = useState<Record<string, Record<string, unknown>[]>>({});
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const tab = new URLSearchParams(location.search).get("tab") ?? "details";
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch(`${basePath}/api/${table}/${id}`);
+      const res = await adminFetch(`${basePath}/api/${table}/${id}`);
       const body = await res.json();
       setRecord(body.data ?? {});
       setLoading(false);
 
       if (schema.relations) {
         for (const rel of schema.relations) {
-          const rres = await fetch(`${basePath}/api/${table}/${id}/relations/${rel.table}`);
+          const rres = await adminFetch(`${basePath}/api/${table}/${id}/relations/${rel.table}`);
           const rbody = await rres.json();
           setRelations((prev) => ({ ...prev, [rel.table]: rbody.data ?? [] }));
         }
@@ -124,7 +130,7 @@ export const Detail = ({ table, id, schema, basePath, onNavigate }: DetailProps)
     const primaryCol = schema.columns.find((c) => c.primary);
     if (primaryCol) delete payload[primaryCol.name];
 
-    await fetch(`${basePath}/api/${table}/${id}`, {
+    await adminFetch(`${basePath}/api/${table}/${id}`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
@@ -132,8 +138,8 @@ export const Detail = ({ table, id, schema, basePath, onNavigate }: DetailProps)
   };
 
   const handleDelete = async () => {
-    await fetch(`${basePath}/api/${table}/${id}`, { method: "DELETE" });
-    onNavigate(`list/${table}`);
+    await adminFetch(`${basePath}/api/${table}/${id}`, { method: "DELETE" });
+    onNavigate(paths.list(table));
   };
 
   if (loading) return <Text>Loading...</Text>;
@@ -143,7 +149,7 @@ export const Detail = ({ table, id, schema, basePath, onNavigate }: DetailProps)
   return (
     <div>
       <Group mb="md">
-        <Button variant="subtle" leftSection={<ArrowLeft size={16} />} onClick={() => onNavigate(`list/${table}`)}>
+        <Button variant="subtle" leftSection={<ArrowLeft size={16} />} onClick={() => onNavigate(paths.list(table))}>
           Back
         </Button>
         <Title order={2} tt="capitalize">
@@ -151,7 +157,14 @@ export const Detail = ({ table, id, schema, basePath, onNavigate }: DetailProps)
         </Title>
       </Group>
 
-      <Tabs defaultValue="details">
+      <Tabs
+        value={tab}
+        onChange={(next) =>
+          navigate(
+            next === "details" ? location.pathname : `${location.pathname}?tab=${encodeURIComponent(next ?? "")}`,
+          )
+        }
+      >
         <Tabs.List>
           <Tabs.Tab value="details">Details</Tabs.Tab>
           {schema.relations?.map((rel) => (
@@ -170,7 +183,7 @@ export const Detail = ({ table, id, schema, basePath, onNavigate }: DetailProps)
                   <Button leftSection={<Save size={16} />} onClick={handleSave}>
                     Save
                   </Button>
-                  <Button color="red" variant="light" leftSection={<Trash2 size={16} />} onClick={handleDelete}>
+                  <Button color="danger" variant="light" leftSection={<Trash2 size={16} />} onClick={handleDelete}>
                     Delete
                   </Button>
                 </Group>
@@ -182,23 +195,25 @@ export const Detail = ({ table, id, schema, basePath, onNavigate }: DetailProps)
         {schema.relations?.map((rel) => (
           <Tabs.Panel key={rel.table} value={rel.table} pt="md">
             <Paper p="md" withBorder>
-              <Table striped>
-                <Table.Thead>
-                  <Table.Tr>
-                    {relations[rel.table]?.[0] &&
-                      Object.keys(relations[rel.table]![0]!).map((k) => <Table.Th key={k}>{k}</Table.Th>)}
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {(relations[rel.table] ?? []).map((row) => (
-                    <Table.Tr key={String((row as Record<string, unknown>).id ?? JSON.stringify(row))}>
-                      {Object.entries(row).map(([k, v]) => (
-                        <Table.Td key={k}>{String(v)}</Table.Td>
-                      ))}
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
+              <ScrollArea>
+                <Table striped>
+                  <thead>
+                    <tr>
+                      {relations[rel.table]?.[0] &&
+                        Object.keys(relations[rel.table]![0]!).map((k) => <th key={k}>{k}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(relations[rel.table] ?? []).map((row) => (
+                      <tr key={String((row as Record<string, unknown>).id ?? JSON.stringify(row))}>
+                        {Object.entries(row).map(([k, v]) => (
+                          <td key={k}>{String(v)}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </ScrollArea>
             </Paper>
           </Tabs.Panel>
         ))}

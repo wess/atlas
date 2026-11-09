@@ -24,7 +24,7 @@
   <div id="notifications"></div>
   <div id="room">
     <label>Room:</label>
-    <input id="roomInput" value="general" />
+    <input id="roomInput" />
     <button onclick="joinRoom()">Join</button>
     <span id="status" style="margin-left:auto; color: #999;">disconnected</span>
   </div>
@@ -35,11 +35,12 @@
   </div>
   <script>
     let ws
-    let room = "general"
+    const roomFromUrl = () => decodeURIComponent(location.pathname.split("/")[2] ?? "") || "general"
+    let room = roomFromUrl()
     const userId = Math.random().toString(36).slice(2, 8)
 
     const connect = () => {
-      ws = new WebSocket(`ws://${location.host}/ws`)
+      ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`)
       ws.onopen = () => {
         document.getElementById("status").textContent = "connected"
         ws.send(JSON.stringify({ channel: "chat", event: "join", payload: { room, user: userId } }))
@@ -62,12 +63,23 @@
       }
     }
 
-    const joinRoom = () => {
-      room = document.getElementById("roomInput").value || "general"
+    const enterRoom = () => {
+      room = roomFromUrl()
+      document.getElementById("roomInput").value = room
       document.getElementById("messages").innerHTML = ""
+      // without this the old socket's close handler opens a second connection
+      if (ws) ws.onclose = null
       ws?.close()
       connect()
     }
+
+    const joinRoom = () => {
+      const name = document.getElementById("roomInput").value || "general"
+      history.pushState(null, "", "/rooms/" + encodeURIComponent(name))
+      enterRoom()
+    }
+
+    window.addEventListener("popstate", enterRoom)
 
     const addMessage = (user, text, self) => {
       const el = document.createElement("div")
@@ -87,7 +99,8 @@
       setTimeout(() => el.remove(), 3500)
     })
 
-    connect()
+    if (!location.pathname.startsWith("/rooms/")) history.replaceState(null, "", "/rooms/general")
+    enterRoom()
   </script>
 </body>
 </html>

@@ -1,0 +1,62 @@
+$sizes: (xs: 0.875rem, sm: 1.125rem, md: 1.5rem, lg: 2rem, xl: 2.5rem);
+
+@keyframes atlas-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes atlas-fade {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.atlas-loader {
+  display: inline-block;
+  flex: none;
+  color: var(--atlas-primary);
+
+  @each $name, $size in $sizes {
+    &[data-size="#{$name}"] {
+      --loader: #{$size};
+    }
+  }
+
+  &[data-type="ring"] {
+    width: var(--loader);
+    height: var(--loader);
+    border: 2px solid currentcolor;
+    border-inline-end-color: transparent;
+    border-radius: 50%;
+    animation: atlas-spin 800ms linear infinite;
+  }
+
+  &[data-type="dots"] {
+    display: inline-flex;
+    gap: 3px;
+
+    i {
+      width: calc(var(--loader) / 3);
+      height: calc(var(--loader) / 3);
+      border-radius: 50%;
+      background: currentcolor;
+      animation: atlas-fade 900ms ease-in-out infinite;
+
+      &:nth-child(2) {
+        animation-delay: 150ms;
+      }
+
+      &:nth-child(3) {
+        animation-delay: 300ms;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &,
+    i {
+      animation-duration: 2400ms !important;
+    }
+  }
+}

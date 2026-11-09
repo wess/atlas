@@ -1,28 +1,42 @@
-import { AppShell as MantineAppShell, MantineProvider, type MantineThemeOverride } from "@mantine/core";
-import type React from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { AppShell as Shell } from "../components/appshell/index.tsx";
+import { type ColorMode, ColorModeProvider, type ColorScheme } from "../headless/colormode.tsx";
+
+// keys are token names from styles/tokens.scss without the --atlas- prefix, e.g. "primary" or "radius-md"
+export type Theme = Record<string, string>;
 
 export type AtlasProviderProps = {
-  theme?: MantineThemeOverride;
-  children: React.ReactNode;
+  theme?: Theme;
+  defaultMode?: ColorMode;
+  defaultScheme?: ColorScheme;
+  children: ReactNode;
 };
 
-export const AtlasProvider = ({ theme, children }: AtlasProviderProps) => (
-  <MantineProvider theme={theme}>{children}</MantineProvider>
+const themeVars = (theme: Theme) =>
+  Object.fromEntries(Object.entries(theme).map(([token, value]) => [`--atlas-${token}`, value])) as CSSProperties;
+
+export const AtlasProvider = ({ theme, defaultMode, defaultScheme, children }: AtlasProviderProps) => (
+  <ColorModeProvider defaultMode={defaultMode} defaultScheme={defaultScheme}>
+    {theme ? (
+      <div className="atlas-root" style={themeVars(theme)}>
+        {children}
+      </div>
+    ) : (
+      children
+    )}
+  </ColorModeProvider>
 );
 
 export type AppShellProps = {
-  nav?: React.ReactNode;
-  header?: React.ReactNode;
-  children: React.ReactNode;
+  nav?: ReactNode;
+  header?: ReactNode;
+  children: ReactNode;
 };
 
 export const AppShell = ({ nav, header, children }: AppShellProps) => (
-  <MantineAppShell
-    navbar={nav ? { width: 250, breakpoint: "sm" } : undefined}
-    header={header ? { height: 60 } : undefined}
-  >
-    {header && <MantineAppShell.Header>{header}</MantineAppShell.Header>}
-    {nav && <MantineAppShell.Navbar>{nav}</MantineAppShell.Navbar>}
-    <MantineAppShell.Main>{children}</MantineAppShell.Main>
-  </MantineAppShell>
+  <Shell>
+    {header && <Shell.Header>{header}</Shell.Header>}
+    {nav && <Shell.Navbar>{nav}</Shell.Navbar>}
+    <Shell.Main>{children}</Shell.Main>
+  </Shell>
 );

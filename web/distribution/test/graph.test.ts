@@ -121,34 +121,34 @@ test("required external peers are explicit, compatible, and pinned to tested ver
   const root = await fixture();
   const manifest = await Bun.file(join(root, "package.json")).json();
   Object.assign(manifest.peerDependencies, {
-    "@mantine/core": "^9.0.0",
-    "@mantine/hooks": "^9.0.0",
+    "@example/core": "^9.0.0",
+    "@example/hooks": "^9.0.0",
     "react-dom": "^19.0.0",
   });
   await Bun.write(join(root, "package.json"), JSON.stringify(manifest));
   const core = {
-    name: "@mantine/core",
+    name: "@example/core",
     version: "9.0.0",
-    peerDependencies: { "@mantine/hooks": "9.0.0", react: "^19.0.0", "react-dom": "^19.0.0", unused: "*" },
+    peerDependencies: { "@example/hooks": "9.0.0", react: "^19.0.0", "react-dom": "^19.0.0", unused: "*" },
     peerDependenciesMeta: { unused: { optional: true } },
   };
-  await Bun.write(join(root, "node_modules/@mantine/core/package.json"), JSON.stringify(core));
+  await Bun.write(join(root, "node_modules/@example/core/package.json"), JSON.stringify(core));
   for (const [name, version] of [
-    ["@mantine/hooks", "9.0.0"],
+    ["@example/hooks", "9.0.0"],
     ["react-dom", "19.0.0"],
   ])
     await Bun.write(join(root, "node_modules", name!, "package.json"), JSON.stringify({ name, version }));
-  await Bun.write(join(root, "packages/ui/block/index.tsx"), 'export { MantineProvider } from "@mantine/core";');
+  await Bun.write(join(root, "packages/ui/block/index.tsx"), 'export { Provider } from "@example/core";');
   const config = await readConfig(root);
   const graph = await createGraph(config);
   expect(selectEntrypoints(config, graph, [config.entries["./ui/block"]!]).externals).toEqual({
-    "@mantine/core": "9.0.0",
-    "@mantine/hooks": "9.0.0",
+    "@example/core": "9.0.0",
+    "@example/hooks": "9.0.0",
     react: "19.0.0",
     "react-dom": "19.0.0",
   });
   core.peerDependencies.react = "^18.0.0";
-  await Bun.write(join(root, "node_modules/@mantine/core/package.json"), JSON.stringify(core));
+  await Bun.write(join(root, "node_modules/@example/core/package.json"), JSON.stringify(core));
   const incompatible = await readConfig(root);
   expect(() => selectEntrypoints(incompatible, graph, [config.entries["./ui/block"]!])).toThrow("requires react");
 });

@@ -1,7 +1,7 @@
-import { Button, Group, Image, Paper, Text } from "@mantine/core";
 import { ImageIcon, Upload } from "lucide-react";
 import type React from "react";
 import { useRef, useState } from "react";
+import { Button, Group, Paper, Text } from "../components/index.tsx";
 
 export type FileUploadProps = {
   onUpload: (file: File) => Promise<void>;
@@ -44,11 +44,11 @@ export type ImagePreviewProps = {
 export const ImagePreview = ({ src, alt = "", width, height }: ImagePreviewProps) => (
   <Paper p="xs" withBorder>
     {src ? (
-      <Image src={src} alt={alt} width={width} height={height} fit="contain" />
+      <img className="atlas-preview__image" src={src} alt={alt} width={width} height={height} />
     ) : (
-      <Group justify="center" align="center" style={{ width, height, minHeight: 100 }}>
-        <ImageIcon size={48} color="var(--mantine-color-dimmed)" />
-      </Group>
+      <div className="atlas-preview__empty" style={{ width, height }}>
+        <ImageIcon size={48} aria-label="No image" />
+      </div>
     )}
   </Paper>
 );

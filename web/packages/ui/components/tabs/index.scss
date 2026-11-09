@@ -1,0 +1,31 @@
+@use "../../styles/mixins" as *;
+
+.atlas-tabs__list {
+  display: flex;
+  flex-wrap: wrap;
+  border-block-end: 1px solid var(--atlas-border);
+}
+
+.atlas-tabs__tab {
+  @include focusring;
+
+  margin-block-end: -1px;
+  border: 0;
+  border-block-end: 2px solid transparent;
+  background: none;
+  color: var(--atlas-dimmed);
+  padding: 0.5rem 0.875rem;
+  font: inherit;
+  font-size: var(--atlas-font-sm);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--atlas-ink);
+  }
+
+  &[aria-selected="true"] {
+    border-block-end-color: var(--atlas-primary);
+    color: var(--atlas-primary);
+    font-weight: 600;
+  }
+}

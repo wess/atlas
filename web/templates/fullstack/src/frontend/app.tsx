@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 import { AtlasProvider } from "@wess/atlas/ui/provider"
-import { Button, Card, Stack, Text, TextInput, Title } from "@mantine/core"
-import "@mantine/core/styles.css"
+import { Button, Paper, Stack, Text, TextInput, Title } from "@wess/atlas/ui/components"
+import "@wess/atlas/ui/styles.css"
 import { useEffect, useState } from "react"
 import { createRoot } from "react-dom/client"
 
@@ -43,19 +43,19 @@ const App = () => {
     <Stack gap="lg" p="lg">
       <Title order={1}>Users</Title>
 
-      <Card withBorder>
+      <Paper withBorder p="md">
         <Stack gap="sm">
           <TextInput placeholder="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
           <TextInput placeholder="Email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
           <Button onClick={createUser}>Add User</Button>
         </Stack>
-      </Card>
+      </Paper>
 
       {users.map((user) => (
-        <Card key={user.id} withBorder>
+        <Paper key={user.id} withBorder p="md">
           <Title order={3}>{user.name}</Title>
           <Text>{user.email}</Text>
-        </Card>
+        </Paper>
       ))}
     </Stack>
   )

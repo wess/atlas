@@ -59,11 +59,11 @@
 
   <div id="app">
     <div class="tabs">
-      <button class="active" onclick="showTab('types')">Content Types</button>
-      <button onclick="showTab('entries')">Entries</button>
-      <button onclick="showTab('media')">Media</button>
-      <button onclick="showTab('keys')">API Keys</button>
-      <button onclick="showTab('webhooks')">Webhooks</button>
+      <button data-screen="types" onclick="go('types')">Content Types</button>
+      <button data-screen="entries" onclick="go('entries')">Entries</button>
+      <button data-screen="media" onclick="go('media')">Media</button>
+      <button data-screen="keys" onclick="go('keys')">API Keys</button>
+      <button data-screen="webhooks" onclick="go('webhooks')">Webhooks</button>
     </div>
 
     <div id="tab-types">
@@ -136,7 +136,8 @@
   </div>
 
   <script>
-    let token = null
+    // session storage so a reload lands back on the same screen
+    let token = sessionStorage.getItem("token")
     const api = (path, opts = {}) =>
       fetch(path, {
         ...opts,
@@ -173,6 +174,7 @@
     }
 
     function onAuth() {
+      sessionStorage.setItem("token", token)
       document.getElementById("auth").style.display = "none"
       document.getElementById("app").style.display = "block"
       loadTypes()
@@ -182,13 +184,26 @@
       loadWebhooks()
     }
 
-    function showTab(name) {
-      document.querySelectorAll(".tabs button").forEach((b) => b.classList.remove("active"))
-      event.target.classList.add("active");
-      ["types", "entries", "media", "keys", "webhooks"].forEach((t) => {
-        document.getElementById("tab-" + t).classList.toggle("hidden", t !== name)
+    const screens = ["types", "entries", "media", "keys", "webhooks"]
+
+    function renderRoute() {
+      const name = location.pathname.split("/")[2]
+      const screen = screens.includes(name) ? name : "types"
+      if (screen !== name) history.replaceState(null, "", "/app/types")
+      document.querySelectorAll(".tabs button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.screen === screen)
+      })
+      screens.forEach((name) => {
+        document.getElementById("tab-" + name).classList.toggle("hidden", name !== screen)
       })
     }
+
+    function go(screen) {
+      history.pushState(null, "", "/app/" + screen)
+      renderRoute()
+    }
+
+    window.addEventListener("popstate", renderRoute)
 
     async function loadTypes() {
       const rows = await api("/admin/api/types")
@@ -364,6 +379,8 @@
       await api("/admin/api/webhooks/" + id, { method: "DELETE" })
       loadWebhooks()
     }
+    renderRoute()
+    if (token) onAuth()
   </script>
 </body>
 </html>

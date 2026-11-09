@@ -1,4 +1,4 @@
-import { ActionIcon, Button, Group, Select, Stack, TextInput } from "@mantine/core";
+import { ActionIcon, Button, Group, Select, Stack, TextInput } from "@atlas/ui/components";
 import { Plus, X } from "lucide-react";
 
 export type FilterRow = {
@@ -43,7 +43,7 @@ export const FilterBuilder = ({ filters, fields, onChange }: FilterBuilderProps)
             {!["null", "notnull"].includes(f.op) && (
               <TextInput size="xs" value={f.value} onChange={(e) => update(idx, { value: e.currentTarget.value })} />
             )}
-            <ActionIcon size="sm" color="red" variant="light" onClick={() => remove(idx)}>
+            <ActionIcon aria-label="Remove filter" size="sm" color="danger" variant="light" onClick={() => remove(idx)}>
               <X size={14} />
             </ActionIcon>
           </Group>

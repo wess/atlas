@@ -26,11 +26,15 @@ const SQLITE_TYPES: Record<ColumnType, string> = {
 };
 
 // Map our normalized ColumnType to dialect-specific SQL type.
-const sqlType = (type: ColumnType, dialect: Dialect, _primary: boolean): string =>
+export const sqlType = (type: ColumnType, dialect: Dialect): string =>
   dialect === "postgres" ? PG_TYPES[type] : SQLITE_TYPES[type];
 
+const indexName = (table: string, column: string) => `${table}_${column}_key`;
+const createIndexSql = (table: string, column: string) =>
+  `CREATE UNIQUE INDEX ${indexName(table, column)} ON ${table} (${column});`;
+
 const columnDdl = (col: LiveColumn, dialect: Dialect): string => {
-  const parts: string[] = [col.name, sqlType(col.type, dialect, col.primary)];
+  const parts: string[] = [col.name, sqlType(col.type, dialect)];
   if (col.primary) {
     if (dialect === "sqlite") parts.push("PRIMARY KEY");
     else parts.push("PRIMARY KEY");
@@ -41,21 +45,25 @@ const columnDdl = (col: LiveColumn, dialect: Dialect): string => {
 };
 
 const createTableSql = (t: LiveTable, dialect: Dialect): string => {
-  const lines = t.columns.map((c) => `  ${columnDdl(c, dialect)}`);
+  const lines = t.columns.map((c) => `  ${columnDdl(c, dialect)}${c.unique ? " UNIQUE" : ""}`);
   return `CREATE TABLE ${t.name} (\n${lines.join(",\n")}\n);`;
 };
 
 const dropTableSql = (t: LiveTable): string => `DROP TABLE ${t.name};`;
 
+// sqlite refuses ADD COLUMN ... UNIQUE, so the constraint is always a separate index here
 const addColumnSql = (table: string, col: LiveColumn, dialect: Dialect): string =>
-  `ALTER TABLE ${table} ADD COLUMN ${columnDdl(col, dialect)};`;
+  [
+    `ALTER TABLE ${table} ADD COLUMN ${columnDdl(col, dialect)};`,
+    ...(col.unique ? [createIndexSql(table, col.name)] : []),
+  ].join("\n");
 
-const dropColumnSql = (table: string, col: LiveColumn, dialect: Dialect): string => {
-  if (dialect === "postgres") return `ALTER TABLE ${table} DROP COLUMN ${col.name};`;
-  // SQLite added DROP COLUMN in 3.35 but it's still not universal — emit but
-  // warn. The migration runner will execute it on Bun's bundled SQLite (3.45+).
-  return `ALTER TABLE ${table} DROP COLUMN ${col.name};`;
-};
+// sqlite won't drop a column that still has an index. Bun's bundled sqlite has DROP COLUMN (3.35+).
+const dropColumnSql = (table: string, col: LiveColumn): string =>
+  [
+    ...(col.unique ? [`DROP INDEX IF EXISTS ${indexName(table, col.name)};`] : []),
+    `ALTER TABLE ${table} DROP COLUMN ${col.name};`,
+  ].join("\n");
 
 // Build an inverse op so we can compose down.sql.
 const inverseOp = (op: DiffOp): DiffOp => {
@@ -68,6 +76,10 @@ const inverseOp = (op: DiffOp): DiffOp => {
       return { kind: "drop_column", table: op.table, column: op.column };
     case "drop_column":
       return { kind: "add_column", table: op.table, column: op.column };
+    case "add_unique":
+      return { kind: "drop_unique", table: op.table, column: op.column };
+    case "drop_unique":
+      return { kind: "add_unique", table: op.table, column: op.column };
     case "alter_column":
       return { kind: "alter_column", table: op.table, from: op.to, to: op.from };
   }
@@ -82,12 +94,18 @@ const opToSql = (op: DiffOp, dialect: Dialect): string => {
     case "add_column":
       return addColumnSql(op.table, op.column, dialect);
     case "drop_column":
-      return dropColumnSql(op.table, op.column, dialect);
+      return dropColumnSql(op.table, op.column);
+    case "add_unique":
+      return createIndexSql(op.table, op.column);
+    case "drop_unique":
+      return `DROP INDEX ${indexName(op.table, op.column)};`;
     case "alter_column": {
       // Type/nullability changes — emit as a comment so the user reviews.
       const reasons: string[] = [];
-      if (op.from.type !== op.to.type) reasons.push(`type ${op.from.type} → ${op.to.type}`);
+      if (sqlType(op.from.type, dialect) !== sqlType(op.to.type, dialect))
+        reasons.push(`type ${op.from.type} → ${op.to.type}`);
       if (op.from.nullable !== op.to.nullable) reasons.push(`nullable ${op.from.nullable} → ${op.to.nullable}`);
+      if (op.from.unique !== op.to.unique) reasons.push(`unique ${op.from.unique} → ${op.to.unique}`);
       return `-- ALTER ${op.table}.${op.from.name} (${reasons.join(", ")}) — review and adjust manually`;
     }
   }

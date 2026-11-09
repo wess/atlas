@@ -1,0 +1,24 @@
+@use "../../styles/mixins" as *;
+
+.atlas-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--atlas-font-sm);
+  cursor: pointer;
+
+  input {
+    @include focusring;
+
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: 0;
+    accent-color: var(--atlas-primary);
+    cursor: inherit;
+  }
+
+  &:has(input:disabled) {
+    color: var(--atlas-dimmed);
+    cursor: not-allowed;
+  }
+}

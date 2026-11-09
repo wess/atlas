@@ -1,19 +1,18 @@
 import { existsSync, mkdirSync } from "node:fs";
-import type { Connection, Schema } from "../../db/query.ts";
+import type { Connection, Dialect, Schema } from "../../db/query.ts";
 import { introspect } from "./introspect.ts";
 import { tablesFromSchemas } from "./schema.ts";
-import { renderInverseSql, renderSql } from "./sql.ts";
+import { renderInverseSql, renderSql, sqlType } from "./sql.ts";
 import type { DiffOp, DiffPlan, LiveColumn, LiveTable } from "./types.ts";
 
 export type { DiffOp, DiffPlan, LiveColumn, LiveTable } from "./types.ts";
 
 const colsByName = (cols: readonly LiveColumn[]): Map<string, LiveColumn> => new Map(cols.map((c) => [c.name, c]));
 
-// `serial` is an integer + identity; an introspected DB always reports it as
-// integer. Treat them as equivalent so `column.serial().primaryKey()` doesn't
-// diff against a plain INTEGER PRIMARY KEY in SQLite.
-const sameType = (a: LiveColumn, b: LiveColumn): boolean => {
-  if (a.type === b.type) return true;
+// compare what the database stores, not our names for it: sqlite keeps a boolean as INTEGER, and
+// an introspected serial always reads back as integer
+const sameType = (a: LiveColumn, b: LiveColumn, dialect: Dialect): boolean => {
+  if (sqlType(a.type, dialect) === sqlType(b.type, dialect)) return true;
   const isIntLike = (t: string) => t === "serial" || t === "integer";
   return isIntLike(a.type) && isIntLike(b.type);
 };
@@ -26,10 +25,10 @@ const sameNullable = (a: LiveColumn, b: LiveColumn): boolean => {
   return a.nullable === b.nullable;
 };
 
-const columnsEqual = (a: LiveColumn, b: LiveColumn): boolean =>
-  sameType(a, b) && sameNullable(a, b) && a.primary === b.primary;
+const columnsEqual = (a: LiveColumn, b: LiveColumn, dialect: Dialect): boolean =>
+  sameType(a, b, dialect) && sameNullable(a, b) && a.primary === b.primary;
 
-const diffTables = (live: readonly LiveTable[], desired: readonly LiveTable[]): DiffOp[] => {
+const diffTables = (live: readonly LiveTable[], desired: readonly LiveTable[], dialect: Dialect): DiffOp[] => {
   const ops: DiffOp[] = [];
   const liveMap = new Map(live.map((t) => [t.name, t]));
   const desiredMap = new Map(desired.map((t) => [t.name, t]));
@@ -51,7 +50,14 @@ const diffTables = (live: readonly LiveTable[], desired: readonly LiveTable[]): 
     for (const c of t.columns) {
       const live = liveCols.get(c.name);
       if (!live) ops.push({ kind: "add_column", table: t.name, column: c });
-      else if (!columnsEqual(live, c)) ops.push({ kind: "alter_column", table: t.name, from: live, to: c });
+      else {
+        // dropping a live constraint needs its real name, which may not be ours, so that one stays a review comment
+        const lostUnique = live.unique && !c.unique && !c.primary;
+        if (!columnsEqual(live, c, dialect) || lostUnique) {
+          ops.push({ kind: "alter_column", table: t.name, from: live, to: c });
+        }
+        if (c.unique && !live.unique) ops.push({ kind: "add_unique", table: t.name, column: c.name });
+      }
     }
     for (const c of existing.columns) {
       if (!desiredCols.has(c.name)) ops.push({ kind: "drop_column", table: t.name, column: c });
@@ -66,7 +72,7 @@ const diffTables = (live: readonly LiveTable[], desired: readonly LiveTable[]): 
 export const plan = async (db: Connection, schemas: readonly Schema[]): Promise<DiffPlan> => {
   const live = await introspect(db);
   const desired = tablesFromSchemas(schemas);
-  const ops = diffTables(live, desired);
+  const ops = diffTables(live, desired, db.dialect);
   return {
     ops,
     up: renderSql(ops, db.dialect),

@@ -28,7 +28,7 @@ export const signup =
       record[field] = field === "password" ? await hash(String(value)) : value;
     }
 
-    const query = from(opts.table).insert(record);
+    const query = from(opts.table).insert(record).returning("*");
     let rows: any[];
     try {
       rows = await opts.db.execute(query);
@@ -42,7 +42,7 @@ export const signup =
       }
       throw err;
     }
-    const user = rows[0] ?? record;
+    const { password: _hash, ...user } = rows[0] ?? record;
 
     return opts.onSuccess(conn, user);
   };
@@ -78,7 +78,8 @@ export const login =
     const valid = await verifyPassword(String(passwordValue), String(user[opts.password]));
     if (!valid) return halt(conn, 401, { error: "Invalid credentials" });
 
-    return opts.onSuccess(conn, user);
+    const { [opts.password]: _hash, ...safe } = user;
+    return opts.onSuccess(conn, safe);
   };
 
 type RequireAuthOptions = {

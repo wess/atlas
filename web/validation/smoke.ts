@@ -17,6 +17,8 @@ export async function smokeFixture(directory: string, example = false, admin = f
       SECRET: secret,
       AUTH_SECRET: secret,
       DATABASE_PATH: join(directory, "smoke.db"),
+      ADMIN_EMAIL: "admin@example.test",
+      ADMIN_PASSWORD: "local-fixture-password",
     },
   });
   const stdout = new Response(child.stdout).text();
@@ -39,6 +41,33 @@ export async function smokeFixture(directory: string, example = false, admin = f
     }
     if (!ready) throw new Error("Fixture server did not become ready");
     if (admin) {
+      const deep = await fetch(`${origin}/admin/models/users/records/1`);
+      if (!deep.ok || !(await deep.text()).includes("/admin/assets/entry.js"))
+        throw new Error("Admin shell did not serve a deep link");
+      for (const [asset, marker] of [
+        ["entry.js", "createRoot"],
+        ["entry.css", ".atlas-button"],
+      ] as const) {
+        const response = await fetch(`${origin}/admin/assets/${asset}`);
+        const body = await response.text();
+        if (!response.ok) throw new Error(`Admin ${asset} returned ${response.status}`);
+        if (asset === "entry.css" && !body.includes(marker)) throw new Error("Admin stylesheet is missing components");
+      }
+      const session = await (await fetch(`${origin}/admin/session`)).json();
+      if (session.authRequired !== true || session.authenticated !== false || session.loginEnabled !== true) {
+        throw new Error("Admin session endpoint is wrong");
+      }
+      const signIn = await fetch(`${origin}/admin/session`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin },
+        body: JSON.stringify({ email: "admin@example.test", password: "local-fixture-password" }),
+      });
+      await signIn.arrayBuffer();
+      const cookie = signIn.headers.get("set-cookie")?.split(";")[0];
+      if (signIn.status !== 200 || !cookie) throw new Error(`Admin sign-in returned ${signIn.status}`);
+      const signedIn = await fetch(`${origin}/admin/api/schema`, { headers: { cookie } });
+      await signedIn.arrayBuffer();
+      if (signedIn.status !== 200) throw new Error(`Admin session cookie returned ${signedIn.status}`);
       const endpoint = `${origin}/admin/api/schema`;
       const denied = await fetch(endpoint);
       if (denied.status !== 401) throw new Error(`Anonymous admin returned ${denied.status}`);

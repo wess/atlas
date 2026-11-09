@@ -89,6 +89,9 @@
       "@atlas/edge": [
         "./packages/edge/index.ts"
       ],
+      "@atlas/ui/styles.css": [
+        "./packages/ui/styles/index.scss"
+      ],
       "@atlas/ui": [
         "./packages/ui/index.ts"
       ],
@@ -169,6 +172,9 @@
       ],
       "@wess/atlas/edge": [
         "./packages/edge/index.ts"
+      ],
+      "@wess/atlas/ui/styles.css": [
+        "./packages/ui/styles/index.scss"
       ],
       "@wess/atlas/ui": [
         "./packages/ui/index.ts"

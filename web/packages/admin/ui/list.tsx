@@ -6,16 +6,19 @@ import {
   Group,
   Pagination,
   Paper,
+  ScrollArea,
   Table,
   TextInput,
   Title,
-} from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+} from "@atlas/ui/components";
+import { navigate, useDisclosure, useLocation } from "@atlas/ui/headless";
 import { type ColumnDef, columnSizingFeature, flexRender, tableFeatures, useTable } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, Filter, Plus, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { adminFetch } from "./api.ts";
 import { BulkBar } from "./components/bulkbar.tsx";
 import { FilterBuilder, type FilterRow } from "./components/filter.tsx";
+import { paths } from "./paths.ts";
 
 const features = tableFeatures({ columnSizingFeature });
 
@@ -43,50 +46,80 @@ type ListMeta = {
   pages: number;
 };
 
+const filtersFrom = (query: URLSearchParams): FilterRow[] =>
+  [...query.entries()]
+    .filter(([key, value]) => key.startsWith("filter.") && value)
+    .map(([key, value]) => ({ field: key.slice("filter.".length), op: "eq", value }));
+
 export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProps) => {
   const [data, setData] = useState<Record<string, unknown>[]>([]);
   const [meta, setMeta] = useState<ListMeta>({ page: 1, limit: 20, total: 0, pages: 0 });
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<{ field: string; order: "asc" | "desc" } | null>(null);
-  const [filters, setFilters] = useState<FilterRow[]>([]);
+  // the url owns everything worth returning to, so reload and back land on the same rows
+  const location = useLocation();
+  const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const page = Number(query.get("page")) || 1;
+  const search = query.get("search") ?? "";
+  const sortField = query.get("sort");
+  const sort = sortField ? { field: sortField, order: query.get("order") === "desc" ? "desc" : "asc" } : null;
+  const urlFilters = filtersFrom(query);
+  const [filters, setFilters] = useState<FilterRow[]>(urlFilters);
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
-  const [filterOpen, { toggle: toggleFilter }] = useDisclosure(false);
+  const [filterOpen, { toggle: toggleFilter }] = useDisclosure(urlFilters.length > 0);
 
-  const fetchData = useCallback(
-    async (page = 1) => {
-      const params = new URLSearchParams();
-      params.set("page", String(page));
-      params.set("limit", String(meta.limit));
-      if (search) params.set("search", search);
-      if (sort) {
-        params.set("sort", sort.field);
-        params.set("order", sort.order);
+  const update = useCallback(
+    (patch: Record<string, string | null>, options?: { replace?: boolean }) => {
+      const next = new URLSearchParams(query);
+      for (const [key, value] of Object.entries(patch)) {
+        if (value) next.set(key, value);
+        else next.delete(key);
       }
-      for (const f of filters) {
-        if (f.field && f.value) {
-          params.set(`filter.${f.field}`, f.value);
-        }
-      }
-      const res = await fetch(`${basePath}/api/${table}?${params}`);
-      const body = await res.json();
-      setData(body.data ?? []);
-      setMeta(body.meta ?? { page: 1, limit: 20, total: 0, pages: 0 });
+      const text = next.toString();
+      navigate(text ? `${location.pathname}?${text}` : location.pathname, options);
     },
-    [basePath, table, search, sort, filters, meta.limit],
+    [query, location.pathname],
   );
 
-  useEffect(() => {
-    fetchData(1);
-  }, [fetchData]);
+  const changeFilters = (rows: FilterRow[]) => {
+    setFilters(rows);
+    const next = new URLSearchParams(query);
+    for (const key of [...next.keys()]) if (key.startsWith("filter.")) next.delete(key);
+    for (const row of rows) if (row.field && row.value) next.set(`filter.${row.field}`, row.value);
+    next.delete("page");
+    const text = next.toString();
+    navigate(text ? `${location.pathname}?${text}` : location.pathname, { replace: true });
+  };
 
-  const toggleSort = useCallback((field: string) => {
-    setSort((prev) => {
-      if (prev?.field === field) {
-        return prev.order === "asc" ? { field, order: "desc" } : null;
-      }
-      return { field, order: "asc" };
+  // back and forward change the url underneath the draft rows; half-typed rows have no url form to compare
+  const urlFilterKey = JSON.stringify(urlFilters);
+  useEffect(() => {
+    setFilters((rows) => {
+      const complete = rows.filter((row) => row.field && row.value).map((row) => ({ ...row, op: "eq" }));
+      return JSON.stringify(complete) === urlFilterKey ? rows : JSON.parse(urlFilterKey);
     });
-  }, []);
+  }, [urlFilterKey]);
+
+  const load = useCallback(async () => {
+    const params = new URLSearchParams(location.search);
+    params.set("page", String(page));
+    params.set("limit", String(meta.limit));
+    const res = await adminFetch(`${basePath}/api/${table}?${params}`);
+    const body = await res.json();
+    setData(body.data ?? []);
+    setMeta(body.meta ?? { page: 1, limit: 20, total: 0, pages: 0 });
+  }, [basePath, table, location.search, page, meta.limit]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const toggleSort = useCallback(
+    (field: string) => {
+      const direction = sort?.field === field ? sort.order : null;
+      if (direction === "desc") update({ sort: null, order: null, page: null });
+      else update({ sort: field, order: direction === "asc" ? "desc" : "asc", page: null });
+    },
+    [sort?.field, sort?.order, update],
+  );
 
   const toggleSelect = useCallback((id: string | number) => {
     setSelectedIds((prev) => {
@@ -107,13 +140,13 @@ export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProp
 
   const handleBulkAction = async (action: string) => {
     const ids = Array.from(selectedIds);
-    await fetch(`${basePath}/api/${table}/bulk`, {
+    await adminFetch(`${basePath}/api/${table}/bulk`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ action, ids }),
     });
     setSelectedIds(new Set());
-    fetchData(meta.page);
+    load();
   };
 
   const columns = useMemo<ColumnDef<typeof features, Record<string, unknown>>[]>(() => {
@@ -141,15 +174,20 @@ export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProp
         id: col.name,
         accessorKey: col.name,
         header: () => (
-          <Group gap={4} style={{ cursor: "pointer" }} onClick={() => toggleSort(col.name)}>
-            <span>{col.name}</span>
-            {sort?.field === col.name && (sort.order === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
-          </Group>
+          <button type="button" className="atlas-table__sort" onClick={() => toggleSort(col.name)}>
+            {col.name}
+            {sort?.field === col.name &&
+              (sort.order === "asc" ? (
+                <ArrowUp size={14} aria-label="Sorted ascending" />
+              ) : (
+                <ArrowDown size={14} aria-label="Sorted descending" />
+              ))}
+          </button>
         ),
       });
     }
     return cols;
-  }, [schema.columns, selectedIds, data.length, sort, toggleSort, toggleSelect, toggleAll]);
+  }, [schema.columns, selectedIds, data.length, sort?.field, sort?.order, toggleSort, toggleSelect, toggleAll]);
 
   const reactTable = useTable({
     features,
@@ -166,7 +204,7 @@ export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProp
           {table}
         </Title>
         {!schema.readOnly && (
-          <Button leftSection={<Plus size={16} />} onClick={() => onNavigate(`create/${table}`)}>
+          <Button leftSection={<Plus size={16} />} onClick={() => onNavigate(paths.create(table))}>
             New
           </Button>
         )}
@@ -177,17 +215,17 @@ export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProp
           placeholder="Search..."
           leftSection={<Search size={16} />}
           value={search}
-          onChange={(e) => setSearch(e.currentTarget.value)}
-          style={{ flex: 1 }}
+          onChange={(e) => update({ search: e.currentTarget.value, page: null }, { replace: true })}
+          flex={1}
         />
-        <ActionIcon variant="light" onClick={toggleFilter}>
+        <ActionIcon aria-label="Toggle filters" aria-expanded={filterOpen} variant="light" onClick={toggleFilter}>
           <Filter size={16} />
         </ActionIcon>
       </Group>
 
       <Collapse expanded={filterOpen}>
         <Paper p="sm" mb="md" withBorder>
-          <FilterBuilder filters={filters} fields={filterFields} onChange={setFilters} />
+          <FilterBuilder filters={filters} fields={filterFields} onChange={changeFilters} />
         </Paper>
       </Collapse>
 
@@ -199,41 +237,48 @@ export const ModelList = ({ table, schema, basePath, onNavigate }: ModelListProp
       />
 
       <Paper withBorder>
-        <Table striped highlightOnHover>
-          <Table.Thead>
-            {reactTable.getHeaderGroups().map((hg) => (
-              <Table.Tr key={hg.id}>
-                {hg.headers.map((header) => (
-                  <Table.Th key={header.id} style={{ width: header.getSize() }}>
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </Table.Th>
-                ))}
-              </Table.Tr>
-            ))}
-          </Table.Thead>
-          <Table.Tbody>
-            {reactTable.getRowModel().rows.map((row) => (
-              <Table.Tr
-                key={row.id}
-                style={{ cursor: "pointer" }}
-                onClick={(e) => {
-                  const target = e.target as HTMLElement;
-                  if (target.closest("input[type=checkbox]")) return;
-                  onNavigate(`detail/${table}/${row.original.id}`);
-                }}
-              >
-                {row.getAllCells().map((cell) => (
-                  <Table.Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Table.Td>
-                ))}
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+        <ScrollArea>
+          <Table striped highlightOnHover>
+            <thead>
+              {reactTable.getHeaderGroups().map((hg) => (
+                <tr key={hg.id}>
+                  {hg.headers.map((header) => (
+                    <th key={header.id} style={{ width: header.getSize() }}>
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {reactTable.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  style={{ cursor: "pointer" }}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.target === e.currentTarget)
+                      onNavigate(paths.detail(table, row.original.id as string | number));
+                  }}
+                  onClick={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.closest("input[type=checkbox]")) return;
+                    onNavigate(paths.detail(table, row.original.id as string | number));
+                  }}
+                >
+                  {row.getAllCells().map((cell) => (
+                    <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </ScrollArea>
       </Paper>
 
       {meta.pages > 1 && (
         <Group justify="center" mt="md">
-          <Pagination total={meta.pages} value={meta.page} onChange={(p) => fetchData(p)} />
+          <Pagination total={meta.pages} value={meta.page} onChange={(p) => update({ page: String(p) })} />
         </Group>
       )}
     </div>

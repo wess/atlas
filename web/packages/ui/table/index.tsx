@@ -1,4 +1,3 @@
-import { Group, Pagination, Table, TextInput } from "@mantine/core";
 import {
   type ColumnDef,
   columnFilteringFeature,
@@ -17,6 +16,7 @@ import {
 } from "@tanstack/react-table";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import React from "react";
+import { Button, Group, Pagination, ScrollArea, Table, TextInput } from "../components/index.tsx";
 
 const features = tableFeatures({
   columnFilteringFeature,
@@ -66,14 +66,14 @@ export const ActionColumn = <T extends RowData>(config: {
   cell: (info) => (
     <Group gap="xs">
       {config.onEdit && (
-        <button type="button" onClick={() => config.onEdit!(info.row.original)}>
+        <Button size="xs" variant="subtle" onClick={() => config.onEdit!(info.row.original)}>
           Edit
-        </button>
+        </Button>
       )}
       {config.onDelete && (
-        <button type="button" onClick={() => config.onDelete!(info.row.original)}>
+        <Button size="xs" variant="subtle" color="danger" onClick={() => config.onDelete!(info.row.original)}>
           Delete
-        </button>
+        </Button>
       )}
     </Group>
   ),
@@ -114,37 +114,44 @@ export const createTable = <T extends RowData>(config: TableConfig<T>) => {
             mb="md"
           />
         )}
-        <Table>
-          <Table.Thead>
-            {table.getHeaderGroups().map((hg) => (
-              <Table.Tr key={hg.id}>
-                {hg.headers.map((h) => (
-                  <Table.Th
-                    key={h.id}
-                    onClick={h.column.getCanSort() ? h.column.getToggleSortingHandler() : undefined}
-                    style={{ cursor: h.column.getCanSort() ? "pointer" : "default" }}
-                  >
-                    {flexRender(h.column.columnDef.header, h.getContext())}
-                    {h.column.getIsSorted() === "asc" ? (
-                      <ChevronUp size={14} style={{ verticalAlign: "middle", marginLeft: 4 }} />
-                    ) : h.column.getIsSorted() === "desc" ? (
-                      <ChevronDown size={14} style={{ verticalAlign: "middle", marginLeft: 4 }} />
-                    ) : null}
-                  </Table.Th>
-                ))}
-              </Table.Tr>
-            ))}
-          </Table.Thead>
-          <Table.Tbody>
-            {table.getRowModel().rows.map((row) => (
-              <Table.Tr key={row.id}>
-                {row.getAllCells().map((cell) => (
-                  <Table.Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Table.Td>
-                ))}
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+        <ScrollArea>
+          <Table>
+            <thead>
+              {table.getHeaderGroups().map((hg) => (
+                <tr key={hg.id}>
+                  {hg.headers.map((h) => (
+                    <th key={h.id}>
+                      {h.column.getCanSort() ? (
+                        <button
+                          type="button"
+                          className="atlas-table__sort"
+                          onClick={h.column.getToggleSortingHandler()}
+                        >
+                          {flexRender(h.column.columnDef.header, h.getContext())}
+                          {h.column.getIsSorted() === "asc" && <ChevronUp size={14} aria-label="Sorted ascending" />}
+                          {h.column.getIsSorted() === "desc" && (
+                            <ChevronDown size={14} aria-label="Sorted descending" />
+                          )}
+                        </button>
+                      ) : (
+                        flexRender(h.column.columnDef.header, h.getContext())
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id}>
+                  {row.getAllCells().map((cell) => (
+                    <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </ScrollArea>
         {config.pagination && (
           <Pagination
             total={table.getPageCount()}

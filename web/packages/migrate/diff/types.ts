@@ -6,6 +6,7 @@ export type LiveColumn = {
   readonly type: ColumnType;
   readonly nullable: boolean;
   readonly primary: boolean;
+  readonly unique: boolean;
   readonly hasDefault: boolean;
   /** SQL default expression, emitted verbatim into generated DDL when set. */
   readonly defaultSql: string | null;
@@ -21,6 +22,8 @@ export type DiffOp =
   | { readonly kind: "drop_table"; readonly table: LiveTable }
   | { readonly kind: "add_column"; readonly table: string; readonly column: LiveColumn }
   | { readonly kind: "drop_column"; readonly table: string; readonly column: LiveColumn }
+  | { readonly kind: "add_unique"; readonly table: string; readonly column: string }
+  | { readonly kind: "drop_unique"; readonly table: string; readonly column: string }
   | {
       readonly kind: "alter_column";
       readonly table: string;

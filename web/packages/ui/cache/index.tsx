@@ -1,5 +1,5 @@
-import { Badge, Button, Group, Paper, Table, Text, Title } from "@mantine/core";
 import { Database, RefreshCw, Trash2 } from "lucide-react";
+import { Badge, Button, Group, Paper, Table, Text, Title } from "../components/index.tsx";
 
 export type CacheEntry = {
   key: string;
@@ -21,50 +21,50 @@ export const CacheInspector = ({ entries, onInvalidate, onFlush }: CacheInspecto
         <Title order={4}>Cache Inspector</Title>
       </Group>
       {onFlush && (
-        <Button color="red" size="xs" onClick={onFlush} leftSection={<RefreshCw size={14} />}>
+        <Button color="danger" size="xs" onClick={onFlush} leftSection={<RefreshCw size={14} />}>
           Flush All
         </Button>
       )}
     </Group>
     <Table>
-      <Table.Thead>
-        <Table.Tr>
-          <Table.Th>Key</Table.Th>
-          <Table.Th>Value</Table.Th>
-          <Table.Th>TTL</Table.Th>
-          {onInvalidate && <Table.Th>Actions</Table.Th>}
-        </Table.Tr>
-      </Table.Thead>
-      <Table.Tbody>
+      <thead>
+        <tr>
+          <th>Key</th>
+          <th>Value</th>
+          <th>TTL</th>
+          {onInvalidate && <th>Actions</th>}
+        </tr>
+      </thead>
+      <tbody>
         {entries.map((entry) => (
-          <Table.Tr key={entry.key}>
-            <Table.Td>
+          <tr key={entry.key}>
+            <td>
               <Text size="sm" fw={500}>
                 {entry.key}
               </Text>
-            </Table.Td>
-            <Table.Td>
+            </td>
+            <td>
               <Text size="sm" truncate>
                 {JSON.stringify(entry.value)}
               </Text>
-            </Table.Td>
-            <Table.Td>{entry.ttl ? <Badge>{entry.ttl}s</Badge> : <Badge color="gray">none</Badge>}</Table.Td>
+            </td>
+            <td>{entry.ttl ? <Badge>{entry.ttl}s</Badge> : <Badge color="neutral">none</Badge>}</td>
             {onInvalidate && (
-              <Table.Td>
+              <td>
                 <Button
                   size="xs"
                   variant="light"
-                  color="red"
+                  color="danger"
                   onClick={() => onInvalidate(entry.key)}
                   leftSection={<Trash2 size={14} />}
                 >
                   Invalidate
                 </Button>
-              </Table.Td>
+              </td>
             )}
-          </Table.Tr>
+          </tr>
         ))}
-      </Table.Tbody>
+      </tbody>
     </Table>
   </Paper>
 );
@@ -77,7 +77,7 @@ export type CacheStatusProps = {
 
 export const CacheStatus = ({ connected, entries, hitRate }: CacheStatusProps) => (
   <Group>
-    <Badge color={connected ? "green" : "red"}>{connected ? "Connected" : "Disconnected"}</Badge>
+    <Badge color={connected ? "success" : "danger"}>{connected ? "Connected" : "Disconnected"}</Badge>
     <Text size="sm">{entries} entries</Text>
     {hitRate !== undefined && <Text size="sm">{(hitRate * 100).toFixed(1)}% hit rate</Text>}
   </Group>

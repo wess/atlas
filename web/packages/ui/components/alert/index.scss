@@ -1,0 +1,11 @@
+@use "../../styles/mixins" as *;
+
+.atlas-alert {
+  @include toned;
+
+  border-radius: var(--atlas-radius-md);
+  background: var(--tone-soft);
+  color: var(--tone);
+  padding: var(--atlas-space-sm) var(--atlas-space-md);
+  font-size: var(--atlas-font-sm);
+}

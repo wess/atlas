@@ -10,7 +10,7 @@ bun install
 bun run server.ts
 ```
 
-Open http://localhost:3000 for the chat UI.
+Open http://localhost:3000 for the chat UI. Each room has its own address, such as `/rooms/general`.
 
 ## Features
 
