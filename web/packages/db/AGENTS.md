@@ -17,7 +17,7 @@ compatible with Zod, without a mandatory Zod runtime or type dependency.
 
 ### Query Builder
 - `from(table: string | Schema, alias?: string) => Chainable` - entry point for all queries
-- `raw(sql: string, ...values: any[]) => Fragment` - raw SQL fragment with bind values
+- `raw(sql: string, ...values: any[]) => Fragment` - raw SQL fragment with bind values. `$n` is the fragment's n-th value, so `raw("a = $1 OR b = $1", x)` binds `x` twice; the highest `$n` must equal the number of values or compiling throws
 - `isFragment(value: unknown) => boolean` - type guard for Fragment
 - `createWhereBuilder() => WhereBuilder` - standalone predicate builder
 

@@ -77,7 +77,7 @@ from(table: string, alias?) → Chainable<any>      dynamic / cross-table chain
   string cols in q()/orderBy/groupBy/distinct/returning: ident | t.ident | * | t.* (else throw → use raw())
   select strings: ident or expression without ; -- /* ' " ` $ \ control chars
   orderBy dir: ASC|DESC, nulls: FIRST|LAST (case-insensitive, else throw)
-raw(sql, ...values) → Fragment
+raw(sql, ...values) → Fragment   $n = n-th value (repeatable); highest $n must equal values.length
 defineSchema(table, columns) → Schema<T>
 column.serial() → number   .text() → string   .integer() → number
   .bigint() → bigint   .real() → number   .boolean() → boolean

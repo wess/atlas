@@ -2,7 +2,7 @@ import { isFragment } from "../fragment/index.ts";
 import type { Query } from "../types/index.ts";
 import { validateIdentifier } from "../utils/identifiers.ts";
 import type { ParamCounter } from "../utils/params.ts";
-import { renumberParams } from "../utils/params.ts";
+import { bindFragment } from "../utils/params.ts";
 import { compileConflict, compileReturning } from "./clauses.ts";
 
 const compileRow = (columns: string[], row: Record<string, any>, counter: ParamCounter, values: any[]): string => {
@@ -10,8 +10,7 @@ const compileRow = (columns: string[], row: Record<string, any>, counter: ParamC
     .map((col) => {
       const val = row[col];
       if (isFragment(val)) {
-        const renumbered = renumberParams(val.sql, counter);
-        values.push(...val.values);
+        const renumbered = bindFragment(val, counter, values);
         return renumbered;
       }
       values.push(val);

@@ -2,12 +2,11 @@ import { isFragment } from "../fragment/index.ts";
 import type { Column, ConflictSpec, CteSpec, JoinSpec, OrderSpec, Predicate } from "../types/index.ts";
 import { normalizeDirection, normalizeNulls, validateColumn, validateIdentifier } from "../utils/identifiers.ts";
 import type { ParamCounter } from "../utils/params.ts";
-import { renumberParams } from "../utils/params.ts";
+import { bindFragment } from "../utils/params.ts";
 
 const compileColumn = (col: Column, counter: ParamCounter, values: any[]): string => {
   if (isFragment(col)) {
-    const renumbered = renumberParams(col.sql, counter);
-    values.push(...col.values);
+    const renumbered = bindFragment(col, counter, values);
     return renumbered;
   }
   return validateColumn(col);
@@ -20,8 +19,7 @@ const compilePredicate = (pred: Predicate, counter: ParamCounter, values: any[])
   }
 
   if (isFragment(pred.column) && pred.value === "__raw__") {
-    const renumbered = renumberParams(pred.column.sql, counter);
-    values.push(...pred.column.values);
+    const renumbered = bindFragment(pred.column, counter, values);
     return renumbered;
   }
 
@@ -39,8 +37,7 @@ const compilePredicate = (pred: Predicate, counter: ParamCounter, values: any[])
   }
 
   if (isFragment(pred.value)) {
-    const fragSql = renumberParams(pred.value.sql, counter);
-    values.push(...pred.value.values);
+    const fragSql = bindFragment(pred.value, counter, values);
     return `${col} ${pred.op} ${fragSql}`;
   }
 
@@ -149,8 +146,7 @@ export const compileConflict = (
     for (const [col, val] of Object.entries(spec.setExtra)) {
       const ident = validateIdentifier(col);
       if (isFragment(val)) {
-        const renumbered = renumberParams(val.sql, counter);
-        values.push(...val.values);
+        const renumbered = bindFragment(val, counter, values);
         setClauses.push(`${ident} = ${renumbered}`);
       } else {
         setClauses.push(`${ident} = ${counter.next()}`);
