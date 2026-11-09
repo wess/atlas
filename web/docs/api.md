@@ -353,6 +353,7 @@ invalidate(cache, prefix, ...args) → Promise
 request(url, opts?) → Promise<Response>     opts: { json, headers, method, body, retry, timeout (ms) }
 createClient({ baseUrl, headers?, retry?, interceptors?, timeout? }) → Client
   Client: .get .post .put .patch .del .request — all return Promise<Response>
+  paths start with "/" (or same-origin absolute URL); cross-origin paths throw
 withRetry(fn, { attempts?, delay?, backoff?, retryOn? })
 github({ token }) | stripe({ key }) | openai({ key }) | resend({ key })
   preconfigured clients — import from @wess/atlas/request/providers

@@ -68,7 +68,7 @@ const api = createClient({ baseUrl: "https://api.test", timeout: 5000 })
 export const fetchThing = () => api.get("/things")
 ```
 
-Clients return a `Response`. Also `request(url, opts)` and `withRetry(fn, opts)`; presets for `github`, `stripe`, `openai`, and `resend` are in `/request/providers`.
+Clients return a `Response`. Paths must start with `/`; a path or absolute URL that resolves to another origin throws, so the client's headers stay on `baseUrl`. Also `request(url, opts)` and `withRetry(fn, opts)`; presets for `github`, `stripe`, `openai`, and `resend` are in `/request/providers`.
 
 ## Share links: `@wess/atlas/share`
 
