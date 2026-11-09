@@ -17,6 +17,6 @@ bun run server.ts
 - `GET /api/users` — list users (auth required)
 - `GET /api/posts` — list published posts
 - `POST /api/posts` — create post (auth required)
-- `/admin/*` — admin panel UI
+- `/admin/*` — admin panel UI. Set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` to sign in at `/admin/login`
 
 `atlas init` creates `.env` with fresh authentication secrets. Preserve that file. When copying this template manually, fill each authentication/setup secret with at least 32 random characters before starting.

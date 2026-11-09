@@ -3,9 +3,9 @@ import React, { useState, useEffect } from "react"
 import { createRoot } from "react-dom/client"
 import * as api from "./api.ts"
 import type { Post } from "./api.ts"
+import { follow, navigate, usePathname } from "./router.ts"
 
-const Auth = ({ onLogin }: { onLogin: () => void }) => {
-  const [mode, setMode] = useState<"login" | "signup">("login")
+const Auth = ({ mode, onLogin }: { mode: "login" | "signup"; onLogin: () => void }) => {
   const [handle, setHandle] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -16,7 +16,7 @@ const Auth = ({ onLogin }: { onLogin: () => void }) => {
     if (mode === "signup") {
       const res = await api.signup(handle, email, password)
       if (res.error) return setError(res.error)
-      setMode("login")
+      navigate("/login")
       return
     }
     const res = await api.login(email, password)
@@ -34,9 +34,9 @@ const Auth = ({ onLogin }: { onLogin: () => void }) => {
       <input placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
       <input placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()} />
       <button onClick={submit}>{mode === "login" ? "Log in" : "Sign up"}</button>
-      <div className="toggle" onClick={() => setMode(mode === "login" ? "signup" : "login")}>
+      <a className="toggle" href={mode === "login" ? "/signup" : "/login"} onClick={follow(mode === "login" ? "/signup" : "/login")}>
         {mode === "login" ? "Don't have an account? Sign up" : "Already have an account? Log in"}
-      </div>
+      </a>
     </div>
   )
 }
@@ -73,9 +73,8 @@ const Compose = ({ onPost }: { onPost: () => void }) => {
   )
 }
 
-const Feed = () => {
+const Feed = ({ tab }: { tab: "timeline" | "mine" }) => {
   const [posts, setPosts] = useState<Post[]>([])
-  const [tab, setTab] = useState<"timeline" | "mine">("mine")
 
   const load = async () => {
     const token = api.getToken()
@@ -93,8 +92,8 @@ const Feed = () => {
     <>
       <Compose onPost={load} />
       <div className="tabs">
-        <span className={tab === "mine" ? "active" : ""} onClick={() => setTab("mine")}>My Posts</span>
-        <span className={tab === "timeline" ? "active" : ""} onClick={() => setTab("timeline")}>Timeline</span>
+        <a className={tab === "mine" ? "active" : ""} href="/mine" onClick={follow("/mine")}>My Posts</a>
+        <a className={tab === "timeline" ? "active" : ""} href="/timeline" onClick={follow("/timeline")}>Timeline</a>
       </div>
       {posts.length === 0
         ? <div className="empty">{tab === "timeline" ? "Follow people to see their posts" : "No posts yet"}</div>
@@ -105,11 +104,19 @@ const Feed = () => {
 }
 
 const App = () => {
-  const [loggedIn, setLoggedIn] = useState(!!api.getToken())
+  const pathname = usePathname()
+  const loggedIn = !!api.getToken()
+  const screens = loggedIn ? ["/mine", "/timeline"] : ["/login", "/signup"]
+  const known = screens.includes(pathname)
+
+  // an address that does not fit the session settles on that session's home, without a history entry
+  useEffect(() => {
+    if (!known) navigate(screens[0]!, { replace: true })
+  }, [known])
 
   const logout = () => {
     api.setToken(null)
-    setLoggedIn(false)
+    navigate("/login")
   }
 
   return (
@@ -118,7 +125,9 @@ const App = () => {
         Chirp
         {loggedIn && <span className="logout" onClick={logout}>Logout</span>}
       </header>
-      {loggedIn ? <Feed /> : <Auth onLogin={() => setLoggedIn(true)} />}
+      {known && (loggedIn
+        ? <Feed tab={pathname === "/timeline" ? "timeline" : "mine"} />
+        : <Auth mode={pathname === "/signup" ? "signup" : "login"} onLogin={() => navigate("/mine")} />)}
     </>
   )
 }

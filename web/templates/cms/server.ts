@@ -1,4 +1,6 @@
 import { admin, model } from "@wess/atlas/admin"
+import { verify } from "@wess/atlas/auth/password"
+import { from } from "@wess/atlas/db/query"
 import { migrate } from "@wess/atlas/migrate"
 import { get, pipe, putHeader, serve, text } from "@wess/atlas/server"
 import { config } from "./src/config.ts"
@@ -30,21 +32,27 @@ const panel = admin({
     model({ schema: revisions }),
     model({ schema: webhooks }),
   ],
-  auth: { secret: config.auth.secret, authorize: (claims) => claims.role === "admin" },
+  auth: {
+    secret: config.auth.secret,
+    authorize: (claims) => claims.role === "admin",
+    login: async ({ email, password }) => {
+      const user = await db.one(from(users).where((q) => q("email").equals(email)))
+      if (!user || !(await verify(password, user.passwordHash))) return null
+      return { userId: user.id, role: user.role }
+    },
+  },
 })
 
 const page = await Bun.file(new URL("./index.html", import.meta.url).pathname).text()
-const home = get(
-  "/",
-  pipe((c) => putHeader(text(c, 200, page), "content-type", "text/html; charset=utf-8")),
-)
+const shell = pipe((c) => putHeader(text(c, 200, page), "content-type", "text/html; charset=utf-8"))
 
 serve({
   maxRequestBodySize: 16 * 1024 * 1024,
   port: config.port,
   hostname: config.host,
   routes: [
-    home,
+    get("/", shell),
+    get("/app/*", shell),
     ...healthRoutes,
     ...authRoutes,
     ...typeRoutes,

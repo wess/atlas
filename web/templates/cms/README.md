@@ -22,7 +22,7 @@ bun run migrate:up
 bun run dev
 ```
 
-Open `http://localhost:3000` for the admin panel. Register an account to get
+Open `http://localhost:3000` for the admin panel, with screens at `/app/types`, `/app/entries`, `/app/media`, `/app/keys`, and `/app/webhooks`. The generated panel at `/panel` signs in users with the `admin` role. Register an account to get
 started. Migrations also run automatically on server boot.
 
 An auto-generated CRUD dashboard (from `@wess/atlas/admin`) covering every table is

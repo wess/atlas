@@ -10,6 +10,8 @@ export const config = defineConfig({
     return value;
   } }),
   },
+  adminEmail: env("ADMIN_EMAIL", { default: "" }),
+  adminPassword: env("ADMIN_PASSWORD", { default: "" }),
   storage: {
     path: env("STORAGE_PATH", { default: "./uploads" }),
     s3Endpoint: env("S3_ENDPOINT", { default: "" }),

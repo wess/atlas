@@ -55,15 +55,16 @@
       <button onclick="createPost()">Post</button>
     </div>
     <div class="tabs">
-      <button class="active" onclick="showTab('feed')">Feed</button>
-      <button onclick="showTab('profile')">Profile</button>
+      <button data-screen="feed" onclick="go('feed')">Feed</button>
+      <button data-screen="profile" onclick="go('profile')">Profile</button>
     </div>
     <div id="feed-tab"></div>
     <div id="profile-tab" style="display:none"></div>
   </div>
 
   <script>
-    let token = null
+    // session storage so a reload lands back on the same screen
+    let token = sessionStorage.getItem("token")
     let ws = null
 
     async function signup() {
@@ -105,6 +106,7 @@
     }
 
     function onAuth() {
+      sessionStorage.setItem("token", token)
       document.getElementById("auth").style.display = "none"
       document.getElementById("app").style.display = "block"
       connectWs()
@@ -112,7 +114,7 @@
     }
 
     function connectWs() {
-      ws = new WebSocket(`ws://${location.host}`)
+      ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`)
       ws.onopen = () => {
         ws.send(JSON.stringify({ channel: "notifications", event: "join", payload: { token } }))
       }
@@ -169,12 +171,27 @@
       loadFeed()
     }
 
-    function showTab(tab) {
-      document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"))
-      event.target.classList.add("active")
-      document.getElementById("feed-tab").style.display = tab === "feed" ? "block" : "none"
-      document.getElementById("profile-tab").style.display = tab === "profile" ? "block" : "none"
+    const screens = ["feed", "profile"]
+
+    function renderRoute() {
+      const name = location.pathname.split("/")[2]
+      const screen = screens.includes(name) ? name : "feed"
+      if (screen !== name) history.replaceState(null, "", "/app/feed")
+      document.querySelectorAll(".tabs button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.screen === screen)
+      })
+      document.getElementById("feed-tab").style.display = screen === "feed" ? "block" : "none"
+      document.getElementById("profile-tab").style.display = screen === "profile" ? "block" : "none"
     }
+
+    function go(screen) {
+      history.pushState(null, "", "/app/" + screen)
+      renderRoute()
+    }
+
+    window.addEventListener("popstate", renderRoute)
+    renderRoute()
+    if (token) onAuth()
   </script>
 </body>
 </html>
