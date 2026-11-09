@@ -56,7 +56,7 @@ export const welcome = (to: string, name: string) =>
   })
 ```
 
-With no key it logs to the console, which suits development. Check `result.ok` rather than expecting a throw. Templates: `inviteEmail`, `passwordResetEmail`.
+With no key it logs to the console, which suits development. In production that fallback warns once and redacts links and tokens, so configure a provider there. Check `result.ok` rather than expecting a throw. Templates: `inviteEmail`, `passwordResetEmail`.
 
 ## Outbound HTTP: `@wess/atlas/request`
 

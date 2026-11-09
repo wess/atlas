@@ -253,7 +253,8 @@ renderShareEmailMessage(opts) → { subject, html, text }   pure preview/render
 ```
 createEmailer({ apiKey?, from? }) → Emailer    auto-picks Resend if both set, else console
 createResendEmailer({ apiKey, from }) → Emailer
-createConsoleEmailer() → Emailer               dev fallback; logs and returns ok:true
+createConsoleEmailer({ redact? }) → Emailer    dev fallback; logs and returns ok:true
+  NODE_ENV=production: warns once, redacts URLs/tokens in logged mail
 Emailer: { enabled, send(msg) → Promise<SendResult> }
 EmailMessage: { to, subject, html, text?, replyTo?, from? }
 SendResult: { ok: true, id?, logged? } | { ok: false, error }

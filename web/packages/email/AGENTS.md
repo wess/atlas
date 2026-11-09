@@ -21,6 +21,10 @@ const dev  = createConsoleEmailer()  // logs subject/body, returns ok: true, log
 
 The console transport is the default fall-through when `apiKey` or `from` are
 blank — keeps dev environments unblocked without configuring a sending domain.
+Under `NODE_ENV=production` it still falls through (startup never throws), but it
+`console.warn`s once and logs bodies with URLs and long tokens replaced by
+`[url redacted]` / `[token redacted]`, so reset and invite links never land in
+production logs. `createConsoleEmailer({ redact })` overrides the default.
 
 ```ts
 type Emailer = {

@@ -15,22 +15,53 @@ export type Emailer = {
   readonly send: (msg: EmailMessage) => Promise<SendResult>;
 };
 
+const isProduction = (): boolean => process.env.NODE_ENV === "production";
+
+// Reset and invite mails carry bearer links; in production logs those are a
+// takeover for anyone who can read the log stream.
+const URL_PATTERN = /\b[a-z][a-z0-9+.-]*:\/\/[^\s"'<>]+/gi;
+const TOKEN_PATTERN = /\b[A-Za-z0-9_-]{24,}\b/g;
+
+export const redactSecrets = (value: string): string =>
+  value.replace(URL_PATTERN, "[url redacted]").replace(TOKEN_PATTERN, "[token redacted]");
+
+const warned = { production: false };
+
+const warnProductionFallback = (): void => {
+  if (warned.production) return;
+  Object.assign(warned, { production: true });
+  console.warn(
+    "[email] WARNING: NODE_ENV=production but no email provider is configured. Messages are NOT being sent; they are logged with links and tokens redacted. Set an API key and from address.",
+  );
+};
+
+export type ConsoleEmailerOptions = {
+  /** Replace URLs and long tokens in logged bodies. Defaults to true when NODE_ENV=production. */
+  readonly redact?: boolean;
+};
+
 /**
  * Console-only transport. Useful in dev when no real provider is configured —
  * messages are logged instead of sent so flows still complete end-to-end.
+ * Under NODE_ENV=production it warns once and redacts links and tokens, since
+ * a logged reset URL is as good as the reset itself.
  */
-export const createConsoleEmailer = (): Emailer => ({
-  enabled: false,
-  send: async (msg) => {
-    const recipients = Array.isArray(msg.to) ? msg.to : [msg.to];
-    console.log("[email] (console transport — no provider configured)");
-    console.log(`  to: ${recipients.join(", ")}`);
-    console.log(`  subject: ${msg.subject}`);
-    if (msg.text) console.log(msg.text);
-    else console.log(msg.html);
-    return { ok: true, logged: true };
-  },
-});
+export const createConsoleEmailer = (opts: ConsoleEmailerOptions = {}): Emailer => {
+  const redact = opts.redact ?? isProduction();
+  if (isProduction()) warnProductionFallback();
+  return {
+    enabled: false,
+    send: async (msg) => {
+      const recipients = Array.isArray(msg.to) ? msg.to : [msg.to];
+      const body = msg.text ?? msg.html;
+      console.log("[email] (console transport — no provider configured)");
+      console.log(`  to: ${recipients.join(", ")}`);
+      console.log(`  subject: ${redact ? redactSecrets(msg.subject) : msg.subject}`);
+      console.log(redact ? redactSecrets(body) : body);
+      return { ok: true, logged: true };
+    },
+  };
+};
 
 /**
  * Resend's own host. Overridable because the API surface is not Resend's alone
