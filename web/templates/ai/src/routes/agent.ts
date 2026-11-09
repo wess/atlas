@@ -1,12 +1,12 @@
-import { post, pipe, json } from "@wess/atlas/server"
+import { post, json } from "@wess/atlas/server"
 import { runAgent } from "@wess/atlas/ai"
 import { ai } from "../ai.ts"
+import { authed } from "../pipes/auth.ts"
 import { tools } from "../tools/index.ts"
 
 export const agentRoutes = [
-  post("/api/agent", pipe(async (c) => {
-    const body = await c.request.json()
-    const { message } = body as { message: string }
+  post("/api/agent", authed(async (c) => {
+    const { message } = (c.body ?? {}) as { message?: string }
 
     if (!message) return json(c, 400, { error: "message is required" })
 
