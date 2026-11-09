@@ -111,9 +111,13 @@ logged server-side only.
 - `wsAdapter` — standalone WS adapter for use with `compose()`
 
 ### SSE (`sse/index.ts`) — import from `@wess/atlas/server/sse`
-- `SseClient` — client with id, send, close
-- `createSseChannel()` — managed SSE channel with broadcast + pipe
-- `eventStream(conn, generator)` — one-off SSE response helper
+- `SseClient` — `{ id, topic?, lastEventId?, send(event, data, id?), close() }`; `lastEventId` is the `Last-Event-ID` header from a reconnecting EventSource
+- `createSseChannel({ heartbeat?, topic? })` — managed SSE channel: `clients()`, `broadcast(event, data, id?)`, `publish(topic, event, data, id?)`, `pipe(conn)`
+- `eventStream(conn, generator, { heartbeat? })` — one-off SSE response helper; `generator(send)` where `send(event, data, id?)`
+- `SseId = string | number`; `SseOptions`, `SseChannelOptions` types
+- Event ids: pass `id` to `send`/`broadcast`/`publish` and the frame gets an `id:` line (no newlines allowed). Browsers replay it as `Last-Event-ID` on reconnect; read `client.lastEventId` to resume.
+- Heartbeat: `heartbeat` is ms between `: ping` comment lines (off by default); the timer is cleared on close, cancel, and slow-client drop. Use it to keep proxies from idling the stream out.
+- Targeting: `client.send` hits one client (`ch.clients().find(...)`). For groups, give the channel `topic: (conn) => conn.query.room` and call `publish("room1", ...)`; clients with other topics (or none) are skipped. `broadcast` still reaches everyone.
 
 ## Usage
 

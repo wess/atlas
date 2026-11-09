@@ -187,9 +187,9 @@ WsConn<T>: wrapped ws with auto-JSON send
 
 ## @wess/atlas/server/sse
 ```
-createSseChannel() → { broadcast, pipe, clients }
-eventStream(conn, generator) → SSE response
-SseClient: { id, send, close }
+createSseChannel({ heartbeat?, topic? }) → { broadcast(event, data, id?), publish(topic, event, data, id?), pipe, clients }
+eventStream(conn, generator, { heartbeat? }) → SSE response
+SseClient: { id, topic?, lastEventId?, send(event, data, id?), close }
 ```
 
 ## @wess/atlas/auth
@@ -368,6 +368,7 @@ CLI surface:
   atlas add <pkg>...                   install @wess/atlas/* packages
   atlas check                         reject local Atlas paths and legacy aliases
   atlas dev                             foreman → Procfile
+  atlas migrate up|down|status|new <name>   DATABASE_URL, --dir (default ./migrations)
   atlas mcp                             start MCP server
   atlas docs [<pkg>|<doc>|<root>]      print canonical documentation to stdout
   atlas skills [<name>]                list or print agent skills
@@ -422,6 +423,7 @@ Always-on tools (independent of context):
 ## @wess/atlas/ai
 ```
 createProvider({ provider, key?, baseUrl? }) → AiProvider   provider: "openai"|"anthropic"|"ollama"
+  key: required openai/anthropic; optional ollama (Bearer, for Ollama Cloud). baseUrl: optional on all three
 createConversation(system?) → Conversation
 addMessage(conv, msg) → Conversation
 send(provider, conv, content, opts?) → { conversation, response }

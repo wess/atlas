@@ -5,7 +5,7 @@ Unified AI provider abstraction with chat, embeddings, streaming, RAG, and agent
 ## Exports
 
 Provider:
-- `createProvider({ provider, key?, baseUrl? })` → `AiProvider` — provider is `"openai" | "anthropic" | "ollama"`
+- `createProvider({ provider, key?, baseUrl? })` → `AiProvider` — provider is `"openai" | "anthropic" | "ollama"`. `key` is required for openai/anthropic, optional for ollama (sent as `Authorization: Bearer`, needed for Ollama Cloud). `baseUrl` is optional for all three (anthropic default `https://api.anthropic.com`, trailing slash trimmed)
 - `AiProvider` exposes `.chat(opts)`, `.chatStream(opts)`, `.embed(opts)`
 
 Chat:
@@ -53,6 +53,7 @@ import { createProvider } from "@wess/atlas/ai"
 const openai = createProvider({ provider: "openai", key: process.env.OPENAI_API_KEY! })
 const anthropic = createProvider({ provider: "anthropic", key: process.env.ANTHROPIC_API_KEY! })
 const ollama = createProvider({ provider: "ollama" }) // local, no key needed
+const cloud = createProvider({ provider: "ollama", baseUrl: "https://ollama.com", key: process.env.OLLAMA_API_KEY }) // Ollama Cloud: sends Authorization: Bearer
 ```
 
 ## Chat

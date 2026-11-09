@@ -27,7 +27,9 @@ const makeConnection = (sql: InstanceType<typeof SQL>, isTx = false): Connection
   },
 
   transaction: async <T>(fn: (tx: Connection) => Promise<T>): Promise<T> =>
-    sql.begin(async (tx: any) => fn(makeConnection(tx, true))),
+    isTx
+      ? (sql as any).savepoint(async (sp: any) => fn(makeConnection(sp, true)))
+      : sql.begin(async (tx: any) => fn(makeConnection(tx, true))),
 
   close: async () => {
     if (!isTx) await sql.close();

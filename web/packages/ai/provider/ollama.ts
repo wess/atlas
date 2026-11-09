@@ -11,6 +11,7 @@ import type {
 } from "./index.ts";
 
 type OllamaConfig = {
+  key?: string;
   baseUrl?: string;
   defaultModel?: string;
 };
@@ -52,6 +53,10 @@ const formatTools = (tools: ToolDef[]) =>
 export const createOllama = (config: OllamaConfig): AiProvider => {
   const baseUrl = (config.baseUrl ?? "http://localhost:11434").replace(/\/$/, "");
   const defaultModel = config.defaultModel ?? "llama3";
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(config.key ? { Authorization: `Bearer ${config.key}` } : {}),
+  };
 
   const chat = async (opts: ChatOptions): Promise<ChatResponse> => {
     const body: Record<string, unknown> = {
@@ -64,7 +69,7 @@ export const createOllama = (config: OllamaConfig): AiProvider => {
 
     const res = await fetch(`${baseUrl}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
     });
 
@@ -104,7 +109,7 @@ export const createOllama = (config: OllamaConfig): AiProvider => {
 
     const res = await fetch(`${baseUrl}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
     });
 
@@ -149,7 +154,7 @@ export const createOllama = (config: OllamaConfig): AiProvider => {
     for (const input of inputs) {
       const res = await fetch(`${baseUrl}/api/embeddings`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           model: opts.model ?? defaultModel,
           prompt: input,

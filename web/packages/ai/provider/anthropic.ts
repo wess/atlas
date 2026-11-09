@@ -13,6 +13,7 @@ import type {
 
 type AnthropicConfig = {
   key: string;
+  baseUrl?: string;
   defaultModel?: string;
 };
 
@@ -80,7 +81,7 @@ const extractSystem = (messages: Message[]): string | undefined => {
 };
 
 export const createAnthropic = (config: AnthropicConfig): AiProvider => {
-  const baseUrl = "https://api.anthropic.com";
+  const baseUrl = (config.baseUrl ?? "https://api.anthropic.com").replace(/\/$/, "");
   const defaultModel = config.defaultModel ?? "claude-sonnet-4-6";
 
   const headers = {

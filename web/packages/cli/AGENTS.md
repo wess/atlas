@@ -56,9 +56,13 @@ The `atlas init` command. Flags: `--yes/-y` (skip prompts), `--name/-n` (project
 
 The `atlas add` command validates public module names and installs the facade, selected implementation libraries, and the required external peers using the release catalog. It accepts narrow entries such as `auth/password` and `db/postgres`.
 
+### migrate/index.ts
+
+The `atlas migrate` command. `migrate/run.ts` holds the action logic (`runMigrate(args, { dir, url }, deps)`, deps injectable for tests), `migrate/target.ts` holds `parseTarget(DATABASE_URL)` and `checkName`. `@wess/atlas/migrate` and the db driver are resolved from the consuming project at run time (like `mcp`); install with `atlas add migrate db/postgres` or `db/sqlite`.
+
 ### entry.ts
 
-CLI bin entry point. Registers init, add, check, dev, mcp, docs, and skills commands, then calls `cli("atlas", commands)`.
+CLI bin entry point. Registers init, add, check, dev, migrate, mcp, docs, and skills commands, then calls `cli("atlas", commands)`.
 
 ## CLI Commands
 
@@ -87,6 +91,22 @@ Check an application's manifests, Bun lockfile, installed Atlas links, source im
 and TypeScript aliases. Atlas facade and backing libraries must use the same exact
 stable version. Local paths, legacy aliases, and links outside node_modules fail the check.
 Run `bunx --package https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz atlas check` in application CI after a frozen install.
+
+### atlas migrate
+
+Run SQL migrations from `./migrations` (`--dir/-d` overrides). Reads `DATABASE_URL`:
+`postgres://` or `postgresql://` uses the postgres driver, anything else is a sqlite
+path (`./app.db`, `sqlite:./app.db`, `file:./app.db`). `new` needs no database.
+
+```sh
+atlas migrate up               # apply pending migrations
+atlas migrate down             # roll back the most recent one
+atlas migrate status           # applied / pending per migration
+atlas migrate new add_users    # create migrations/<yyyymmdd>_add_users/{up,down}.sql
+```
+
+Errors (missing DATABASE_URL, unknown action, bad name, module not installed) print a
+one-line message and exit 1.
 
 ### atlas dev
 

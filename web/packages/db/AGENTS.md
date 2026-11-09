@@ -116,4 +116,4 @@ from("users").where(q => q.raw(raw("active = $1", true)))
 
 Sibling: none. External: none. Runtime: `Bun.sql` (postgres), `bun:sqlite`.
 
-SQLite caches up to 256 prepared statements per connection. Async transactions serialize with other operations on that connection; use the provided `tx` for every operation inside the callback. Nested `tx.transaction` calls use savepoints.
+SQLite caches up to 256 prepared statements per connection. Async transactions serialize with other operations on that connection; use the provided `tx` for every operation inside the callback. Nested `tx.transaction` calls use savepoints on both drivers (Postgres via Bun.sql `savepoint`); an inner failure rolls back only the inner scope. The nested Postgres test runs when `ATLAS_TEST_POSTGRES_URL` is set, otherwise it is skipped.
