@@ -32,6 +32,12 @@ export type ModelConfig = {
   readonly actions?: CustomAction[];
   readonly bulkActions?: BulkAction[];
   readonly readOnly?: boolean;
+  /**
+   * Columns create and update may write. Default: every schema column except
+   * primary keys. Anything else in a request body is dropped. A primary key
+   * listed here is writable on create only, never on update.
+   */
+  readonly editableFields?: string[];
 };
 
 export type AdminConfig = {

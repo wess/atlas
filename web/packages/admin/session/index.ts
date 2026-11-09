@@ -1,5 +1,5 @@
 import { sign } from "../../auth/token/index.ts";
-import { clientIp, createMemoryRateLimit } from "../../security/ratelimit/index.ts";
+import { addressKey, clientIp, createMemoryRateLimit } from "../../security/ratelimit/index.ts";
 import type { Conn, Route } from "../../server/index.ts";
 import { del, get, json, parseJson, pipe, pipeline, post, putHeader } from "../../server/index.ts";
 import { isSameOrigin, revocationsFor, sessionClaims, sessionCookie } from "../auth/index.ts";
@@ -83,7 +83,7 @@ export const generateSessionRoutes = (config: AdminConfig): Route[] => {
           return json(c, 400, { error: "Enter your email and password." });
         }
         const account = email.trim().toLowerCase();
-        const address = clientIp(c.request, { trustedProxies: auth.trustedProxies });
+        const address = addressKey(clientIp(c.request, { trustedProxies: auth.trustedProxies }));
         const buckets = {
           pair: `admin-login:${address}:${account}`,
           address: `admin-login:${address}`,

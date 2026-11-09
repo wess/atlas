@@ -1,9 +1,21 @@
 import { from, raw } from "../../db/query.ts";
 import type { Route } from "../../server/index.ts";
 import { del, get, json, parseJson, pipe, pipeline, post, put } from "../../server/index.ts";
-import { handleBulkAction } from "../actions/index.ts";
+import { handleBulkAction, parseIds } from "../actions/index.ts";
 import { adminAuth } from "../auth/index.ts";
-import type { AdminConfig } from "../config/index.ts";
+import type { AdminConfig, ModelConfig } from "../config/index.ts";
+
+// a request body may only set columns the model allows; anything else (a role flag, a password hash
+// column missing from the schema, the primary key) is dropped before it reaches the query
+const writable = (modelCfg: ModelConfig, body: unknown, creating: boolean): Record<string, unknown> | null => {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const columns = modelCfg.schema.columns as Record<string, { primary?: boolean }>;
+  const primary = (name: string) => Boolean(columns[name]?.primary) || name === "id";
+  const allowed = modelCfg.editableFields
+    ? modelCfg.editableFields.filter((name) => Object.hasOwn(columns, name) && (creating || !primary(name)))
+    : Object.keys(columns).filter((name) => !primary(name));
+  return Object.fromEntries(Object.entries(body as Record<string, unknown>).filter(([key]) => allowed.includes(key)));
+};
 
 export const generateRoutes = (config: AdminConfig): Route[] => {
   const routes: Route[] = [];
@@ -31,6 +43,7 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
             actions: m.actions?.map((a) => ({ name: a.name, label: a.label })),
             bulkActions: m.bulkActions ?? ["delete"],
             readOnly: m.readOnly ?? false,
+            editableFields: m.editableFields,
             relations: m.relations?.map((r) => ({
               table: r.schema.table,
               foreignKey: r.foreignKey,
@@ -132,7 +145,8 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
           withAuth(
             pipeline(parseJson)(
               pipe(async (c) => {
-                const data = c.body as Record<string, unknown>;
+                const data = writable(modelCfg, c.body, true);
+                if (!data || Object.keys(data).length === 0) return json(c, 400, { error: "No editable fields" });
                 const row = await config.db.one(from(table).insert(data).returning("*"));
                 return json(c, 201, { data: row });
               }),
@@ -148,7 +162,8 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
           withAuth(
             pipeline(parseJson)(
               pipe(async (c) => {
-                const data = c.body as Record<string, unknown>;
+                const data = writable(modelCfg, c.body, false);
+                if (!data || Object.keys(data).length === 0) return json(c, 400, { error: "No editable fields" });
                 const row = await config.db.one(
                   from(table)
                     .update(data)
@@ -187,8 +202,11 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
           withAuth(
             pipeline(parseJson)(
               pipe(async (c) => {
-                const { action, ids } = c.body as { action: string; ids: (string | number)[] };
-                return handleBulkAction(config.db, table, modelCfg, action, ids, c);
+                const { action, ids } = (c.body ?? {}) as { action?: unknown; ids?: unknown };
+                if (typeof action !== "string") return json(c, 400, { error: "action is required" });
+                const parsed = parseIds(ids);
+                if (!parsed) return json(c, 400, { error: "ids must be an array of record ids" });
+                return handleBulkAction(config.db, table, modelCfg, action, parsed, c);
               }),
             ),
           ),
@@ -204,10 +222,12 @@ export const generateRoutes = (config: AdminConfig): Route[] => {
           withAuth(
             pipeline(parseJson)(
               pipe(async (c) => {
-                const { action, ids } = c.body as { action: string; ids: (string | number)[] };
+                const { action, ids } = (c.body ?? {}) as { action?: unknown; ids?: unknown };
                 const actionDef = modelCfg.actions!.find((a) => a.name === action);
-                if (!actionDef) return json(c, 400, { error: `Unknown action: ${action}` });
-                const result = await actionDef.handler(config.db, ids);
+                if (!actionDef) return json(c, 400, { error: `Unknown action: ${String(action)}` });
+                const parsed = parseIds(ids);
+                if (!parsed) return json(c, 400, { error: "ids must be an array of record ids" });
+                const result = await actionDef.handler(config.db, parsed);
                 return json(c, 200, result);
               }),
             ),

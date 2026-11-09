@@ -1,4 +1,4 @@
-import { requireAuth } from "../../auth/index.ts";
+import { isSessionToken, requireAuth } from "../../auth/flows/index.ts";
 import { verify } from "../../auth/token/index.ts";
 import type { Conn, PipeFn } from "../../server/index.ts";
 import { assign, halt, pipeline } from "../../server/index.ts";
@@ -52,6 +52,8 @@ export const sessionClaims = async (conn: Conn, auth: AdminAuth): Promise<Record
   } catch {
     return null;
   }
+  // an OAuth access token or reset token signed with the same secret is not an admin session
+  if (!isSessionToken(session, claims)) return null;
   // a cookie without an id can never be signed out, so it isn't accepted as a session
   if (typeof claims.jti !== "string" || (await revocationsFor(auth).isRevoked(claims.jti))) return null;
   return claims;
@@ -67,7 +69,8 @@ export const adminAuth = (config: AdminConfig): ((handler: PipeFn) => PipeFn) =>
     return (handler) => handler;
   }
   if (typeof auth.authorize !== "function") throw new Error("Admin auth requires an authorization predicate");
-  const bearer = requireAuth(auth);
+  // never accepts OAuth access tokens: a third-party grant must not act as the admin
+  const bearer = requireAuth({ secret: auth.secret });
   const authenticate: PipeFn = async (conn) => {
     if (conn.headers.has("authorization") || !readCookie(conn.headers.get("cookie"), sessionCookie))
       return bearer(conn);
