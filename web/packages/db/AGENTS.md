@@ -127,3 +127,5 @@ Sibling: none. External: none. Runtime: `Bun.sql` (postgres), `bun:sqlite`.
 Nested `tx.transaction(...)` uses a savepoint on both drivers, so an inner throw rolls back only the inner block. Run nested calls one at a time; concurrent savepoints on one connection are unsupported.
 
 SQLite caches up to 256 prepared statements per connection. Async transactions serialize with other operations on that connection; use the provided `tx` for every operation inside the callback. Nested `tx.transaction` calls use savepoints on both drivers (Postgres via Bun.sql `savepoint`); an inner failure rolls back only the inner scope. The nested Postgres test runs when `ATLAS_TEST_POSTGRES_URL` is set, otherwise it is skipped.
+
+On Postgres, builder queries always run as a single prepared statement, even with no bound values, so text smuggled into a builder query cannot stack a second statement. Plain `{ text, values: [] }` objects still use the simple protocol and may contain several statements (migrations rely on this); keep request input out of them.
