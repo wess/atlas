@@ -24,11 +24,10 @@ export const oauthUserinfoRoutes = (cfg: OAuthConfig, basePath = "/oauth"): read
       let payload: jwt.TokenPayload;
       try {
         payload = await jwt.verify(token, cfg.secret);
-      } catch (err) {
-        return halt(c, 401, {
-          error: "invalid_token",
-          error_description: err instanceof Error ? err.message : String(err),
-        });
+        // only an access token this server issued; a session or reset token signed with the same secret is not one
+        if (!jwt.isAccessToken(jwt.headerOf(token), payload)) throw new Error("not an access token");
+      } catch {
+        return halt(c, 401, { error: "invalid_token", error_description: "Invalid or expired access token" });
       }
       const scope = typeof payload.scope === "string" ? payload.scope : "";
       if (!hasOpenIdScope(scope)) {

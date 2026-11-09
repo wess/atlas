@@ -93,4 +93,11 @@ export const issuerFromRequest = (req: Request): string => {
   return `${url.protocol}//${url.host}`;
 };
 
+/**
+ * The configured issuer when set, else the request origin. The fallback
+ * trusts the Host header, so production deployments should set `issuer`.
+ */
+export const issuerFor = (cfg: { readonly issuer?: string }, req: Request): string =>
+  cfg.issuer ? cfg.issuer.replace(/\/+$/, "") : issuerFromRequest(req);
+
 export const hasOpenIdScope = (scope: string): boolean => parseScope(scope).includes("openid");

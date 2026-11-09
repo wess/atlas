@@ -74,7 +74,10 @@ from(table: string, alias?) → Chainable<any>      dynamic / cross-table chain
   .insert(data) .insertMany(data[]) .update(data) .del() .truncate(cascade?)
   .returning(...keys) .onConflict(spec) .cte(name, sub) .recursiveCte(name, sub)
   .toSql(dialect?) → SqlResult<Selected>
-raw(sql, ...values) → Fragment
+  string cols in q()/orderBy/groupBy/distinct/returning: ident | t.ident | * | t.* (else throw → use raw())
+  select strings: ident or expression without ; -- /* ' " ` $ \ control chars
+  orderBy dir: ASC|DESC, nulls: FIRST|LAST (case-insensitive, else throw)
+raw(sql, ...values) → Fragment   $n = n-th value (repeatable); highest $n must equal values.length
 defineSchema(table, columns) → Schema<T>
 column.serial() → number   .text() → string   .integer() → number
   .bigint() → bigint   .real() → number   .boolean() → boolean
@@ -123,7 +126,7 @@ json(conn, status, data) → Conn
 text(conn, status, body) → Conn
 redirect(conn, location, status?) → Conn
 stream(conn, status, readable) → Conn
-parseJson | parseForm | parseMultipart   built-in parser pipes
+parseJson | parseForm | parseMultipart   built-in parser pipes (parseJson: essence application/json or */*+json)
 onError(handler) → error pipe
 createAdapter(name, start) → ServerAdapter
 compose(adapters) → ComposedServer
@@ -135,7 +138,7 @@ getR | postR | putR | patchR | delR(path, schemas, handler) → Route
     (Zod, plain functions, or any Standard-Schema-shape qualify)
   - before: PipeFn[] (run ahead of validation; e.g., requireAuth)
   - assigns: phantom — `{} as MyClaims` types c.assigns for the handler
-  body schema auto-parses JSON; rejects non-application/json content-types.
+  body schema auto-parses JSON; rejects content-types whose MIME essence isn't application/json or */*+json.
   validation failures → unprocessable("Invalid <where>", VALIDATION_FAILED)
 
 httpError(status, message, { code?, details?, headers? }) → HttpError
@@ -151,7 +154,8 @@ serviceUnavailable(message?, opts?) → HttpError
 ```
 defineEdge(config) → { ...config, listen() → Promise<RunningEdge> }
 runEdge(config) → Promise<RunningEdge>          { mode: "tls"|"plain", stop() }
-proxy(upstream, { preserveHost? }) → EdgeHandler   reverse proxy with X-Forwarded-*
+proxy(upstream, { preserveHost?, trustForwarded? }) → EdgeHandler   reverse proxy with X-Forwarded-*
+  X-Forwarded-For = peer IP, client Forwarded dropped; trustForwarded: true appends to an upstream chain
 forward(req, options, ctx) → Promise<Response>     low-level proxy primitive
 files({ root, index?, stripPrefix? }) → EdgeHandler   static file serving via Bun.file
 compressResponse(res, accept, allow) → Response    apply gzip/zstd
@@ -179,7 +183,9 @@ ForwardContext: { remoteIp, tls, host }
 
 ## @wess/atlas/server/ws
 ```
-ws(config) → { websocket, rooms, upgrade }
+ws(config) → { websocket, rooms, upgrade, upgradeFrom }
+WsConfig: { channels?, onOpen?, onMessage?, onClose?, upgradeData?(req) → ws.data, onError?(err, ws) }
+  handler throw/rejection → onError + close(1011); handle runs only after join → true (channels with join)
 channel(name, handlers) → Channel
 createRooms() → { join, leave, leaveAll, broadcast, members }
 WsConn<T>: wrapped ws with auto-JSON send
@@ -187,27 +193,33 @@ WsConn<T>: wrapped ws with auto-JSON send
 
 ## @wess/atlas/server/sse
 ```
-createSseChannel() → { broadcast, pipe, clients }
-eventStream(conn, generator) → SSE response
-SseClient: { id, send, close }
+createSseChannel({ heartbeat?, topic? }) → { broadcast(event, data, id?), publish(topic, event, data, id?), pipe, clients }
+eventStream(conn, generator, { heartbeat? }) → SSE response
+SseClient: { id, topic?, lastEventId?, send(event, data, id?), close }
 ```
 
 ## @wess/atlas/auth
 ```
 hash(password) → Promise<string>           Argon2id via Bun.password
 verify(password, hashed) → Promise<bool>
-token.sign(payload, secret, opts?) → Promise<string>   opts: { expiresIn: seconds }
+token.sign(payload, secret, opts?) → Promise<string>   opts: { expiresIn: seconds, typ? } — always set expiresIn; verify doesn't require exp
 token.verify(jwt, secret) → Promise<TokenPayload>
+token.headerOf(jwt) | token.isAccessToken(header, claims) | token.ACCESS_TOKEN_TYP ("at+jwt")
 createMemoryStore({ ttl?, maxEntries? }) → SessionStore dev/testing session store; ttl seconds expires entries
-signup({ db, table, fields, onSuccess }) → PipeFn      onSuccess gets the new row without its password
-login({ db, table, identity, password, onSuccess }) → PipeFn  same; the password column must be named as given
-requireAuth({ secret }) → PipeFn           reads Bearer token, sets conn.assigns.auth
-passwordReset({ db, table, secret, transport, expiresIn? }) → PipeFn
+signup({ db, table, fields, onSuccess }) → PipeFn      onSuccess gets the new row without its password; 409 on duplicate reveals the account exists
+login({ db, table, identity, password, onSuccess }) → PipeFn  same; the password column must be named as given; unknown accounts cost one dummy verify
+requireAuth({ secret, acceptAccessTokens? }) → PipeFn  reads Bearer token, sets conn.assigns.auth; refuses OAuth access tokens and `purpose` tokens
+isSessionToken(jwt, claims, { acceptAccessTokens? }) → bool   requireAuth's check, for custom guards
+passwordReset({ db, table, secret, transport, expiresIn?, passwordField? }) → PipeFn  transport not awaited; token bound to the current hash
+verifyPasswordReset(token, secret, currentHash(email)) → { email }   throws once the password has changed
+passwordFingerprint(secret, passwordHash) → string
 ```
 
 ## @wess/atlas/auth/social
 ```
-socialAuth({ secret, providers, cookie? }) → SocialAuth
+socialAuth({ secret, providers, cookie?, intentStore? }) → SocialAuth
+  returnTo is opaque signed state; validate with localReturnPath(value) → string | null before redirecting
+localReturnPath(value) → string | null      local-path check shared with sso (refuses control chars, `\`, `//`)
   SocialAuth: { providers,
                 authorize(name, { scopes?, returnTo?, extraParams? }?) → { url, cookie },
                 complete(name, conn) → { provider, tokens, profile, returnTo? },
@@ -226,6 +238,7 @@ SocialProfile: { provider, id, email?, emailVerified?, name?, picture?, username
 TokenSet: { accessToken, tokenType?, expiresIn?, refreshToken?, idToken?, scope?, raw }
 State + PKCE verifier live in a signed, HttpOnly, SameSite=lax cookie
   (`_atlas_oauth_state`, 10 min TTL). Override via cookie: { name?, path?, secure?, sameSite? }.
+  Apple form_post (provider.crossSiteCallback) gets SameSite=None; Secure. Default callback errors are generic; details are logged.
 ```
 
 ## @wess/atlas/share
@@ -248,7 +261,8 @@ renderShareEmailMessage(opts) → { subject, html, text }   pure preview/render
 ```
 createEmailer({ apiKey?, from? }) → Emailer    auto-picks Resend if both set, else console
 createResendEmailer({ apiKey, from }) → Emailer
-createConsoleEmailer() → Emailer               dev fallback; logs and returns ok:true
+createConsoleEmailer({ redact? }) → Emailer    dev fallback; logs and returns ok:true
+  NODE_ENV=production: warns once, redacts URLs/tokens in logged mail
 Emailer: { enabled, send(msg) → Promise<SendResult> }
 EmailMessage: { to, subject, html, text?, replyTo?, from? }
 SendResult: { ok: true, id?, logged? } | { ok: false, error }
@@ -275,11 +289,16 @@ bearer token. Subprocess configuration travels over stdin rather than command ar
 ## @wess/atlas/oauth
 ```
 oauthRoutes(cfg, { basePath?, adminBasePath? }) → Route[]   all OAuth endpoints
+  cfg.secret: a dedicated OAUTH_SECRET; access tokens are typ at+jwt and refused by requireAuth by default
+  cfg.issuer?: public issuer URL (default from Host — set it in production)
+  /revoke authenticates confidential clients; a replayed auth code revokes that client's refresh tokens for the user
+  /end_session (GET or POST) ends a session only for a valid id_token_hint for client_id;
+    onEndSession({ userId, logoutToken, issuer, clientId, backchannelLogoutUri })
 oauthAuthorizeRoutes(cfg, base) | oauthTokenRoutes | oauthRevokeRoutes
 oauthDeviceRoutes | oauthDiscoveryRoutes | oauthClientRoutes(cfg, adminBase)
 findClient(db, id) | verifyClientCredentials(db, id, secret)
 sweepExpired(cfg) | sweepExpiredAuthCodes | sweepExpiredRefreshTokens | sweepExpiredDeviceCodes(cfg)
-helpers: parseScope, formatScope, includesScopes, isAllowedRedirect,
+helpers: parseScope, formatScope, includesScopes, isAllowedRedirect, issuerFor(cfg, req), issuerFromRequest,
          verifyPkceS256, randomId, shortId, sha256, newUserCode, normalizeUserCode
 constants: ACCESS_TOKEN_TTL_SECONDS, REFRESH_TOKEN_TTL_SECONDS,
            AUTH_CODE_TTL_SECONDS, DEVICE_CODE_TTL_SECONDS, DEVICE_POLL_INTERVAL_SECONDS
@@ -297,10 +316,11 @@ clearDiscoveryCache()                                  for tests / hot-reload
 SsoConfig: { db, issuerUrl, clientId, clientSecret,
              onAuthenticated(db, claims) → { localUserId, displayName? },
              issueSession(conn, user, claims) → Conn,
-             redirectUri?, scopes?, basePath?, defaultPostLoginPath?, stateTable?,
+             redirectUri? (set in production; default trusts Host), scopes?, basePath?, defaultPostLoginPath?, stateTable?,
              findLocalUserBySub?(db, sub), invalidateSessions?(db, { sub, localUserId }) }
 IdTokenClaims: { sub, iss, aud, email?, email_verified?, name?, preferred_username?, picture?, ... }
 DiscoveryDoc: { issuer, authorization_endpoint, token_endpoint, jwks_uri, userinfo_endpoint?, end_session_endpoint? }
+return_to must pass localReturnPath, else defaultPostLoginPath; error descriptions are generic, details logged
 ```
 
 ## @wess/atlas/security
@@ -309,16 +329,19 @@ withSecurityHeaders(fetch, { dev?, csp?, disableCsp? }) → fetch     HSTS/CSP/C
 developmentCsp | productionCsp                                       string CSP presets
 decideInline(mime, name, wantInline) → { contentType, disposition }  safe-MIME allowlist for inline
 createDbRateLimit({ db }) | createMemoryRateLimit({ maxEntries? }) → RateLimit      .check(bucket, max, windowSec) .reset(bucket) .sweep(olderThanSec)
+  memory limiter evicts the oldest bucket at capacity, never refuses
 clientIp(req, { trustedProxies? }) → string                          honors X-Forwarded-For only via trusted proxy
+addressKey(ip) → string                                              IPv6 grouped by /64 for rate-limit keys
 userAgent(req) → string | undefined
 parseTrustedProxies(env) → string[]
 createAuditLogger({ db }) → { log(event), ... }                      fire-and-forget; never throws
-createSessionStore<U>({ db, secret, ttlSeconds }) → SessionStore     DB-backed JWT sessions
+createSessionStore<U>({ db, secret, ttlSeconds, payload? }) → SessionStore     DB-backed JWT sessions; default payload drops /password|secret|token/i fields
   .issue(user, ctx) .isActive(jti) .touch(jti) .revoke(jti, userId) .revokeAll(userId, keep?) .sweepExpired()
 newJti() → string
 generateSecret() → string                       TOTP base32 secret
 totpAt(secret, epochSec) → string               6-digit code at time
-verifyTotp(secret, code, { window? }) → bool    window=1 accepts ±30s
+verifyTotp(secret, code, { window?, afterStep? }) → bool    window=1 accepts ±30s
+matchTotp(secret, code, { window?, afterStep? }) → step | null   store the step, pass it as afterStep to stop replays
 otpauthUrl({ secret, account, issuer }) → string
 generateBackupCodes(n?) → string[]              store hashed
 base32Encode(bytes) | base32Decode(str)
@@ -348,6 +371,7 @@ invalidate(cache, prefix, ...args) → Promise
 request(url, opts?) → Promise<Response>     opts: { json, headers, method, body, retry, timeout (ms) }
 createClient({ baseUrl, headers?, retry?, interceptors?, timeout? }) → Client
   Client: .get .post .put .patch .del .request — all return Promise<Response>
+  paths start with "/" (or same-origin absolute URL); cross-origin paths throw
 withRetry(fn, { attempts?, delay?, backoff?, retryOn? })
 github({ token }) | stripe({ key }) | openai({ key }) | resend({ key })
   preconfigured clients — import from @wess/atlas/request/providers
@@ -368,6 +392,7 @@ CLI surface:
   atlas add <pkg>...                   install @wess/atlas/* packages
   atlas check                         reject local Atlas paths and legacy aliases
   atlas dev                             foreman → Procfile
+  atlas migrate up|down|status|new <name>   DATABASE_URL, --dir (default ./migrations)
   atlas mcp                             start MCP server
   atlas docs [<pkg>|<doc>|<root>]      print canonical documentation to stdout
   atlas skills [<name>]                list or print agent skills
@@ -398,8 +423,11 @@ CLI surface:
 ## @wess/atlas/admin
 ```
 admin({ db, models, basePath?, auth?, allowUnauthenticated? }) → { mount, routes }
-  auth: { secret, authorize(claims), login?({ email, password }) → claims | null, sessionSeconds?, rateLimit?, trustedOrigins? }
-model({ schema, listFields?, searchFields?, filterFields?, relations?, actions?, bulkActions?, readOnly? }) → ModelConfig
+  auth: { secret, authorize(claims), login?({ email, password }) → claims | null, sessionSeconds?, rateLimit?, revocations?, trustedProxies?, trustedOrigins? }
+createMemoryRevocations() | createDbRevocations({ db, table? }) → Revocations   signed-out session ids
+model({ schema, listFields?, searchFields?, filterFields?, relations?, actions?, bulkActions?, readOnly?, editableFields? }) → ModelConfig
+  create/update write schema columns only (minus primary keys), narrowed by editableFields; action ids must be an array
+  bearer and cookie auth refuse OAuth access tokens and purpose tokens; login throttling keys IPv6 by /64
 @wess/atlas/admin/ui: AdminApp AdminSidebar Dashboard ModelList Detail Create FilterBuilder QueryBuilder BulkBar
 Screens: {base} {base}/login {base}/query {base}/models/:table {base}/models/:table/new {base}/models/:table/records/:id
 Server: {base}/api/* {base}/session (POST sign in, GET state, DELETE sign out) {base}/assets/entry.js|entry.css
@@ -407,20 +435,22 @@ Server: {base}/api/* {base}/session (POST sign in, GET state, DELETE sign out) {
 
 ## @wess/atlas/mcp
 ```
-createContext(opts?) → AtlasMcpContext      opts: { db?, cache?, routes?, config?, storage?, migrationsDir?, logBuffer? }
+createContext(opts?) → AtlasMcpContext      opts: { db?, cache?, routes?, config?, storage?, migrationsDir?, logBuffer?, allowWrites? }
+  db.query is read-only and WRITES: tools (migrate.up/down, cache.set/del/flush) are hidden unless allowWrites (atlas mcp: ATLAS_MCP_ALLOW_WRITES=1)
 collectTools(ctx) → Tool[]                  tools auto-register from what's in ctx
 createMcpServer(tools, ctx) → McpServer
-defineTool({ name, description, inputSchema, handler }) → Tool
+defineTool({ name, description, inputSchema, handler, annotations? }) → Tool
 McpServer: .start() .stop()
 
 Always-on tools (independent of context):
   docs.list                              list package, guide, and root documentation sources
-  docs.read({ package?, doc?, root? })   read one canonical source; docs/agents.md is the grounding guide
+  docs.read({ package?, doc?, root? })   read one canonical source (names from docs.list only); docs/agents.md is the grounding guide
 ```
 
 ## @wess/atlas/ai
 ```
 createProvider({ provider, key?, baseUrl? }) → AiProvider   provider: "openai"|"anthropic"|"ollama"
+  key: required openai/anthropic; optional ollama (Bearer, for Ollama Cloud). baseUrl: optional on all three
 createConversation(system?) → Conversation
 addMessage(conv, msg) → Conversation
 send(provider, conv, content, opts?) → { conversation, response }
@@ -437,7 +467,8 @@ generateJson<T>(provider, prompt, opts?) → T
 tool(name, desc, parameters) → ToolDef
 index(rag, id, text, metadata?) → Promise  rag: { ai, store, topK? }
 query(rag, question) → { answer, sources }
-runAgent({ ai, system?, tools, maxIterations? }, prompt) → { response, messages, iterations }
+runAgent({ ai, system?, tools, maxIterations?, approve? }, prompt) → { response, messages, iterations }
+  approve(call) → boolean|Promise<boolean>; false refuses the call. Throwing handlers and bad args become "Error: …" tool results
 withAi(provider) → PipeFn                  adds ai to conn.assigns
 ```
 
@@ -461,4 +492,4 @@ after success, failure, or cancellation. Keys preserve reserved characters and U
 dot path segments are rejected. `/storage/signing#signRequest` accepts a precomputed
 `payloadHash` when signing a body hashed by the caller.
 
-Admin auth requires `{ secret, authorize: claims => boolean | Promise<boolean> }`; authenticated users without permission receive 403. Add `login` to enable the sign-in screen, which issues an `HttpOnly`, `SameSite=Strict` session cookie; cookie writes must be same-origin and attempts are limited to 10 per email per 15 minutes (`rateLimit` shares the count across processes). The browser bundle ships prebuilt, so serving admin needs no React in the application. Anonymous admin configuration requires explicit `allowUnauthenticated: true` for local development and is rejected in production. Browser admin components are exported from `@wess/atlas/admin/ui`, keeping UI dependencies out of server startup. CMS administrator registration requires the generated `ADMIN_SETUP_SECRET` via `X-Setup-Token`.
+Admin auth requires `{ secret, authorize: claims => boolean | Promise<boolean> }`; authenticated users without permission receive 403. Add `login` to enable the sign-in screen, which issues an `HttpOnly`, `SameSite=Strict` session cookie; cookie writes must be same-origin and sign-out revokes the session id; attempts are limited per address and account, per address, and per account, so one client can't lock an account out (`rateLimit` and `revocations` share state across processes). The browser bundle ships prebuilt, so serving admin needs no React in the application. Anonymous admin configuration requires explicit `allowUnauthenticated: true` for local development and is rejected in production. Browser admin components are exported from `@wess/atlas/admin/ui`, keeping UI dependencies out of server startup. CMS administrator registration requires the generated `ADMIN_SETUP_SECRET` via `X-Setup-Token`.

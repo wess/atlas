@@ -4,9 +4,10 @@
 // app uses). The package handles discovery, PKCE, state, code exchange,
 // id_token verification, and back-channel logout.
 
+import { localReturnPath } from "../auth/social/returnto/index.ts";
 import { readStateCookie } from "../auth/social/state/index.ts";
 import * as jwt from "../auth/token/index.ts";
-import type { Route } from "../server/index.ts";
+import type { Conn, Route } from "../server/index.ts";
 import { get, halt, json, parseForm, parseJson, pipeline, post, redirect } from "../server/index.ts";
 import { clearDiscoveryCache, discover } from "./discovery.ts";
 import { newPkcePair, randomNonce, randomState } from "./pkce.ts";
@@ -18,12 +19,19 @@ export { sweepExpiredSsoState } from "./state.ts";
 export type { AuthenticatedUser, DiscoveryDoc, IdTokenClaims, SessionIssuer, SsoConfig } from "./types.ts";
 export { clearDiscoveryCache };
 
-const issuerOf = (req: Request): string => {
+// only a fallback: it trusts the Host header, so production sets cfg.redirectUri
+const originOf = (req: Request): string => {
   const url = new URL(req.url);
   return `${url.protocol}//${url.host}`;
 };
 
-const defaultRedirectUri = (req: Request, basePath: string): string => `${issuerOf(req)}${basePath}/callback`;
+const defaultRedirectUri = (req: Request, basePath: string): string => `${originOf(req)}${basePath}/callback`;
+
+// details go to the log; the browser gets a fixed description so IdP and app internals stay private
+const failure = (c: Conn, status: number, error: string, description: string, err: unknown) => {
+  console.error(`[sso] ${error}:`, err instanceof Error ? err.message : String(err));
+  return halt(c, status, { error, error_description: description });
+};
 
 const ensureOpenIdScope = (scopes: readonly string[]): readonly string[] =>
   scopes.includes("openid") ? scopes : ["openid", ...scopes];
@@ -42,10 +50,7 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
   const scopes = ensureOpenIdScope(cfg.scopes ?? ["openid", "email", "profile"]);
   const parseBody = pipeline(parseJson, parseForm);
   const logoutIds = new Map<string, number>();
-  const localPath = (path: string): string => {
-    if (!path.startsWith("/") || path.startsWith("//") || /[\\\r\n]/.test(path)) return "/";
-    return path;
-  };
+  const localPath = (path: string): string => localReturnPath(path) ?? localReturnPath(defaultPath) ?? "/";
   const cookie = (request: Request, value: string, maxAge: number): string => {
     const secure = new URL(cfg.redirectUri ?? request.url).protocol === "https:" ? "; Secure" : "";
     return `_atlas_sso_state=${value}; Path=${basePath}; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`;
@@ -72,10 +77,7 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
       try {
         disc = await discover(cfg.issuerUrl);
       } catch (err) {
-        return halt(c, 502, {
-          error: "sso_discovery_failed",
-          error_description: err instanceof Error ? err.message : String(err),
-        });
+        return failure(c, 502, "sso_discovery_failed", "The identity provider could not be reached", err);
       }
 
       const state = randomState();
@@ -132,10 +134,7 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
       try {
         disc = await discover(cfg.issuerUrl);
       } catch (err) {
-        return halt(c, 502, {
-          error: "sso_discovery_failed",
-          error_description: err instanceof Error ? err.message : String(err),
-        });
+        return failure(c, 502, "sso_discovery_failed", "The identity provider could not be reached", err);
       }
 
       const redirectUri = cfg.redirectUri ?? defaultRedirectUri(c.request, basePath);
@@ -182,10 +181,7 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
           const payload = await jwt.verifyRs256(tokens.id_token, { keys: fresh.jwks.keys as any });
           claims = payload as IdTokenClaims;
         } catch (err2) {
-          return halt(c, 502, {
-            error: "id_token_invalid",
-            error_description: err2 instanceof Error ? err2.message : String(err2),
-          });
+          return failure(c, 502, "id_token_invalid", "The identity provider's token could not be verified", err2);
         }
       }
 
@@ -208,10 +204,7 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
       try {
         user = await cfg.onAuthenticated(cfg.db, claims);
       } catch (err) {
-        return halt(c, 500, {
-          error: "provisioning_failed",
-          error_description: err instanceof Error ? err.message : String(err),
-        });
+        return failure(c, 500, "provisioning_failed", "Your account could not be set up", err);
       }
 
       // Hand off to host-issued session. The session helper is responsible
@@ -243,20 +236,14 @@ export const mountSso = (cfg: SsoConfig): readonly Route[] => {
         try {
           disc = await discover(cfg.issuerUrl);
         } catch (err) {
-          return halt(c, 502, {
-            error: "sso_discovery_failed",
-            error_description: err instanceof Error ? err.message : String(err),
-          });
+          return failure(c, 502, "sso_discovery_failed", "The identity provider could not be reached", err);
         }
 
         let payload: jwt.TokenPayload;
         try {
           payload = await jwt.verifyRs256(tokenStr, { keys: disc.jwks.keys as any });
         } catch (err) {
-          return halt(c, 400, {
-            error: "invalid_token",
-            error_description: err instanceof Error ? err.message : String(err),
-          });
+          return failure(c, 400, "invalid_token", "logout_token could not be verified", err);
         }
         if (
           !boundClaims(payload) ||

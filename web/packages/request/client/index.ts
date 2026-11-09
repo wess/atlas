@@ -56,9 +56,36 @@ export const request = async (url: string, opts?: RequestOptions): Promise<Respo
   return doFetch();
 };
 
+const isAbsolute = (path: string): boolean => /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path);
+
+/**
+ * Join a client path onto baseUrl. The client attaches its default headers
+ * (often credentials) to every call, so a path that would move the request to
+ * another origin — "@evil.com/x", "evil.com", "//evil.com", or an absolute URL
+ * on a different host — is refused rather than sent.
+ */
+export const resolveClientUrl = (baseUrl: string, path: string): string => {
+  const base = new URL(baseUrl);
+  if (isAbsolute(path)) {
+    const target = new URL(path);
+    if (target.origin !== base.origin) {
+      throw new Error(`Refusing cross-origin request to ${target.origin}; this client is bound to ${base.origin}.`);
+    }
+    return target.href;
+  }
+  if (path !== "" && !path.startsWith("/") && !path.startsWith("?") && !path.startsWith("#")) {
+    throw new Error(`Client paths must start with "/" (got "${path}").`);
+  }
+  const target = new URL(`${baseUrl}${path}`);
+  if (target.origin !== base.origin) {
+    throw new Error(`Refusing cross-origin request to ${target.origin}; this client is bound to ${base.origin}.`);
+  }
+  return target.href;
+};
+
 export const createClient = (config: ClientOptions): Client => {
   const send = async (path: string, opts?: RequestOptions): Promise<Response> => {
-    const url = `${config.baseUrl}${path}`;
+    const url = resolveClientUrl(config.baseUrl, path);
     const headers: Record<string, string> = {
       ...config.headers,
       ...opts?.headers,

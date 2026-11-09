@@ -9,9 +9,9 @@ limiting, audit logging, TOTP/2FA, and revocable JWT sessions.
 |-----------|------------------|
 | `headers` | `withSecurityHeaders` — strict default headers + CSP, plus a peer-IP shim that stashes `req.peerIp` for `clientIp` to read |
 | `inline` | `decideInline` — safe-MIME allowlist for `Content-Disposition: inline` decisions |
-| `ratelimit` | `createDbRateLimit` / `createMemoryRateLimit` + `clientIp` / `userAgent` / `parseTrustedProxies` |
+| `ratelimit` | `createDbRateLimit` / `createMemoryRateLimit` + `clientIp` / `addressKey` / `userAgent` / `parseTrustedProxies` |
 | `audit` | `createAuditLogger` — fire-and-forget audit-event recorder |
-| `totp` | `generateSecret`, `totpAt`, `verifyTotp`, `otpauthUrl`, `generateBackupCodes` |
+| `totp` | `generateSecret`, `totpAt`, `verifyTotp`, `matchTotp`, `otpauthUrl`, `generateBackupCodes` |
 | `sessions` | `createSessionStore` — DB-backed JWT sessions with revoke, sweep, and `last_used_at` |
 
 Everything is exported from the package root: `import { ... } from "@wess/atlas/security"`.
@@ -72,7 +72,7 @@ CREATE TABLE rate_limits (
 ```
 
 `createMemoryRateLimit({ maxEntries? })` returns the same interface for tests / dev (it also
-self-sweeps expired buckets opportunistically). Capacity defaults to 10,000; new buckets are denied when full without resetting active counters.
+self-sweeps expired buckets opportunistically). Capacity defaults to 10,000. When full of live buckets it evicts the oldest instead of refusing, so nobody can lock every client out by minting keys; the cost is that a flood can reset the oldest counters. Use the DB limiter where that matters.
 
 Both limiters expose `sweep(olderThanSeconds)` — drop buckets whose window
 started more than that many seconds ago, returning the removed count. Run it
@@ -82,6 +82,12 @@ from accumulating one row per bucket key forever.
 `clientIp(req, { trustedProxies })` returns the real client IP. It honors
 `X-Forwarded-For` / `X-Real-IP` *only* when the request actually arrived from a
 configured trusted proxy — otherwise the headers are attacker-supplied. Forwarded chains are walked from the nearest hop toward the client; the first untrusted address wins.
+
+`addressKey(ip)` turns an address into a rate-limit key: IPv6 is grouped by its
+/64 (`2001:db8:1:2::/64`), since one host usually controls the whole prefix and
+could otherwise rotate into a fresh bucket per attempt. IPv4 and IPv4-mapped
+IPv6 come back as the plain IPv4 address. Key per-address limits with
+`addressKey(clientIp(req, { trustedProxies }))`.
 
 ## Audit log
 
@@ -112,13 +118,16 @@ Logging is fire-and-forget — `log` never throws and never blocks the response.
 ## TOTP / 2FA
 
 ```ts
-import { generateSecret, otpauthUrl, verifyTotp, generateBackupCodes } from "@wess/atlas/security"
+import { generateSecret, otpauthUrl, matchTotp, generateBackupCodes } from "@wess/atlas/security"
 
 const secret = generateSecret()
 const provisioning = otpauthUrl({ secret, account: user.email, issuer: "Atlas" })
 // render `provisioning` as a QR code
 
-if (!verifyTotp(secret, code, { window: 1 })) return Response.json({ error: "invalid_code" }, { status: 401 })
+// sign-in: refuse a code from a step already used, then remember this one
+const step = matchTotp(secret, code, { window: 1, afterStep: user.totp_last_step ?? undefined })
+if (step === null) return Response.json({ error: "invalid_code" }, { status: 401 })
+await db.execute(from("users").where((q) => q("id").equals(user.id)).update({ totp_last_step: step }))
 
 const backupCodes = generateBackupCodes()  // store hashed; show plaintext exactly once
 ```
@@ -126,6 +135,14 @@ const backupCodes = generateBackupCodes()  // store hashed; show plaintext exact
 Pure `node:crypto` — no external deps. SHA-1 / 6-digit / 30-second steps,
 matching every authenticator app in the wild. `window: 1` accepts ±30s of
 clock skew.
+
+**Replay.** A TOTP code stays valid for its whole window, so on its own
+`verifyTotp` accepts the same code twice. `matchTotp(secret, code, opts)`
+returns the matched time step (or null); store it per account (e.g. a
+`totp_last_step` column) and pass it back as `afterStep`, which refuses that
+step and every earlier one. `verifyTotp` takes `afterStep` too. Update the
+stored step with a conditional write (`WHERE totp_last_step < step`) if two
+sign-ins can race.
 
 ## Sessions
 
@@ -153,6 +170,11 @@ await sessions.revokeAll(user.id, /* keep current */ jti)
 // nightly cleanup
 await sessions.sweepExpired()
 ```
+
+The default JWT payload is the user object minus any field whose name matches
+`/password|secret|token/i` (JWT payloads are readable by whoever holds the
+token). Pass `payload: (user) => ({ id: user.id, ... })` to choose claims
+explicitly.
 
 The JWT stays stateless, but the embedded `jti` is bound to a row whose
 `revoked_at` lets you kill a session server-side. Pair with

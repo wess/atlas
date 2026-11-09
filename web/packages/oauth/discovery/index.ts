@@ -1,6 +1,6 @@
 import type { Route } from "../../server/index.ts";
 import { get, json } from "../../server/index.ts";
-import { issuerFromRequest } from "../helpers";
+import { issuerFor } from "../helpers";
 import type { OAuthConfig } from "../types.ts";
 
 const metadata = (cfg: OAuthConfig, basePath: string, issuer: string) => {
@@ -37,19 +37,19 @@ const metadata = (cfg: OAuthConfig, basePath: string, issuer: string) => {
 
 /**
  * RFC 8414 OAuth + OIDC Discovery. Same payload served at both well-known
- * paths so RPs that pick one or the other both work. `issuer` derives from
- * the request URL so the same binary works behind any host.
+ * paths so RPs that pick one or the other both work. `issuer` is
+ * `cfg.issuer` when set, else derived from the request URL (Host header).
  */
 export const oauthDiscoveryRoutes = (cfg: OAuthConfig, basePath = "/oauth"): readonly Route[] => {
   const routes: Route[] = [
     get("/.well-known/oauth-authorization-server", async (c) =>
-      json(c, 200, metadata(cfg, basePath, issuerFromRequest(c.request))),
+      json(c, 200, metadata(cfg, basePath, issuerFor(cfg, c.request))),
     ),
   ];
   if (cfg.openid) {
     routes.push(
       get("/.well-known/openid-configuration", async (c) =>
-        json(c, 200, metadata(cfg, basePath, issuerFromRequest(c.request))),
+        json(c, 200, metadata(cfg, basePath, issuerFor(cfg, c.request))),
       ),
     );
   }

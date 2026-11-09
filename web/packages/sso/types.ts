@@ -50,7 +50,8 @@ export type SsoConfig = {
   /**
    * Where the IdP should send the user-agent back after consent. Must be
    * registered on the IdP's client record. Defaults to the host app's
-   * `${origin}/auth/sso/callback`, derived from the request URL.
+   * `${origin}/auth/sso/callback`, derived from the request URL, which trusts
+   * the Host header: set it explicitly in production.
    */
   readonly redirectUri?: string;
   /**
@@ -61,7 +62,8 @@ export type SsoConfig = {
   /**
    * Called when the IdP returns valid claims. Implementations upsert the
    * local user row and return its primary key. Throwing aborts the login
-   * with a 500 — RPs should surface the message to the user.
+   * with a generic 500 (`provisioning_failed`); the message is logged, not
+   * sent to the browser.
    */
   readonly onAuthenticated: (db: Connection, claims: IdTokenClaims) => Promise<AuthenticatedUser>;
   /**

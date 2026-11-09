@@ -23,6 +23,8 @@ When `json` is provided, the body is serialized and `content-type: application/j
 
 Returns a `Client` with preconfigured `baseUrl`, default `headers`, optional `retry`, and `interceptors`.
 
+Paths must start with `/` (or `?`/`#`, or be empty) and are appended to `baseUrl`; an absolute URL is accepted only on the same origin as `baseUrl`. Anything that would move the request to another host (`"@evil.com/x"`, `"https://other.host/..."`) throws before any request is sent, so default headers never leave the configured origin.
+
 ```ts
 import { createClient } from "@wess/atlas/request"
 

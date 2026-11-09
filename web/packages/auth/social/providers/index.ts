@@ -42,6 +42,12 @@ export type SocialProvider<TConfig = unknown> = {
   readonly authorizeUrl: (params: AuthorizeParams) => string;
   readonly exchange: (params: ExchangeParams) => Promise<TokenSet>;
   readonly profile: (tokens: TokenSet) => Promise<SocialProfile>;
+  /**
+   * The provider returns to the callback with a cross-site form POST (Apple's
+   * `response_mode=form_post`). Its state cookie is then set `SameSite=None;
+   * Secure`, or the browser would withhold it from the callback.
+   */
+  readonly crossSiteCallback?: boolean;
 };
 
 export type { AppleConfig } from "./apple/index.ts";

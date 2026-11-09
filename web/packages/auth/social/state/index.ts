@@ -40,9 +40,12 @@ export const createState = async (secret: string, provider: string, returnTo?: s
   const nonce = randomNonce();
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = await computeCodeChallenge(codeVerifier);
-  const stateToken = await token.sign({ provider, nonce, codeVerifier, ...(returnTo ? { returnTo } : {}) }, secret, {
-    expiresIn: STATE_TTL_SECONDS,
-  });
+  // purpose keeps the state cookie from passing requireAuth when it shares the session secret
+  const stateToken = await token.sign(
+    { purpose: "social_state", provider, nonce, codeVerifier, ...(returnTo ? { returnTo } : {}) },
+    secret,
+    { expiresIn: STATE_TTL_SECONDS },
+  );
   return { stateToken, codeVerifier, codeChallenge, nonce };
 };
 

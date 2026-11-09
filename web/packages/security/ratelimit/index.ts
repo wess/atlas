@@ -50,7 +50,11 @@ export const createMemoryRateLimit = (opts?: { maxEntries?: number }): RateLimit
       const existing = buckets.get(bucket);
       if (!existing || now - existing.startedAt >= windowSeconds) {
         if (!existing && buckets.size >= maxEntries) sweep(now);
-        if (!existing && buckets.size >= maxEntries) return { ok: false, count: 0, retryAfterSeconds: windowSeconds };
+        // full of live buckets: forget the oldest rather than refuse, or anyone able to mint keys (one per
+        // spoofed account name) could fill the map and lock every client out
+        if (!existing && buckets.size >= maxEntries) buckets.delete(buckets.keys().next().value!);
+        // re-insert so map order stays oldest window first
+        buckets.delete(bucket);
         buckets.set(bucket, { count: 1, startedAt: now, windowSeconds });
         return { ok: true, count: 1, retryAfterSeconds: 0 };
       }
@@ -279,6 +283,28 @@ export const clientIp = (req: Request, opts: ClientIpOptions = {}): string => {
     if (real && isIP(real)) return real;
   }
   return peer;
+};
+
+/**
+ * Rate-limit key for an address. IPv6 hosts are usually handed a whole /64,
+ * so each address there would be a fresh bucket; keying on the /64 counts
+ * them as one client. IPv4 (and IPv4-mapped IPv6) comes back unchanged.
+ */
+export const addressKey = (ip: string): string => {
+  const bare = ip.replace(/^\[|\]$/g, "").split("%")[0]!;
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(bare);
+  if (mapped) return mapped[1]!;
+  if (isIP(bare) !== 6) return ip;
+  const [head = "", tail = ""] = bare.split("::");
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  // an embedded dotted quad fills two groups
+  const width = (groups: string[]) => groups.reduce((n, g) => n + (g.includes(".") ? 2 : 1), 0);
+  const groups = bare.includes("::") ? [...left, ...Array(8 - width(left) - width(right)).fill("0"), ...right] : left;
+  return `${groups
+    .slice(0, 4)
+    .map((g) => Number.parseInt(g, 16).toString(16))
+    .join(":")}::/64`;
 };
 
 export const userAgent = (req: Request): string => (req.headers.get("user-agent") ?? "").slice(0, 256);

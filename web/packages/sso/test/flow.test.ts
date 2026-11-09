@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, test } from "bun:test";
+import { afterAll, beforeAll, expect, spyOn, test } from "bun:test";
 import * as jwt from "../../auth/token/index.ts";
 import { connect } from "../../db/index.ts";
 import { router } from "../../server/index.ts";
@@ -47,7 +47,7 @@ afterAll(() => {
   clearDiscoveryCache();
 });
 
-const setup = async () => {
+const setup = async (provision?: () => Promise<{ localUserId: number }>) => {
   const db = connect({ driver: "sqlite", path: ":memory:" });
   await ensureSsoStateTable(db);
   let logouts = 0;
@@ -60,7 +60,7 @@ const setup = async () => {
       clientSecret: "secret",
       onAuthenticated: async () => {
         logins++;
-        return { localUserId: 1 };
+        return provision ? provision() : { localUserId: 1 };
       },
       issueSession: (conn) => conn,
       invalidateSessions: () => {
@@ -137,6 +137,53 @@ test("concurrent logins share one discovery request", async () => {
     expect(responses.every((res) => res.status === 302)).toBe(true);
     expect(discoveryRequests - before).toBe(1);
   } finally {
+    await db.close();
+  }
+});
+
+const signIn = async (
+  app: (req: Request) => Promise<Response>,
+  db: Awaited<ReturnType<typeof setup>>["db"],
+  query: string,
+) => {
+  const start = await app(new Request(`http://localhost/auth/sso/login${query}`));
+  const state = new URL(start.headers.get("location")!).searchParams.get("state")!;
+  const cookie = start.headers.get("set-cookie")!.split(";")[0]!;
+  const row = await db.one<{ nonce: string }>({ text: "SELECT nonce FROM sso_state WHERE state = ?", values: [state] });
+  return app(
+    new Request(`http://localhost/auth/sso/callback?code=${row!.nonce}&state=${state}`, { headers: { cookie } }),
+  );
+};
+
+test("return_to with a tab, newline, or backslash can't leave the site", async () => {
+  const { db, app } = await setup();
+  try {
+    // browsers strip the tab, so "/\t/evil.example" would become "//evil.example"
+    for (const evil of ["/%09/evil.example", "/%0A/evil.example", "/%5Cevil.example", "/%00/evil.example"]) {
+      const done = await signIn(app, db, `?return_to=${evil}`);
+      expect(done.status).toBe(302);
+      expect(done.headers.get("location")).toBe("/");
+    }
+    expect((await signIn(app, db, "?return_to=/inbox%3Ftab%3D2")).headers.get("location")).toBe("/inbox?tab=2");
+  } finally {
+    await db.close();
+  }
+});
+
+test("a provisioning failure is logged, not shown to the browser", async () => {
+  const logged = spyOn(console, "error").mockImplementation(() => {});
+  const { db, app } = await setup(async () => {
+    throw new Error("duplicate key value violates unique constraint users_email_key");
+  });
+  try {
+    const done = await signIn(app, db, "");
+    expect(done.status).toBe(500);
+    const body = await done.text();
+    expect(body).toContain("provisioning_failed");
+    expect(body).not.toContain("users_email_key");
+    expect(logged.mock.calls.flat().join(" ")).toContain("users_email_key");
+  } finally {
+    logged.mockRestore();
     await db.close();
   }
 });

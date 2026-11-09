@@ -2,7 +2,7 @@ import { isFragment } from "../fragment/index.ts";
 import type { Query } from "../types/index.ts";
 import { validateIdentifier } from "../utils/identifiers.ts";
 import type { ParamCounter } from "../utils/params.ts";
-import { renumberParams } from "../utils/params.ts";
+import { bindFragment } from "../utils/params.ts";
 import { compileReturning, compileWheres } from "./clauses.ts";
 
 export const compileUpdate = (query: Query, counter: ParamCounter, values: any[]): string => {
@@ -13,8 +13,7 @@ export const compileUpdate = (query: Query, counter: ParamCounter, values: any[]
     validateIdentifier(col);
     const val = query.values[col];
     if (isFragment(val)) {
-      const renumbered = renumberParams(val.sql, counter);
-      values.push(...val.values);
+      const renumbered = bindFragment(val, counter, values);
       return `${col} = ${renumbered}`;
     }
     const param = counter.next();

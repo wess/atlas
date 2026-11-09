@@ -30,10 +30,10 @@ test("collectTools excludes db tools when no db", () => {
 
 test("collectTools returns cache tools when cache present", () => {
   const cache = createMemoryCache();
-  const ctx = createContext({ cache });
-  const tools = collectTools(ctx);
+  const tools = collectTools(createContext({ cache }));
   expect(tools.some((t) => t.name === "cache.get")).toBe(true);
-  expect(tools.some((t) => t.name === "cache.flush")).toBe(true);
+  expect(tools.some((t) => t.name === "cache.flush")).toBe(false);
+  expect(collectTools(createContext({ cache, allowWrites: true })).some((t) => t.name === "cache.flush")).toBe(true);
 });
 
 test("collectTools always includes health", () => {
@@ -50,11 +50,12 @@ test("collectTools includes routes when present", () => {
 
 test("collectTools includes migrate tools when db and migrationsDir present", () => {
   const db = connect({ driver: "sqlite", path: ":memory:" });
-  const ctx = createContext({ db, migrationsDir: "./migrations" });
-  const tools = collectTools(ctx);
+  const tools = collectTools(createContext({ db, migrationsDir: "./migrations" }));
   expect(tools.some((t) => t.name === "migrate.status")).toBe(true);
-  expect(tools.some((t) => t.name === "migrate.up")).toBe(true);
-  expect(tools.some((t) => t.name === "migrate.down")).toBe(true);
+  expect(tools.some((t) => t.name === "migrate.up")).toBe(false);
+  const writable = collectTools(createContext({ db, migrationsDir: "./migrations", allowWrites: true }));
+  expect(writable.some((t) => t.name === "migrate.up")).toBe(true);
+  expect(writable.some((t) => t.name === "migrate.down")).toBe(true);
 });
 
 test("collectTools excludes migrate tools when no migrationsDir", () => {
@@ -110,7 +111,7 @@ test("health.check runs against db", async () => {
 
 test("cache tools work with memory cache", async () => {
   const cache = createMemoryCache();
-  const ctx = createContext({ cache });
+  const ctx = createContext({ cache, allowWrites: true });
   const tools = collectTools(ctx);
 
   const setTool = tools.find((t) => t.name === "cache.set")!;

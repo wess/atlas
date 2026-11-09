@@ -45,7 +45,7 @@ export const examples = async () => {
 }
 ```
 
-`db.all` returns rows, `db.one` returns a row or null, and `db.execute` runs writes. Also on the chain: `join`, `leftJoin`, `innerJoin`, `groupBy`, `having`, `distinct`, `insertMany`, `onConflict`, `cte`, `recursiveCte`, `toSql`. Use `from("table")` for dynamic tables and `raw(sql, ...values)` for fragments. Never build SQL with string concatenation.
+`db.all` returns rows, `db.one` returns a row or null, and `db.execute` runs writes. Also on the chain: `join`, `leftJoin`, `innerJoin`, `groupBy`, `having`, `distinct`, `insertMany`, `onConflict`, `cte`, `recursiveCte`, `toSql`. Use `from("table")` for dynamic tables and `raw(sql, ...values)` for fragments. Never build SQL with string concatenation. String columns in `q()`, `orderBy`, `groupBy`, `distinct`, and `returning` must be plain identifiers (`email`, `u.email`, `*`, `u.*`) or the query throws; use `raw()` for expressions. `select` also accepts expressions like `"COUNT(*) as total"` but rejects `;`, comments, quotes, and `$`. `orderBy` direction must be ASC or DESC (any case). In `raw()`, `$n` means the n-th value and may repeat (`raw("a = $1 OR b = $1", x)`); the highest `$n` must equal the value count. On Postgres a builder query always runs as one prepared statement; plain `{ text, values: [] }` may hold several statements, so never put request input in it.
 
 ## Validating input
 
@@ -70,6 +70,8 @@ export const rename = (id: number, email: string) =>
   })
 ```
 
+Nesting `tx.transaction(...)` uses a savepoint, so an inner throw rolls back only the inner block. Run nested calls one at a time, not in `Promise.all`.
+
 ## Migrations
 
 Generate them from the schema rather than writing SQL.
@@ -85,4 +87,4 @@ await migrate.up(db, "./migrations")
 
 `.unique()` becomes a constraint on new tables and a `CREATE UNIQUE INDEX` on existing ones, which fails on apply if the data already has duplicates, so clean those up first. Removing `.unique()` is flagged as a comment for you to resolve. `.default(value)` and `.defaultRaw(sql)` are both written to the DDL. Still read the generated SQL before running it.
 
-Also `migrate.plan`, `migrate.status`, `migrate.down`, and `migrate.create(dir, name)` for hand-written migrations.
+Also `migrate.plan`, `migrate.status`, `migrate.down`, and `migrate.create(dir, name)` for hand-written migrations. From the shell: `atlas migrate up|down|status` reads `DATABASE_URL`, and `atlas migrate new <name>` creates an empty migration.

@@ -10,7 +10,7 @@ description: Create and run Atlas projects. Use when scaffolding with atlas init
 Atlas ships from GitHub releases, not npm. Never add an npm token, a `file:` or `link:` path, or a source alias.
 
 ```sh
-bun add -g https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz
+bun add -g https://github.com/wess/atlas/releases/download/v0.5.1/wess-atlas-cli-0.5.1.tgz
 ```
 
 ## Start
@@ -33,7 +33,7 @@ atlas skills install          # put these skills in .claude/skills
 | `edge` | TLS reverse proxy |
 | `socialnetwork`, `cms` | Fuller reference apps |
 
-`atlas init` writes `.env` with fresh secrets, so keep that file. Prefer a template over assembling from nothing.
+`atlas init` writes `.env` with fresh secrets and owner-only permissions (0600), so keep that file. Prefer a template over assembling from nothing.
 
 ## Modules
 
@@ -62,9 +62,10 @@ A missing variable with no default throws at startup.
 
 ```sh
 atlas dev                       # run the Procfile
+atlas migrate up                # apply ./migrations using DATABASE_URL; also down, status, new <name>
 atlas check                     # rejects local Atlas paths and legacy aliases
 atlas docs [module]             # print a reference
-atlas mcp                       # docs and runtime inspection over MCP
+atlas mcp                       # docs and runtime inspection over MCP; db.query is read-only unless ATLAS_MCP_ALLOW_WRITES=1
 ```
 
 ## Before deploying

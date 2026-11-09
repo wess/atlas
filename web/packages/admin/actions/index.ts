@@ -4,6 +4,12 @@ import type { Conn } from "../../server/index.ts";
 import { json } from "../../server/index.ts";
 import type { ModelConfig } from "../config/index.ts";
 
+/** The ids from a request body, or null unless it is an array of strings and finite numbers. */
+export const parseIds = (value: unknown): (string | number)[] | null =>
+  Array.isArray(value) && value.every((id) => typeof id === "string" || (typeof id === "number" && Number.isFinite(id)))
+    ? value
+    : null;
+
 export const handleBulkAction = async (
   db: Connection,
   table: string,
@@ -13,6 +19,8 @@ export const handleBulkAction = async (
   conn: Conn,
 ): Promise<Conn> => {
   const allowed = modelCfg.bulkActions ?? ["delete"];
+  // a string would be iterated per character, deleting ids "1", "2", ...
+  if (!parseIds(ids)) return json(conn, 400, { error: "ids must be an array of record ids" });
 
   if (!allowed.includes(action as any)) {
     return json(conn, 400, { error: `Bulk action not allowed: ${action}` });

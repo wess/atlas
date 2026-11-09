@@ -15,8 +15,10 @@ import { createStore, presign, remove, upload } from "@wess/atlas/storage"
 const store = createStore({ endpoint: "https://s3.test", bucket: "files", region: "auto", accessKey: "k", secretKey: "s" })
 
 export const save = async (file: File) => {
-  await upload(store, { key: `avatars/${file.name}`, body: file, contentType: file.type, maxBytes: 5_000_000 })
-  return presign(store, `avatars/${file.name}`, { expires: 3600 })
+  // a random key, because the client picks file.name and could overwrite or path into another user's object
+  const key = `avatars/${crypto.randomUUID()}`
+  await upload(store, { key, body: file, contentType: file.type, maxBytes: 5_000_000 })
+  return presign(store, key, { expires: 3600 })
 }
 
 export const drop = (key: string) => remove(store, key)
@@ -56,7 +58,7 @@ export const welcome = (to: string, name: string) =>
   })
 ```
 
-With no key it logs to the console, which suits development. Check `result.ok` rather than expecting a throw. Templates: `inviteEmail`, `passwordResetEmail`.
+With no key it logs to the console, which suits development. In production that fallback warns once and redacts links and tokens, so configure a provider there. Check `result.ok` rather than expecting a throw. Templates: `inviteEmail`, `passwordResetEmail`.
 
 ## Outbound HTTP: `@wess/atlas/request`
 
@@ -68,7 +70,7 @@ const api = createClient({ baseUrl: "https://api.test", timeout: 5000 })
 export const fetchThing = () => api.get("/things")
 ```
 
-Clients return a `Response`. Also `request(url, opts)` and `withRetry(fn, opts)`; presets for `github`, `stripe`, `openai`, and `resend` are in `/request/providers`.
+Clients return a `Response`. Paths must start with `/`; a path or absolute URL that resolves to another origin throws, so the client's headers stay on `baseUrl`. Also `request(url, opts)` and `withRetry(fn, opts)`; presets for `github`, `stripe`, `openai`, and `resend` are in `/request/providers`.
 
 ## Share links: `@wess/atlas/share`
 
@@ -84,5 +86,5 @@ Read the reference first with `atlas docs <module>`, because these need app-owne
 
 - **`billing`:** Stripe checkout, portal, webhooks (`createBilling`), and Connect marketplace payments (`createConnect`).
 - **`notify`:** APNs and FCM push (`createConfiguredNotifier`).
-- **`edge`:** TLS reverse proxy with Let's Encrypt (`defineEdge`); don't bring Caddy or nginx.
+- **`edge`:** TLS reverse proxy with Let's Encrypt (`defineEdge`); don't bring Caddy or nginx. It overwrites `X-Forwarded-For` with the peer address; pass `proxy(url, { trustForwarded: true })` only when the edge itself sits behind a proxy you control.
 - **`mcp`:** expose docs and runtime inspection to agents (`createMcpServer`).

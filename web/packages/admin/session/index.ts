@@ -1,13 +1,14 @@
 import { sign } from "../../auth/token/index.ts";
-import { createMemoryRateLimit } from "../../security/ratelimit/index.ts";
+import { addressKey, clientIp, createMemoryRateLimit } from "../../security/ratelimit/index.ts";
 import type { Conn, Route } from "../../server/index.ts";
 import { del, get, json, parseJson, pipe, pipeline, post, putHeader } from "../../server/index.ts";
-import { isSameOrigin, sessionClaims, sessionCookie } from "../auth/index.ts";
+import { isSameOrigin, revocationsFor, sessionClaims, sessionCookie } from "../auth/index.ts";
 import type { AdminConfig } from "../config/index.ts";
 
 const eightHours = 8 * 60 * 60;
-const attemptsAllowed = 10;
-const attemptWindowSeconds = 15 * 60;
+// per address and account, per address, and per account across every address: one person can't lock
+// out an account, and only a spread-out attack reaches the account-wide limit
+const limits = { pair: [10, 15 * 60], address: [50, 15 * 60], account: [100, 60 * 60] } as const;
 // argon2 work scales with input, so an absurd password must not reach the verifier
 const longestCredential = 1024;
 
@@ -53,11 +54,13 @@ export const generateSessionRoutes = (config: AdminConfig): Route[] => {
     ),
     del(
       path,
-      pipe((c) =>
-        isSameOrigin(c, auth)
-          ? noStore(putHeader(json(c, 200, { authenticated: false }), "set-cookie", cookie(base, "", 0)))
-          : json(c, 403, { error: "Cross-origin request refused." }),
-      ),
+      pipe(async (c) => {
+        if (!isSameOrigin(c, auth)) return json(c, 403, { error: "Cross-origin request refused." });
+        const claims = await sessionClaims(c, auth);
+        if (claims && typeof claims.exp === "number")
+          await revocationsFor(auth).revoke(claims.jti as string, claims.exp);
+        return noStore(putHeader(json(c, 200, { authenticated: false }), "set-cookie", cookie(base, "", 0)));
+      }),
     ),
   ];
 
@@ -79,23 +82,35 @@ export const generateSessionRoutes = (config: AdminConfig): Route[] => {
         ) {
           return json(c, 400, { error: "Enter your email and password." });
         }
-        const bucket = `admin-login:${email.trim().toLowerCase()}`;
-        const limit = await attempts.check(bucket, attemptsAllowed, attemptWindowSeconds);
-        if (!limit.ok) {
-          const minutes = Math.ceil(limit.retryAfterSeconds / 60);
-          return putHeader(
-            json(c, 429, { error: `Too many attempts for this account. Try again in ${minutes} minutes.` }),
-            "retry-after",
-            String(limit.retryAfterSeconds),
-          );
+        const account = email.trim().toLowerCase();
+        const address = addressKey(clientIp(c.request, { trustedProxies: auth.trustedProxies }));
+        const buckets = {
+          pair: `admin-login:${address}:${account}`,
+          address: `admin-login:${address}`,
+          account: `admin-login:${account}`,
+        };
+        for (const [name, [max, window]] of Object.entries(limits) as [
+          keyof typeof limits,
+          readonly [number, number],
+        ][]) {
+          const limit = await attempts.check(buckets[name], max, window);
+          if (!limit.ok) {
+            const minutes = Math.ceil(limit.retryAfterSeconds / 60);
+            return putHeader(
+              json(c, 429, { error: `Too many sign-in attempts. Try again in ${minutes} minutes.` }),
+              "retry-after",
+              String(limit.retryAfterSeconds),
+            );
+          }
         }
         const claims = await login({ email, password });
         if (!claims) return json(c, 401, { error: "That email and password don't match." });
         if (!(await auth.authorize(claims))) {
           return json(c, 403, { error: "This account doesn't have access to the admin." });
         }
-        await attempts.reset(bucket);
-        const value = await sign(claims, auth.secret, { expiresIn: lifetime });
+        // the account-wide count is left alone, or one success would wipe a distributed attack's progress
+        await attempts.reset(buckets.pair);
+        const value = await sign({ ...claims, jti: crypto.randomUUID() }, auth.secret, { expiresIn: lifetime });
         return noStore(putHeader(json(c, 200, { authenticated: true }), "set-cookie", cookie(base, value, lifetime)));
       }),
     ),

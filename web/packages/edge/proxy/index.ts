@@ -1,6 +1,12 @@
 export type ProxyOptions = {
   readonly upstream: string;
   readonly preserveHost?: boolean;
+  /**
+   * Keep the client's X-Forwarded-For/Forwarded and append to them. Only for an
+   * edge that itself sits behind a proxy you control (a load balancer, a CDN);
+   * otherwise any client can claim any address. Default false.
+   */
+  readonly trustForwarded?: boolean;
 };
 
 const HOP_BY_HOP = new Set([
@@ -25,7 +31,17 @@ const stripHopByHop = (headers: Headers): Headers => {
   return out;
 };
 
-const appendForwardedFor = (h: Headers, ip: string): void => {
+// Headers a client could set to impersonate an upstream proxy. As the
+// outermost hop the edge is the only party that knows the real peer, so it
+// discards these and reports what it saw itself.
+const CLIENT_FORWARDING = ["forwarded", "x-forwarded-port", "x-forwarded-prefix"];
+
+const setForwardedFor = (h: Headers, ip: string, trust: boolean): void => {
+  if (!trust) {
+    for (const name of CLIENT_FORWARDING) h.delete(name);
+    h.set("x-forwarded-for", ip);
+    return;
+  }
   const prior = h.get("x-forwarded-for");
   h.set("x-forwarded-for", prior ? `${prior}, ${ip}` : ip);
 };
@@ -47,7 +63,7 @@ export const forward = async (req: Request, options: ProxyOptions, ctx: ForwardC
 
   const headers = stripHopByHop(req.headers);
   headers.set("x-real-ip", ctx.remoteIp);
-  appendForwardedFor(headers, ctx.remoteIp);
+  setForwardedFor(headers, ctx.remoteIp, options.trustForwarded === true);
   headers.set("x-forwarded-proto", ctx.tls ? "https" : "http");
   headers.set("x-forwarded-host", ctx.host);
   if (!options.preserveHost) headers.set("host", target.host);
@@ -71,6 +87,6 @@ export const forward = async (req: Request, options: ProxyOptions, ctx: ForwardC
 };
 
 export const proxy =
-  (upstream: string, opts: { preserveHost?: boolean } = {}) =>
+  (upstream: string, opts: { preserveHost?: boolean; trustForwarded?: boolean } = {}) =>
   async (req: Request, ctx: ForwardContext): Promise<Response> =>
-    forward(req, { upstream, preserveHost: opts.preserveHost }, ctx);
+    forward(req, { upstream, preserveHost: opts.preserveHost, trustForwarded: opts.trustForwarded }, ctx);

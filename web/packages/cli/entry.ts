@@ -5,6 +5,7 @@ import { docsCommand } from "./docs/index.ts";
 import { foreman } from "./foreman/index.ts";
 import { initCommand } from "./init/index.ts";
 import { checkCommand } from "./libraries/index.ts";
+import { migrateCommand } from "./migrate/index.ts";
 import { skillsCommand } from "./skills/index.ts";
 
 const devCommand = command("dev", {
@@ -28,4 +29,13 @@ const mcpCommand = command("mcp", {
   },
 });
 
-cli("atlas", [initCommand, addCommand, checkCommand, devCommand, mcpCommand, docsCommand, skillsCommand]);
+cli("atlas", [
+  initCommand,
+  addCommand,
+  checkCommand,
+  devCommand,
+  migrateCommand,
+  mcpCommand,
+  docsCommand,
+  skillsCommand,
+]);

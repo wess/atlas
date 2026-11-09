@@ -1,5 +1,20 @@
 import type { Connection } from "../../db/query.ts";
 import { readSql, scanMigrations } from "../files/index.ts";
+import { splitSqlite } from "./statements.ts";
+
+// postgres runs a parameterless multi-statement string as one implicit transaction. sqlite would
+// run only the first statement, so it gets each one in turn inside an explicit transaction.
+const runScript = async (db: Connection, sql: string, record: { text: string; values: unknown[] }) => {
+  if (db.dialect === "postgres") {
+    await db.execute({ text: sql, values: [] });
+    await db.execute(record);
+    return;
+  }
+  await db.transaction(async (tx) => {
+    for (const statement of splitSqlite(sql)) await tx.execute({ text: statement, values: [] });
+    await tx.execute(record);
+  });
+};
 
 export type MigrationStatus = {
   readonly name: string;
@@ -32,9 +47,7 @@ export const up = async (db: Connection, dir: string = "./migrations"): Promise<
   const ran: string[] = [];
 
   for (const migration of pending) {
-    const sql = readSql(migration.upPath);
-    await db.execute({ text: sql, values: [] });
-    await db.execute({
+    await runScript(db, readSql(migration.upPath), {
       text:
         db.dialect === "postgres"
           ? "INSERT INTO schema_migrations (name) VALUES ($1)"
@@ -55,9 +68,7 @@ export const down = async (db: Connection, dir: string = "./migrations"): Promis
 
   if (!lastApplied) return null;
 
-  const sql = readSql(lastApplied.downPath);
-  await db.execute({ text: sql, values: [] });
-  await db.execute({
+  await runScript(db, readSql(lastApplied.downPath), {
     text:
       db.dialect === "postgres"
         ? "DELETE FROM schema_migrations WHERE name = $1"

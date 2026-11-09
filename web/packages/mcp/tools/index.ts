@@ -29,5 +29,6 @@ export const collectTools = (ctx: AtlasMcpContext): Tool[] => {
   tools.push(...docsTools);
   if (ctx.logBuffer) tools.push(...logTools);
 
-  return tools;
+  // a connected agent can be prompt-injected, so tools that change state appear only on request
+  return ctx.allowWrites ? tools : tools.filter((tool) => !tool.description.startsWith("WRITES:"));
 };

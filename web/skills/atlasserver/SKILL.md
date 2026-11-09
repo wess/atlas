@@ -32,7 +32,7 @@ serve({
 
 ## Typed routes
 
-Prefer these over parsing by hand. A `body` schema parses JSON itself, so don't add `parseJson` to `before`. Validators can be Zod, a function, or anything with `.parse`.
+Prefer these over parsing by hand. A `body` schema parses JSON itself, so don't add `parseJson` to `before`. Both accept only a content-type of `application/json` or `*/*+json` (parameters like `charset` are fine). Validators can be Zod, a function, or anything with `.parse`.
 
 ```ts
 import { requireAuth } from "@wess/atlas/auth/flows"
@@ -94,7 +94,7 @@ const websocket: WsConfig = { channels: [chat], onClose: (ws) => rooms.leaveAll(
 serve({ port: 3000, routes: [], websocket })
 ```
 
-Clients connect to `/ws` and send `{ channel, event, payload }`.
+Clients connect to `/ws` and send `{ channel, event, payload }`. When a channel has `join`, `handle` only runs for sockets whose join returned `true`. Pass `upgradeData: (req) => ({ cookie: req.headers.get("cookie") })` to put request data on `ws.data`. A handler that throws or rejects is reported to `onError` (default `console.error`) and its socket is closed with 1011.
 
 ## Server-sent events
 
@@ -102,12 +102,14 @@ Clients connect to `/ws` and send `{ channel, event, payload }`.
 import { get, serve } from "@wess/atlas/server"
 import { createSseChannel } from "@wess/atlas/server/sse"
 
-const events = createSseChannel()
+const events = createSseChannel({ heartbeat: 15_000 })
 
 serve({ port: 3000, routes: [get("/events", events.pipe)] })
 
 events.broadcast("notification", { text: "hello" })
 ```
+
+`heartbeat` sends `: ping` keepalives in ms. Give the channel `topic: (c) => c.query.room` and `events.publish("room1", event, data)` reaches one group. Pass an id to `broadcast(event, data, id)` and read `client.lastEventId` to resume after a reconnect.
 
 ## Security
 

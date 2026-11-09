@@ -17,13 +17,24 @@ const listPackages = (): string[] => {
     .sort();
 };
 
+const listDocs = (): string[] =>
+  existsSync(DOCS_DIR)
+    ? readdirSync(DOCS_DIR)
+        .filter((f) => f.endsWith(".md"))
+        .sort()
+    : [];
+
+// names come from an MCP client, so only names the listing itself produced are
+// readable; anything else (../, absolute paths) never reaches the filesystem
 const readPackageAgents = (pkg: string): string => {
+  if (!listPackages().includes(pkg)) throw new Error(`Unknown package "${pkg}"`);
   const path = `${PACKAGES_DIR}/${pkg}/AGENTS.md`;
   if (!existsSync(path)) throw new Error(`No AGENTS.md found for package "${pkg}"`);
   return readFileSync(path, "utf-8");
 };
 
 const readDocFile = (name: string): string => {
+  if (!listDocs().includes(name)) throw new Error(`Unknown doc "${name}"`);
   const path = `${DOCS_DIR}/${name}`;
   if (!existsSync(path)) throw new Error(`No doc file at docs/${name}`);
   return readFileSync(path, "utf-8");
@@ -33,7 +44,10 @@ const ROOT_DOCS = ["llms.txt", "SOUL.md", "CLAUDE.md", "README.md"] as const;
 
 const listRootDocs = (): string[] => ROOT_DOCS.filter((name) => existsSync(`${REPO_ROOT}${name}`));
 
+const isRootDoc = (name: string): name is (typeof ROOT_DOCS)[number] => (ROOT_DOCS as readonly string[]).includes(name);
+
 const readRootDoc = (name: string): string => {
+  if (!isRootDoc(name)) throw new Error(`Unknown root doc "${name}"; expected one of ${ROOT_DOCS.join(", ")}`);
   const path = `${REPO_ROOT}${name}`;
   if (!existsSync(path)) throw new Error(`No root doc named "${name}"`);
   return readFileSync(path, "utf-8");
@@ -47,11 +61,7 @@ export const docsTools: Tool[] = [
     inputSchema: { type: "object", properties: {} },
     handler: async () => {
       const packages = listPackages();
-      const docs = existsSync(DOCS_DIR)
-        ? readdirSync(DOCS_DIR)
-            .filter((f) => f.endsWith(".md"))
-            .sort()
-        : [];
+      const docs = listDocs();
       const root = listRootDocs();
       return { packages, docs, root };
     },

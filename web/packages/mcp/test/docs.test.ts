@@ -78,3 +78,28 @@ test("docs.read errors when neither package nor doc is supplied", async () => {
   const read = docsTools.find((t) => t.name === "docs.read")!;
   await expect(read.handler({}, ctx)).rejects.toThrow("requires either");
 });
+
+test("docs.read rejects traversal through root, doc, and package", async () => {
+  const ctx = createContext();
+  const read = docsTools.find((t) => t.name === "docs.read")!;
+  const attempts = [
+    { root: "../../../../../../../../etc/passwd" },
+    { root: "/etc/hosts" },
+    { root: "package.json" },
+    { doc: "../README" },
+    { doc: "../../../../../../../../etc/passwd" },
+    { package: "../docs" },
+    { package: "../../../../../../../../etc" },
+  ];
+  for (const params of attempts) {
+    await expect(read.handler(params, ctx)).rejects.toThrow(/Unknown/);
+  }
+});
+
+test("docs.read still serves listed root docs", async () => {
+  const ctx = createContext();
+  const read = docsTools.find((t) => t.name === "docs.read")!;
+  const result = (await read.handler({ root: "llms.txt" }, ctx)) as { source: string; content: string };
+  expect(result.source).toBe("llms.txt");
+  expect(result.content.length).toBeGreaterThan(0);
+});

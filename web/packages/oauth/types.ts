@@ -65,14 +65,29 @@ export type OidcConfig = {
     readonly userId: number | string;
     readonly logoutToken: string;
     readonly issuer: string;
+    /** The client the logout token is addressed to. */
+    readonly clientId: string;
+    /** Where to POST `logoutToken` (as `logout_token=`, form-encoded). */
+    readonly backchannelLogoutUri: string;
   }) => Promise<void> | void;
 };
 
 /** Top-level config every route factory consumes. */
 export type OAuthConfig = {
   readonly db: Connection;
-  /** JWT signing secret. */
+  /**
+   * Access-token signing secret. Use a dedicated secret (e.g. `OAUTH_SECRET`),
+   * not the one your app signs sessions with. `requireAuth` rejects access
+   * tokens either way, but a separate secret keeps them out of any custom
+   * guard that calls `token.verify` directly.
+   */
   readonly secret: string;
+  /**
+   * Public issuer URL, e.g. `https://id.example.com`. Used for discovery and
+   * the `iss` of id_tokens and logout tokens. When unset it is derived from
+   * the request's Host header, which a client controls: set it in production.
+   */
+  readonly issuer?: string;
   /** Scopes the server is willing to grant. */
   readonly scopes: readonly string[];
   /**

@@ -62,6 +62,12 @@ export type VerifyTotpOptions = {
   readonly step?: number;
   /** Number of steps before/after `when` to accept. Default: 1 (±30s). */
   readonly window?: number;
+  /**
+   * The step returned by the last successful `matchTotp` for this account.
+   * Codes from that step or earlier are refused, so a code can't be replayed
+   * inside its validity window. Store it per user after each sign-in.
+   */
+  readonly afterStep?: number;
 };
 
 const constantTimeEqual = (a: string, b: string): boolean => {
@@ -71,21 +77,35 @@ const constantTimeEqual = (a: string, b: string): boolean => {
   return diff === 0;
 };
 
-export const verifyTotp = (secret: string, code: string, opts: VerifyTotpOptions = {}): boolean => {
+/**
+ * Like `verifyTotp`, but returns the time step the code matched (or null).
+ * Persist it as the account's last used step and pass it back as
+ * `afterStep` next time; a matched step is always greater than `afterStep`.
+ */
+export const matchTotp = (secret: string, code: string, opts: VerifyTotpOptions = {}): number | null => {
   const cleaned = code.replace(/\s+/g, "");
-  if (!/^\d{6}$/.test(cleaned)) return false;
+  if (!/^\d{6}$/.test(cleaned)) return null;
   const now = opts.when ?? new Date();
   const step = opts.step ?? 30;
   const window = opts.window ?? 1;
   const counter = Math.floor(now.getTime() / 1000 / step);
+  const floor = opts.afterStep ?? Number.NEGATIVE_INFINITY;
   // Walk every step in the window without short-circuiting so timing leaks
   // nothing about which step matched (or whether any did).
-  let valid = false;
+  let matched: number | null = null;
   for (let i = -window; i <= window; i++) {
-    if (constantTimeEqual(hotp(secret, BigInt(counter + i)), cleaned)) valid = true;
+    const candidate = counter + i;
+    if (constantTimeEqual(hotp(secret, BigInt(candidate)), cleaned) && candidate > floor) matched = candidate;
   }
-  return valid;
+  return matched;
 };
+
+/**
+ * True when `code` is valid for `secret` now. On its own a code stays usable
+ * for its whole window; pass `afterStep` (from `matchTotp`) to stop replays.
+ */
+export const verifyTotp = (secret: string, code: string, opts: VerifyTotpOptions = {}): boolean =>
+  matchTotp(secret, code, opts) !== null;
 
 export type OtpAuthOptions = {
   readonly secret: string;

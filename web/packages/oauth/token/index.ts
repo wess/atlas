@@ -9,7 +9,7 @@ import {
   DEVICE_POLL_INTERVAL_SECONDS,
   formatScope,
   hasOpenIdScope,
-  issuerFromRequest,
+  issuerFor,
   parseScope,
   REFRESH_TOKEN_TTL_SECONDS,
   randomId,
@@ -62,7 +62,7 @@ const issueTokens = async (
       jti: randomId(16),
     },
     cfg.secret,
-    { expiresIn: ACCESS_TOKEN_TTL_SECONDS },
+    { expiresIn: ACCESS_TOKEN_TTL_SECONDS, typ: jwt.ACCESS_TOKEN_TYP },
   );
   const refreshToken = `oat_${randomId(32)}`;
   const refreshHash = sha256(refreshToken);
@@ -85,7 +85,7 @@ const issueTokens = async (
   };
   if (cfg.openid && hasOpenIdScope(scope)) {
     const id_token = await signIdToken(cfg.openid, user, {
-      issuer: issuerFromRequest(ctx.request),
+      issuer: issuerFor(cfg, ctx.request),
       audience: clientId,
       nonce: ctx.nonce,
       authTime: ctx.authTime,
@@ -152,7 +152,33 @@ export const oauthTokenRoutes = (cfg: OAuthConfig, basePath = "/oauth"): readonl
     >;
 
     const claimedCode = claimed[0];
-    if (!claimedCode) return oauthError(c, 400, "invalid_grant", "Code not found or already used");
+    if (!claimedCode) {
+      // a used code presented again means it leaked (RFC 6749 §4.1.2). refresh tokens don't record which
+      // code minted them, so burn every refresh token this client holds for the user; access tokens
+      // are stateless and run out on their own within ACCESS_TOKEN_TTL_SECONDS.
+      const used = (await cfg.db.one(
+        from(tables.authorizationCodes)
+          .where((q) => q("code").equals(code))
+          .select("client_id", "user_id", "used_at"),
+      )) as Pick<AuthCodeRow, "client_id" | "user_id" | "used_at"> | null;
+      if (used?.used_at && used.client_id === clientId) {
+        await cfg.db.execute(
+          from(tables.refreshTokens)
+            .where((q) => q("user_id").equals(used.user_id))
+            .where((q) => q("client_id").equals(used.client_id))
+            .where((q) => q("revoked_at").isNull())
+            .update({ revoked_at: new Date().toISOString() }),
+        );
+        logAudit(cfg, {
+          userId: used.user_id,
+          event: "oauth.code_reuse_detected",
+          metadata: { client_id: clientId },
+          ip: requestCtx.ip ?? null,
+          userAgent: requestCtx.userAgent ?? null,
+        });
+      }
+      return oauthError(c, 400, "invalid_grant", "Code not found or already used");
+    }
     if (new Date(claimedCode.expires_at).getTime() < Date.now()) {
       return oauthError(c, 400, "invalid_grant", "Code expired");
     }

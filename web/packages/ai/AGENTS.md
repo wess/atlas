@@ -5,7 +5,7 @@ Unified AI provider abstraction with chat, embeddings, streaming, RAG, and agent
 ## Exports
 
 Provider:
-- `createProvider({ provider, key?, baseUrl? })` → `AiProvider` — provider is `"openai" | "anthropic" | "ollama"`
+- `createProvider({ provider, key?, baseUrl? })` → `AiProvider` — provider is `"openai" | "anthropic" | "ollama"`. `key` is required for openai/anthropic, optional for ollama (sent as `Authorization: Bearer`, needed for Ollama Cloud). `baseUrl` is optional for all three (anthropic default `https://api.anthropic.com`, trailing slash trimmed)
 - `AiProvider` exposes `.chat(opts)`, `.chatStream(opts)`, `.embed(opts)`
 
 Chat:
@@ -33,7 +33,9 @@ RAG:
 - `query(rag, question)` → `{ answer, sources }`
 
 Agents:
-- `runAgent({ ai, system?, tools, maxIterations? }, prompt)` → result
+- `runAgent({ ai, system?, tools, maxIterations?, approve? }, prompt)` → result
+  - `approve(call) => boolean | Promise<boolean>` runs before each tool call; `false` refuses it and the model gets `Error: tool call <name> was not approved` as the result
+  - A handler that throws, an unknown tool, or unparseable arguments (`ToolCall.error`) becomes an `Error: <message>` tool result; the loop keeps going and no stack is sent
 
 Server pipe:
 - `withAi(provider)` → `PipeFn` — adds `provider` to `conn.assigns.ai`
@@ -53,6 +55,7 @@ import { createProvider } from "@wess/atlas/ai"
 const openai = createProvider({ provider: "openai", key: process.env.OPENAI_API_KEY! })
 const anthropic = createProvider({ provider: "anthropic", key: process.env.ANTHROPIC_API_KEY! })
 const ollama = createProvider({ provider: "ollama" }) // local, no key needed
+const cloud = createProvider({ provider: "ollama", baseUrl: "https://ollama.com", key: process.env.OLLAMA_API_KEY }) // Ollama Cloud: sends Authorization: Bearer
 ```
 
 ## Chat
@@ -135,8 +138,12 @@ const result = await runAgent({
     handler: async (args) => String((args.a as number) * (args.b as number)),
   }],
   maxIterations: 5,
+  // optional: gate calls, e.g. refuse anything destructive without a human
+  approve: (call) => call.name !== "delete_account",
 }, "What is 6 times 7?")
 ```
+
+Tool arguments are model output, and a prompt-injected document can choose them. Never `eval`, `new Function`, shell out, or interpolate them into SQL; parse them into the narrow shape the tool needs and reject the rest.
 
 ## Server pipe
 

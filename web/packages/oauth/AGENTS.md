@@ -18,7 +18,9 @@ import { router } from "@wess/atlas/server"
 
 const cfg = {
   db,
-  secret: process.env.JWT_SECRET!,
+  // a dedicated secret: access tokens are third-party grants, not app sessions
+  secret: process.env.OAUTH_SECRET!,
+  issuer: "https://id.example.com",   // set in production; otherwise taken from the Host header
   scopes: ["read", "write", "share"],
   loadUser: (db, id) => db.one(from("users").where(q => q("id").equals(id))),
   buildAccessTokenClaims: (user) => ({
@@ -27,7 +29,7 @@ const cfg = {
     username: user.username,
     name: user.name,
   }),
-  requireUser: requireAuth({ secret: process.env.JWT_SECRET! }),
+  requireUser: requireAuth({ secret: process.env.JWT_SECRET! }),  // the app's own session secret
   requireAdmin: ownerOnlyPipe,  // your own admin guard
 }
 
@@ -47,7 +49,7 @@ Bun.serve({
 | POST   | `/authorize/approve`        | requireUser  | Issue an auth code; returns `redirect_url` |
 | POST   | `/authorize/deny`           | requireUser  | Returns the error redirect URL |
 | POST   | `/token`                    | client cred  | `authorization_code`, `refresh_token`, `device_code` grants |
-| POST   | `/revoke`                   | open         | RFC 7009 revocation |
+| POST   | `/revoke`                   | client cred  | RFC 7009 revocation (confidential clients must authenticate) |
 | POST   | `/device/authorize`         | open         | RFC 8628 — start device-code flow |
 | GET    | `/device/info`              | requireUser  | Consent metadata for `/pair` SPA |
 | POST   | `/device/approve`           | requireUser  | Record approval against a user_code |
@@ -69,7 +71,8 @@ Plus admin (under `adminBasePath`, default `/admin/oauth`):
 ```ts
 type OAuthConfig = {
   db: Connection
-  secret: string                      // JWT signing secret
+  secret: string                      // access-token signing secret — use a dedicated OAUTH_SECRET
+  issuer?: string                     // public issuer URL; default derives from the Host header
   scopes: readonly string[]           // scopes you're willing to grant
 
   loadUser: (db, userId) => Promise<OAuthUser | null>
@@ -95,6 +98,28 @@ type OAuthConfig = {
 `buildAccessTokenClaims` is the only place your user shape leaks into the JWT.
 The library merges in `{ client_id, scope, jti }` regardless of what you
 return.
+
+### Access tokens are not sessions
+
+Access tokens are HS256 JWTs with the RFC 9068 header `typ: "at+jwt"`.
+`requireAuth` from `@wess/atlas/auth` (and the admin panel's bearer and cookie
+auth) **refuses them by default**, along with older tokens carrying
+`client_id` + `scope`: otherwise a token a user granted a third-party client
+with scope `read` would act as that user everywhere. Give OAuth its own
+`OAUTH_SECRET` anyway, so custom guards that call `token.verify` directly
+can't accept them either. For a resource API meant for OAuth clients, verify
+with the OAuth secret and opt in:
+
+```ts
+const forClients = requireAuth({ secret: process.env.OAUTH_SECRET!, acceptAccessTokens: true })
+// then check conn.assigns.auth.scope
+```
+
+### Issuer
+
+`issuer` sets discovery URLs and the `iss` of id_tokens and logout tokens.
+Unset, it comes from the request's Host header, which a client controls;
+set it in production.
 
 `audit` integrates cleanly with `@wess/atlas/security`'s `AuditLogger`:
 
@@ -199,6 +224,22 @@ import {
 - `redirect_uri` matching is **exact-string only**, per OAuth 2.0 Security
   BCP. No prefix or substring matching.
 - Client secrets are stored as SHA-256 hex; verification is constant-time.
+- **Revocation** (RFC 7009): a refresh token issued to a confidential client
+  can only be revoked by that client sending `client_id` + `client_secret`
+  (401 `invalid_client` otherwise). A `client_id` that is sent must own the
+  token. Public clients' tokens can be revoked by whoever holds them.
+- **Authorization-code replay**: presenting a used code revokes every refresh
+  token that client holds for the user (refresh rows don't record their code,
+  so that is the narrowest set). Access tokens are stateless and expire within
+  `ACCESS_TOKEN_TTL_SECONDS`.
+- **userinfo** accepts only access tokens and answers a generic
+  `invalid_token` without verification details.
+- **end_session** (GET or form POST) only ends a session for an
+  `id_token_hint` this issuer signed whose audience includes the `client_id`
+  sent; without one it just redirects (or returns `{ logged_out: true }`), so a
+  cross-site logout link can't end anyone's session. `onEndSession` is called
+  once per client with a `backchannel_logout_uri`, receiving
+  `{ userId, logoutToken, issuer, clientId, backchannelLogoutUri }`.
 - The plaintext `client_secret` is returned **exactly once** at creation /
   rotation. Surface that in your admin UI and discard.
 

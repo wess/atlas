@@ -19,9 +19,12 @@ the server pipes; `/auth/social` provides social login. `/auth` is the aggregate
 ### JWT Tokens (`token` namespace)
 
 - `token.sign(payload, secret, opts?): Promise<string>` - Create an HS256 JWT
-  - `opts.expiresIn` - seconds until expiration
+  - `opts.expiresIn` - seconds until expiration. **Always set it for anything that grants access**: `verify` checks `exp` when present but does not require it, so a token signed without `expiresIn` is valid forever.
+  - `opts.typ` - JOSE header `typ`, default `"JWT"`. OAuth access tokens use `"at+jwt"`.
 - `token.verify(token, secret): Promise<TokenPayload>` - Verify and decode a JWT
-  - Requires HS256, object claims and finite numeric dates; rejects invalid signatures, expired `exp` (including zero), and future `nbf`
+  - Requires HS256, object claims and finite numeric dates; rejects invalid signatures, expired `exp` (including zero), and future `nbf`. Does not require `exp` (see above).
+- `token.headerOf(token): Record<string, unknown>` - decode the JOSE header without checking it; only meaningful after `verify`
+- `token.ACCESS_TOKEN_TYP` (`"at+jwt"`), `token.isAccessToken(header, claims)` - true for an OAuth access token: the RFC 9068 header, or `client_id` + `scope` claims (tokens minted before the header was set)
 - `TokenPayload` - `Record<string, unknown> & { iat?: number; exp?: number }`
 
 ### Session Management
@@ -34,27 +37,35 @@ the server pipes; `/auth/social` provides social login. `/auth` is the aggregate
 - `signup({ db, table, fields, onSuccess })` - Registration pipe; `table` is a name string or a `defineSchema` object
   - Reads body fields, hashes password, inserts into DB
   - Calls onSuccess with conn and the new row, without its password
+  - A duplicate answers 409, which reveals that the account exists. Rate limit signup, or answer generically and notify the address out of band, if that matters for your app
 - `login({ db, table, identity, password, onSuccess })` - Login pipe
   - Looks up user by identity field, verifies password
   - Calls onSuccess with the row, without its password, or halts 401
-- `requireAuth({ secret })` - JWT guard pipe
+  - An unknown account still runs one argon2 verify against a fixed dummy hash, so timing doesn't reveal which accounts exist
+- `requireAuth({ secret, acceptAccessTokens? })` - JWT guard pipe
   - Reads Bearer token from Authorization header
   - Puts decoded payload into `conn.assigns.auth`
   - Halts 401 if missing or invalid
-- `passwordReset({ db, table, secret, transport, expiresIn? })` - Password reset pipe
-  - Generates reset token (JWT signed with `secret`, TTL `expiresIn` seconds, default 3600), calls transport function
+  - Refuses OAuth access tokens from `@wess/atlas/oauth` (they are third-party grants, not the user's session) and any token with a `purpose` claim (password resets, social state). `acceptAccessTokens: true` lets an API meant for OAuth clients take access tokens; check `conn.assigns.auth.scope` there
+- `isSessionToken(jwt, claims, { acceptAccessTokens? })` - the check `requireAuth` applies after `verify`, for custom guards that call `token.verify` themselves
+- `passwordReset({ db, table, secret, transport, expiresIn?, passwordField? })` - Password reset pipe
+  - Generates reset token (JWT signed with `secret`, TTL `expiresIn` seconds, default 3600) with `purpose: "password_reset"` and `pwd`, a keyed fingerprint of the current password hash (`passwordField`, default `password`)
+  - Calls `transport` without awaiting it, so delivery time can't reveal whether the address has an account. Delivery errors are logged with the token redacted; the response is 200 either way
   - Always returns 200 to prevent email enumeration
+- `verifyPasswordReset(token, secret, currentHash) → Promise<{ email }>` - use it in the endpoint that accepts the new password. `currentHash(email)` returns the stored hash (or null). Throws unless the token is an unexpired reset token whose fingerprint matches, so a link stops working as soon as the password changes, including after it is used once
+- `passwordFingerprint(secret, passwordHash)` - the fingerprint itself, for apps that mint their own reset tokens
 
 ## Usage
 
 ```ts
-import { hash, verify, token, requireAuth, login, signup } from "@wess/atlas/auth"
+import { hash, verify, token, requireAuth, login, signup, passwordReset, verifyPasswordReset } from "@wess/atlas/auth"
+import { from } from "@wess/atlas/db"
 
 // password hashing
 const hashed = await hash("mypassword")
 const ok = await verify("mypassword", hashed)
 
-// JWT
+// JWT — always pass expiresIn for anything that grants access
 const jwt = await token.sign({ userId: 1 }, SECRET, { expiresIn: 3600 })
 const payload = await token.verify(jwt, SECRET)
 
@@ -68,8 +79,17 @@ const loginPipe = login({
   identity: "email",
   password: "password",
   onSuccess: async (conn, user) =>
-    json(conn, 200, { token: await token.sign({ userId: user.id }, SECRET) }),
+    json(conn, 200, { token: await token.sign({ userId: user.id }, SECRET, { expiresIn: 3600 }) }),
 })
+
+// password reset: request, then confirm
+const requestReset = passwordReset({ db, table: "users", secret: RESET_SECRET, transport: sendResetEmail })
+const confirmReset = async (resetToken: string, newPassword: string) => {
+  const { email } = await verifyPasswordReset(resetToken, RESET_SECRET, async (email) =>
+    (await db.one(from("users").where((q) => q("email").equals(email))))?.password ?? null,
+  )
+  await db.execute(from("users").where((q) => q("email").equals(email)).update({ password: await hash(newPassword) }))
+}
 ```
 
 ### Social Login (`@wess/atlas/auth/social`)
@@ -132,7 +152,7 @@ const routes = [
       // app owns the user table — upsert here
       const user = await upsertUserFromProfile(profile)
       const jwt = await token.sign({ sub: user.id }, JWT_SECRET, { expiresIn: 3600 })
-      return redirect(putHeader(conn, "set-cookie", `session=${jwt}; HttpOnly; Path=/`), returnTo ?? "/")
+      return redirect(putHeader(conn, "set-cookie", `session=${jwt}; HttpOnly; Path=/`), localReturnPath(returnTo ?? "") ?? "/")
     },
   })),
   // …same for github / apple / microsoft / facebook / twitter
@@ -142,10 +162,22 @@ const routes = [
 Apple uses `response_mode=form_post` by default, so the callback arrives as a
 `POST` with form-encoded `code`/`state` in the body — mount the route with
 `post(...)` and compose `parseForm` before `social.callback("apple", …)`.
+That POST is cross-site, so Apple's state cookie is set `SameSite=None; Secure`
+automatically (a provider opts in with `crossSiteCallback: true`).
+
+#### Return destinations
+
+`returnTo` is opaque app state, signed into the state cookie and handed back to `onSuccess` and `onError`. Atlas never redirects to it, so it can carry anything, such as a JSON intent. Before redirecting to it, check it: browsers strip tabs and newlines, so `/\t/evil.example` becomes `//evil.example`.
+
+`localReturnPath(value) → string | null` returns the value only if it is a same-site path, refusing control characters, backslashes, `//host`, and anything that resolves off the site. Use it on every path you redirect to.
+
+The default callback error answers 400 `{ error: "Sign-in failed. Please try again." }`
+and logs the underlying message (which can carry a provider's raw response).
+`onError` still receives the real `Error`.
 
 #### Stateless flow
 
-State + PKCE verifier live in a signed, HttpOnly, SameSite=lax cookie
+State + PKCE verifier live in a signed, HttpOnly, SameSite=lax cookie (SameSite=none for form_post providers)
 (`_atlas_oauth_state` by default, 10-minute TTL). Override via
 `socialAuth({ cookie: { name?, path?, secure?, sameSite? } })`. Behind a
 non-HTTPS dev proxy, set `cookie: { secure: false }`.

@@ -46,6 +46,8 @@ const panel = admin({
 serve({ port: 3000, routes: [...panel.routes] })
 ```
 
+Create and update write only schema columns, never primary keys on update; add `editableFields: ["email", "role"]` to a model to narrow that further. Leave password hashes and similar columns out of the schema you hand the admin, or out of `editableFields`. Bulk and custom action `ids` must be an array.
+
 Put your own routes first if any wildcard could overlap. In `relations`, `schema` is the related table and `foreignKey` is its column pointing back at this model.
 
 ## Sign-in
@@ -54,8 +56,9 @@ Put your own routes first if any wildcard could overlap. In `relations`, `schema
 - **Without `login`,** the screen explains that sign-in isn't set up. Bearer tokens still work for scripts.
 - **The session** is an `HttpOnly`, `SameSite=Strict` cookie scoped to `basePath`, `Secure` in production, lasting 8 hours (`sessionSeconds`).
 - **Writes** with a cookie must come from the same origin. If a proxy rewrites `Host`, add the public origin to `trustedOrigins`.
-- **Signing out** clears the cookie but can't revoke the token, so a copied cookie works until it expires.
-- **Attempts** are limited to 10 per email per 15 minutes. Pass `rateLimit: createDbRateLimit({ db })` when running more than one process.
+- **Signing out** revokes the session, so a copied cookie stops working. Pass `revocations: createDbRevocations({ db })` (from `@wess/atlas/admin`) when running more than one process.
+- **Tokens:** Bearer and cookie auth refuse OAuth access tokens and reset tokens even when signed with `secret`.
+- **Attempts** are limited per address and account, so one client can't lock an account out. IPv6 addresses count per /64. Pass `rateLimit: createDbRateLimit({ db })` when running more than one process, and `trustedProxies` behind a proxy.
 - **Scaffolds:** the `admin` template and `atlas init` admin feature sign in with `ADMIN_EMAIL` and `ADMIN_PASSWORD` from `.env`.
 
 Local development without auth needs an explicit `allowUnauthenticated: true`, which is refused when `NODE_ENV=production`.

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import source from "../../../package.json";
@@ -10,6 +10,7 @@ import {
   generateProject,
   listTemplates,
   scaffoldFromTemplate,
+  writeProjectFile,
 } from "../init/templates.ts";
 import { version } from "../modules/index.ts";
 import { releaseUrl } from "../modules/source.ts";
@@ -228,5 +229,32 @@ test("scaffoldFromTemplate creates nested directories for api template", async (
     expect(existsSync(join(testDir, "migrations", "00000001_create_users", "up.sql"))).toBe(true);
   } finally {
     if (existsSync(testDir)) rmSync(testDir, { recursive: true });
+  }
+});
+
+test.each(listTemplates())("the %s scaffold writes .env owner-only", async (template) => {
+  const directory = mkdtempSync(join(tmpdir(), "atlasscaffold"));
+  try {
+    await scaffoldFromTemplate(template, directory, "fixture");
+    const env = join(directory, ".env");
+    if (existsSync(env)) expect(statSync(env).mode & 0o777).toBe(0o600);
+    const example = join(directory, ".env.example");
+    if (existsSync(example)) expect(statSync(example).mode & 0o077).not.toBe(0);
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
+
+test("writeProjectFile restricts env files only", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "atlasenv"));
+  try {
+    await writeProjectFile(join(directory, ".env"), "AUTH_SECRET=x\n");
+    await writeProjectFile(join(directory, ".env.local"), "X=1\n");
+    await writeProjectFile(join(directory, "README.md"), "hi\n");
+    expect(statSync(join(directory, ".env")).mode & 0o777).toBe(0o600);
+    expect(statSync(join(directory, ".env.local")).mode & 0o777).toBe(0o600);
+    expect(statSync(join(directory, "README.md")).mode & 0o077).not.toBe(0);
+  } finally {
+    rmSync(directory, { recursive: true });
   }
 });

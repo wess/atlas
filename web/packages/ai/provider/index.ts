@@ -20,6 +20,8 @@ export type ToolCall = {
   readonly id: string;
   readonly name: string;
   readonly arguments: Record<string, unknown>;
+  // Set when the model sent arguments that could not be parsed; `arguments` is then empty.
+  readonly error?: string;
 };
 
 export type ChatOptions = {
@@ -69,8 +71,8 @@ export type AiProvider = {
 
 export type ProviderConfig =
   | { provider: "openai"; key: string; baseUrl?: string; defaultModel?: string }
-  | { provider: "anthropic"; key: string; defaultModel?: string }
-  | { provider: "ollama"; baseUrl?: string; defaultModel?: string };
+  | { provider: "anthropic"; key: string; baseUrl?: string; defaultModel?: string }
+  | { provider: "ollama"; key?: string; baseUrl?: string; defaultModel?: string };
 
 export const createProvider = (config: ProviderConfig): AiProvider => {
   switch (config.provider) {

@@ -1,8 +1,21 @@
-import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { chmodSync, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import { moduleDependencies, version } from "../modules/index.ts";
 import { releaseUrl } from "../modules/source.ts";
 import type { Answers } from "./questions.ts";
+
+// .env holds generated secrets (AUTH_SECRET and friends); .env.example is
+// meant to be committed and shared, so it keeps the default mode.
+export const isSecretEnvFile = (path: string): boolean => {
+  const name = basename(path);
+  return (name === ".env" || name.startsWith(".env.")) && name !== ".env.example";
+};
+
+/** Write a scaffolded file; env files with secrets are made owner-only (0600). */
+export const writeProjectFile = async (path: string, content: string): Promise<void> => {
+  await Bun.write(path, content);
+  if (isSecretEnvFile(path)) chmodSync(path, 0o600);
+};
 
 // Template scaffolding
 
@@ -78,7 +91,7 @@ export const scaffoldFromTemplate = async (
       content = `${JSON.stringify(manifest, null, 2)}\n`;
     }
 
-    await Bun.write(destPath, content);
+    await writeProjectFile(destPath, content);
     console.log(`  created ${file.rel}`);
   }
   const example = Bun.file(join(projectDir, ".env.example"));
@@ -87,7 +100,7 @@ export const scaffoldFromTemplate = async (
       /^(AUTH_SECRET|OAUTH_STATE_SECRET|ADMIN_SETUP_SECRET)=.*$/gm,
       (_, name) => `${name}=${Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("hex")}`,
     );
-    await Bun.write(join(projectDir, ".env"), content);
+    await writeProjectFile(join(projectDir, ".env"), content);
   }
 };
 

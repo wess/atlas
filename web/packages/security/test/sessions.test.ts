@@ -129,3 +129,22 @@ test("custom payload builder shapes the JWT claims", async () => {
   expect((payload as { secretField?: string }).secretField).toBeUndefined();
   await db.close();
 });
+
+test("default payload leaves out password, secret, and token fields", async () => {
+  const db = await newDb();
+  const store = createSessionStore<Record<string, unknown> & { id: number }>({ db, secret: SECRET });
+  const issued = await store.issue({
+    id: 1,
+    email: "a@b",
+    password: "$argon2id$...",
+    password_hash: "h",
+    passwordHash: "h",
+    totpSecret: "s",
+    resetToken: "t",
+  });
+  const claims = await token.verify(issued.token, SECRET);
+  expect(claims.email).toBe("a@b");
+  for (const key of ["password", "password_hash", "passwordHash", "totpSecret", "resetToken"]) {
+    expect(claims[key]).toBeUndefined();
+  }
+});

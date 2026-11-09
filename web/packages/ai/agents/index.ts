@@ -1,5 +1,5 @@
 import { assistantMessage, toolMessage, userMessage } from "../chat/index.ts";
-import type { AiProvider, Message, ToolDef } from "../provider/index.ts";
+import type { AiProvider, Message, ToolCall, ToolDef } from "../provider/index.ts";
 
 export type AgentTool = {
   readonly definition: ToolDef;
@@ -12,6 +12,24 @@ export type AgentOptions = {
   readonly system?: string;
   readonly maxIterations?: number;
   readonly model?: string;
+  // Called before every tool call; return false to refuse it. The model sees the refusal as the tool result.
+  readonly approve?: (call: ToolCall) => boolean | Promise<boolean>;
+};
+
+const errorText = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+
+// Everything that goes wrong in a tool call becomes the tool's result, so the model can recover
+// and the loop keeps going. Only the message is returned, never the stack.
+const runTool = async (agent: AgentOptions, call: ToolCall): Promise<string> => {
+  if (call.error) return `Error: ${call.error}`;
+  const agentTool = agent.tools.find((t) => t.definition.name === call.name);
+  if (!agentTool) return `Error: unknown tool ${call.name}`;
+  if (agent.approve && !(await agent.approve(call))) return `Error: tool call ${call.name} was not approved`;
+  try {
+    return await agentTool.handler(call.arguments);
+  } catch (error) {
+    return `Error: ${errorText(error)}`;
+  }
 };
 
 export const runAgent = async (
@@ -39,13 +57,7 @@ export const runAgent = async (
     messages.push({ role: "assistant", content: response.content, toolCalls: response.toolCalls });
 
     for (const call of response.toolCalls) {
-      const agentTool = agent.tools.find((t) => t.definition.name === call.name);
-      if (!agentTool) {
-        messages.push(toolMessage(call.id, `Error: unknown tool ${call.name}`));
-        continue;
-      }
-      const result = await agentTool.handler(call.arguments);
-      messages.push(toolMessage(call.id, result));
+      messages.push(toolMessage(call.id, await runTool(agent, call)));
     }
   }
 

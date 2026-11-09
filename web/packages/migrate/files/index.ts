@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 
 export type MigrationFile = {
   readonly name: string;
@@ -30,14 +30,18 @@ export const scanMigrations = (dir: string): MigrationFile[] => {
 };
 
 export const createMigration = (dir: string, name: string): MigrationFile => {
-  const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  // to the second, so two migrations made the same day still sort in the order they were made
+  const timestamp = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
   const dirName = `${timestamp}_${name}`;
   const migrationDir = `${dir}/${dirName}`;
 
-  mkdirSync(migrationDir, { recursive: true });
-
-  Bun.write(`${migrationDir}/up.sql`, "");
-  Bun.write(`${migrationDir}/down.sql`, "");
+  // never reuse a directory: that would empty SQL someone already wrote
+  if (existsSync(migrationDir)) throw new Error(`Migration ${dirName} already exists`);
+  mkdirSync(dir, { recursive: true });
+  mkdirSync(migrationDir);
+  // sync, so the files exist when this returns
+  writeFileSync(`${migrationDir}/up.sql`, "", { flag: "wx" });
+  writeFileSync(`${migrationDir}/down.sql`, "", { flag: "wx" });
 
   return {
     name: dirName,

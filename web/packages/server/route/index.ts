@@ -1,5 +1,6 @@
 import type { Conn } from "../conn/index.ts";
 import { unprocessable } from "../errors/http.ts";
+import { isJsonContentType } from "../parsers/index.ts";
 import type { PipeFn } from "../pipe/index.ts";
 import { pipeline } from "../pipe/index.ts";
 import type { Route } from "../router/index.ts";
@@ -48,8 +49,7 @@ export type RouteSchemas<P, B, Q, A> = {
 export type RouteHandler<P, B, Q, A> = (conn: TypedConn<P, B, Q, A>) => Conn | Promise<Conn>;
 
 const readJson = async (req: Request): Promise<unknown> => {
-  const ct = req.headers.get("content-type") ?? "";
-  if (!ct.includes("application/json")) {
+  if (!isJsonContentType(req.headers.get("content-type"))) {
     throw unprocessable("Expected application/json body", { code: "INVALID_CONTENT_TYPE" });
   }
   try {

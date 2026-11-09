@@ -1,8 +1,9 @@
 import type { Connection, Schema } from "../../db/query.ts";
-import type { RateLimit } from "../../security/ratelimit/index.ts";
+import type { ClientIpOptions, RateLimit } from "../../security/ratelimit/index.ts";
 import type { Conn, PipeFn, Route } from "../../server/index.ts";
 import { get, halt, pipe, putHeader } from "../../server/index.ts";
 import { generateQueryRoutes } from "../query/index.ts";
+import type { Revocations } from "../revocations/index.ts";
 import { generateRoutes } from "../routes/index.ts";
 import { generateSessionRoutes } from "../session/index.ts";
 import { type AdminAssets, loadAdminAssets } from "../ui/assets.ts";
@@ -31,6 +32,12 @@ export type ModelConfig = {
   readonly actions?: CustomAction[];
   readonly bulkActions?: BulkAction[];
   readonly readOnly?: boolean;
+  /**
+   * Columns create and update may write. Default: every schema column except
+   * primary keys. Anything else in a request body is dropped. A primary key
+   * listed here is writable on create only, never on update.
+   */
+  readonly editableFields?: string[];
 };
 
 export type AdminConfig = {
@@ -50,6 +57,10 @@ export type AdminConfig = {
     sessionSeconds?: number;
     /** Login attempt limiter. Pass createDbRateLimit when running more than one process. Default: in-memory. */
     rateLimit?: RateLimit;
+    /** Where signed-out session ids are kept. Pass createDbRevocations when running more than one process. Default: in-memory. */
+    revocations?: Revocations;
+    /** Reverse proxies whose X-Forwarded-For is trusted for login throttling, from parseTrustedProxies. */
+    trustedProxies?: ClientIpOptions["trustedProxies"];
     /** Extra origins allowed to write with a session cookie, for a proxy that rewrites the Host header. */
     trustedOrigins?: string[];
   };

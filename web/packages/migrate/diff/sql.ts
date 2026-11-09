@@ -85,6 +85,17 @@ const inverseOp = (op: DiffOp): DiffOp => {
   }
 };
 
+// Names in a `--` comment come from the live database. A newline (or any other
+// line break or control character) in one would end the comment and turn the
+// rest of the name into SQL in the generated migration.
+export const commentSafe = (text: string): string =>
+  [...text]
+    .map((ch) => {
+      const code = ch.charCodeAt(0);
+      return code < 32 || code === 127 || code === 0x2028 || code === 0x2029 ? " " : ch;
+    })
+    .join("");
+
 const opToSql = (op: DiffOp, dialect: Dialect): string => {
   switch (op.kind) {
     case "create_table":
@@ -106,7 +117,7 @@ const opToSql = (op: DiffOp, dialect: Dialect): string => {
         reasons.push(`type ${op.from.type} → ${op.to.type}`);
       if (op.from.nullable !== op.to.nullable) reasons.push(`nullable ${op.from.nullable} → ${op.to.nullable}`);
       if (op.from.unique !== op.to.unique) reasons.push(`unique ${op.from.unique} → ${op.to.unique}`);
-      return `-- ALTER ${op.table}.${op.from.name} (${reasons.join(", ")}) — review and adjust manually`;
+      return commentSafe(`-- ALTER ${op.table}.${op.from.name} (${reasons.join(", ")}) — review and adjust manually`);
     }
   }
 };
