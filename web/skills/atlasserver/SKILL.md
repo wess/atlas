@@ -94,7 +94,7 @@ const websocket: WsConfig = { channels: [chat], onClose: (ws) => rooms.leaveAll(
 serve({ port: 3000, routes: [], websocket })
 ```
 
-Clients connect to `/ws` and send `{ channel, event, payload }`.
+Clients connect to `/ws` and send `{ channel, event, payload }`. When a channel has `join`, `handle` only runs for sockets whose join returned `true`. Pass `upgradeData: (req) => ({ cookie: req.headers.get("cookie") })` to put request data on `ws.data`. A handler that throws or rejects is reported to `onError` (default `console.error`) and its socket is closed with 1011.
 
 ## Server-sent events
 

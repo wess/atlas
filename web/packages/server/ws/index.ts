@@ -114,6 +114,10 @@ export type WsConfig = {
   onOpen?: WsHandler["open"];
   onMessage?: WsHandler["message"];
   onClose?: WsHandler["close"];
+  /** Build `ws.data` from the upgrade request (cookies, headers, a verified session). */
+  upgradeData?: (req: Request) => unknown | Promise<unknown>;
+  /** Called when a handler throws or rejects. The socket is then closed with 1011. Defaults to console.error. */
+  onError?: (error: unknown, ws: WsConn) => void;
 };
 
 const buildChannelMap = (channels: Channel[]): Map<string, Channel> => {
@@ -125,45 +129,112 @@ const buildChannelMap = (channels: Channel[]): Map<string, Channel> => {
 export const ws = (config: WsConfig) => {
   const rooms = createRooms();
   const channelMap = config.channels ? buildChannelMap(config.channels) : new Map<string, Channel>();
+  // Channels each socket has been admitted to. A channel with a `join` hook
+  // only dispatches `handle` after join resolved true for that socket.
+  const admitted = new WeakMap<WsConn, Set<string>>();
+
+  const fail = (conn: WsConn, error: unknown): void => {
+    try {
+      if (config.onError) config.onError(error, conn);
+      else console.error("[atlas/ws] handler failed:", error);
+    } catch (reportError) {
+      console.error("[atlas/ws] onError failed:", reportError);
+    }
+    try {
+      conn.close(1011, "internal error");
+    } catch {
+      // already closed
+    }
+  };
+
+  // Handlers may be sync or async; either way a throw must not escape as an
+  // unhandled rejection, which takes the whole Bun process down.
+  const run = <R>(conn: WsConn, fn: () => R | Promise<R>, then?: (value: R) => void): void => {
+    try {
+      const result = fn();
+      if (result instanceof Promise) {
+        result.then(
+          (value) => then?.(value),
+          (error) => fail(conn, error),
+        );
+        return;
+      }
+      then?.(result);
+    } catch (error) {
+      fail(conn, error);
+    }
+  };
+
+  const admit = (conn: WsConn, name: string): void => {
+    const set = admitted.get(conn) ?? new Set<string>();
+    admitted.set(conn, new Set([...set, name]));
+  };
+
+  const dismiss = (conn: WsConn, name: string): void => {
+    const set = admitted.get(conn);
+    if (set) admitted.set(conn, new Set([...set].filter((n) => n !== name)));
+  };
+
+  const parseFrame = (message: string): { channel: string; event?: unknown; payload?: unknown } | null => {
+    try {
+      const parsed = JSON.parse(message);
+      return parsed && typeof parsed === "object" && typeof parsed.channel === "string" ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
 
   const websocket = {
     open: (raw: any) => {
       const conn = wrapRaw(raw);
-      config.onOpen?.(conn);
+      run(conn, () => config.onOpen?.(conn));
     },
     message: (raw: any, message: string | Buffer) => {
       const conn = wrapRaw(raw);
 
       if (typeof message === "string" && channelMap.size > 0) {
-        try {
-          const parsed = JSON.parse(message);
-          if (parsed && typeof parsed.channel === "string") {
-            const ch = channelMap.get(parsed.channel);
-            if (ch) {
-              if (parsed.event === "join" && ch.join) {
-                Promise.resolve(ch.join(conn, parsed.payload ?? {}));
-                return;
-              }
-              if (parsed.event === "leave" && ch.leave) {
-                ch.leave(conn);
-                return;
-              }
-              if (ch.handle) {
-                Promise.resolve(ch.handle(conn, parsed.event ?? "message", parsed.payload));
-                return;
-              }
-            }
+        const frame = parseFrame(message);
+        const ch = frame ? channelMap.get(frame.channel) : undefined;
+        if (frame && ch) {
+          const event = typeof frame.event === "string" ? frame.event : "message";
+          if (event === "join" && ch.join) {
+            const join = ch.join;
+            const params = (frame.payload ?? {}) as Record<string, unknown>;
+            run(
+              conn,
+              () => join(conn, params),
+              (ok) => {
+                if (ok === true) admit(conn, ch.name);
+              },
+            );
+            return;
           }
-        } catch {
-          // not JSON, fall through to raw handler
+          if (event === "leave" && ch.leave) {
+            const leave = ch.leave;
+            dismiss(conn, ch.name);
+            run(conn, () => leave(conn));
+            return;
+          }
+          if (ch.handle) {
+            // Channels without a join hook stay open to every socket, as before.
+            if (ch.join && !admitted.get(conn)?.has(ch.name)) return;
+            const handle = ch.handle;
+            run(conn, () => handle(conn, event, frame.payload));
+            return;
+          }
         }
       }
 
-      config.onMessage?.(conn, message);
+      run(conn, () => config.onMessage?.(conn, message));
     },
     close: (raw: any, code: number, reason: string) => {
       const conn = wrapRaw(raw);
-      config.onClose?.(conn, code, reason);
+      try {
+        config.onClose?.(conn, code, reason);
+      } catch (error) {
+        console.error("[atlas/ws] onClose failed:", error);
+      }
+      admitted.delete(conn);
       // Drop dead sockets from every room; nothing else runs after close.
       rooms.leaveAll(conn);
     },
@@ -171,17 +242,24 @@ export const ws = (config: WsConfig) => {
 
   const upgrade = (req: Request, server: any, data?: unknown): boolean => server.upgrade(req, { data });
 
-  return { websocket, rooms, upgrade };
+  // Like `upgrade`, but fills `ws.data` from `config.upgradeData(req)` when no
+  // explicit data is passed.
+  const upgradeFrom = async (req: Request, server: any): Promise<boolean> => {
+    const data = config.upgradeData ? await config.upgradeData(req) : undefined;
+    return server.upgrade(req, { data });
+  };
+
+  return { websocket, rooms, upgrade, upgradeFrom };
 };
 
 export const wsAdapter = createAdapter<WsConfig>("ws", (config) => {
-  const { websocket, upgrade } = ws(config);
+  const { websocket, upgradeFrom } = ws(config);
 
   const server = Bun.serve({
     port: config.port ?? 3001,
     hostname: config.hostname ?? "0.0.0.0",
-    fetch(req, server) {
-      if (upgrade(req, server)) return undefined as any;
+    async fetch(req, server) {
+      if (await upgradeFrom(req, server)) return undefined as any;
       return new Response("Upgrade Required", { status: 426 });
     },
     websocket,

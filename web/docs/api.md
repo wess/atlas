@@ -179,7 +179,9 @@ ForwardContext: { remoteIp, tls, host }
 
 ## @wess/atlas/server/ws
 ```
-ws(config) → { websocket, rooms, upgrade }
+ws(config) → { websocket, rooms, upgrade, upgradeFrom }
+WsConfig: { channels?, onOpen?, onMessage?, onClose?, upgradeData?(req) → ws.data, onError?(err, ws) }
+  handler throw/rejection → onError + close(1011); handle runs only after join → true (channels with join)
 channel(name, handlers) → Channel
 createRooms() → { join, leave, leaveAll, broadcast, members }
 WsConn<T>: wrapped ws with auto-JSON send
