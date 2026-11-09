@@ -91,6 +91,8 @@ await db.close()
 
 `migrate.diff` writes `.unique()` as a constraint on new tables and as `CREATE UNIQUE INDEX {table}_{column}_key` on existing ones, including tables migrated before this was generated. That index fails on apply if the data has duplicates. Removing `.unique()` is reported as a review comment. `.default(value)` and `.defaultRaw(sql)` are both written to the DDL, and columns compare by stored type, so SQLite booleans report in sync.
 
+On SQLite each migration file is split into statements (quotes, comments, and trigger bodies are respected) and applied with its `schema_migrations` row in one transaction, so a failure leaves nothing half-applied; don't put `BEGIN`/`COMMIT` in a SQLite migration. On Postgres the file runs as one implicit transaction.
+
 ## Dependencies
 
 Sibling: `@wess/atlas/db`. Runtime: `bun:sqlite`, `node:fs`.
