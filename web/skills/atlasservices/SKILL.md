@@ -84,5 +84,5 @@ Read the reference first with `atlas docs <module>`, because these need app-owne
 
 - **`billing`:** Stripe checkout, portal, webhooks (`createBilling`), and Connect marketplace payments (`createConnect`).
 - **`notify`:** APNs and FCM push (`createConfiguredNotifier`).
-- **`edge`:** TLS reverse proxy with Let's Encrypt (`defineEdge`); don't bring Caddy or nginx.
+- **`edge`:** TLS reverse proxy with Let's Encrypt (`defineEdge`); don't bring Caddy or nginx. It overwrites `X-Forwarded-For` with the peer address; pass `proxy(url, { trustForwarded: true })` only when the edge itself sits behind a proxy you control.
 - **`mcp`:** expose docs and runtime inspection to agents (`createMcpServer`).

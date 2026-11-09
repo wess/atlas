@@ -154,7 +154,8 @@ serviceUnavailable(message?, opts?) → HttpError
 ```
 defineEdge(config) → { ...config, listen() → Promise<RunningEdge> }
 runEdge(config) → Promise<RunningEdge>          { mode: "tls"|"plain", stop() }
-proxy(upstream, { preserveHost? }) → EdgeHandler   reverse proxy with X-Forwarded-*
+proxy(upstream, { preserveHost?, trustForwarded? }) → EdgeHandler   reverse proxy with X-Forwarded-*
+  X-Forwarded-For = peer IP, client Forwarded dropped; trustForwarded: true appends to an upstream chain
 forward(req, options, ctx) → Promise<Response>     low-level proxy primitive
 files({ root, index?, stripPrefix? }) → EdgeHandler   static file serving via Bun.file
 compressResponse(res, accept, allow) → Response    apply gzip/zstd
