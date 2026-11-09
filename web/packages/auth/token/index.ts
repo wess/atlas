@@ -59,8 +59,15 @@ export type TokenPayload = Record<string, unknown> & {
   exp?: number;
 };
 
-export const sign = async (payload: TokenPayload, secret: string, opts?: { expiresIn?: number }): Promise<string> => {
-  const header = { alg: "HS256", typ: "JWT" };
+export type SignOptions = {
+  /** Seconds until `exp`. Without it the token never expires, so always set it for anything that grants access. */
+  readonly expiresIn?: number;
+  /** JOSE header `typ`. Default `"JWT"`; OAuth access tokens use `"at+jwt"` (RFC 9068). */
+  readonly typ?: string;
+};
+
+export const sign = async (payload: TokenPayload, secret: string, opts?: SignOptions): Promise<string> => {
+  const header = { alg: "HS256", typ: opts?.typ ?? "JWT" };
   const now = Math.floor(Date.now() / 1000);
   const fullPayload = {
     ...payload,
@@ -88,6 +95,31 @@ export const verify = async (token: string, secret: string): Promise<TokenPayloa
       "Invalid token signature. The token was signed with a different secret. Verify that AUTH_SECRET matches between token creation and verification.",
     );
   return validateClaims(decodeObject(payload));
+};
+
+/**
+ * Decode a JWT's JOSE header without checking anything. Only meaningful after
+ * `verify` has accepted the same token.
+ */
+export const headerOf = (token: string): Record<string, unknown> => {
+  const segment = token.split(".")[0];
+  if (!segment) throw new Error("Invalid token format");
+  return decodeObject(segment);
+};
+
+/** RFC 9068 `typ` for OAuth access tokens minted by `@wess/atlas/oauth`. */
+export const ACCESS_TOKEN_TYP = "at+jwt";
+
+/**
+ * True for an OAuth access token: the RFC 9068 header type, or, for tokens
+ * minted before the header was set, the `client_id` + `scope` pair the OAuth
+ * server always stamps. These are delegated, scoped credentials issued to a
+ * third party and must not be accepted as the user's own session.
+ */
+export const isAccessToken = (header: Record<string, unknown>, claims: Record<string, unknown>): boolean => {
+  const typ = typeof header.typ === "string" ? header.typ.toLowerCase() : "";
+  if (typ === ACCESS_TOKEN_TYP || typ === `application/${ACCESS_TOKEN_TYP}`) return true;
+  return typeof claims.client_id === "string" && typeof claims.scope === "string";
 };
 
 // RS256 — asymmetric JWT signing for cases where verifiers can't share the
