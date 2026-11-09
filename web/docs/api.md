@@ -440,7 +440,8 @@ generateJson<T>(provider, prompt, opts?) → T
 tool(name, desc, parameters) → ToolDef
 index(rag, id, text, metadata?) → Promise  rag: { ai, store, topK? }
 query(rag, question) → { answer, sources }
-runAgent({ ai, system?, tools, maxIterations? }, prompt) → { response, messages, iterations }
+runAgent({ ai, system?, tools, maxIterations?, approve? }, prompt) → { response, messages, iterations }
+  approve(call) → boolean|Promise<boolean>; false refuses the call. Throwing handlers and bad args become "Error: …" tool results
 withAi(provider) → PipeFn                  adds ai to conn.assigns
 ```
 
