@@ -31,6 +31,7 @@ const loadProjectContext = async () => {
   }
 
   ctx.migrationsDir = "./migrations";
+  ctx.allowWrites = Bun.env.ATLAS_MCP_ALLOW_WRITES === "1";
   ctx.logBuffer = [] as string[];
 
   return createContext(ctx);

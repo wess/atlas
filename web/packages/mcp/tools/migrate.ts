@@ -5,6 +5,7 @@ export const migrateTools: Tool[] = [
   defineTool({
     name: "migrate.status",
     description: "Show migration status — which migrations are applied and which are pending",
+    annotations: { readOnlyHint: true },
     inputSchema: { type: "object", properties: {} },
     handler: async (_params, ctx) => {
       const { status } = await import("@atlas/migrate");
@@ -13,7 +14,8 @@ export const migrateTools: Tool[] = [
   }),
   defineTool({
     name: "migrate.up",
-    description: "Run all pending migrations",
+    description: "WRITES: run all pending migrations against the connected database (changes schema).",
+    annotations: { readOnlyHint: false, destructiveHint: true },
     inputSchema: { type: "object", properties: {} },
     handler: async (_params, ctx) => {
       const { up } = await import("@atlas/migrate");
@@ -23,7 +25,8 @@ export const migrateTools: Tool[] = [
   }),
   defineTool({
     name: "migrate.down",
-    description: "Rollback the most recent migration",
+    description: "WRITES: roll back the most recent migration (may drop tables or columns and their data).",
+    annotations: { readOnlyHint: false, destructiveHint: true },
     inputSchema: { type: "object", properties: {} },
     handler: async (_params, ctx) => {
       const { down } = await import("@atlas/migrate");

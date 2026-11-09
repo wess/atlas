@@ -65,7 +65,7 @@ atlas dev                       # run the Procfile
 atlas migrate up                # apply ./migrations using DATABASE_URL; also down, status, new <name>
 atlas check                     # rejects local Atlas paths and legacy aliases
 atlas docs [module]             # print a reference
-atlas mcp                       # docs and runtime inspection over MCP
+atlas mcp                       # docs and runtime inspection over MCP; db.query is read-only unless ATLAS_MCP_ALLOW_WRITES=1
 ```
 
 ## Before deploying

@@ -417,15 +417,16 @@ Server: {base}/api/* {base}/session (POST sign in, GET state, DELETE sign out) {
 
 ## @wess/atlas/mcp
 ```
-createContext(opts?) → AtlasMcpContext      opts: { db?, cache?, routes?, config?, storage?, migrationsDir?, logBuffer? }
+createContext(opts?) → AtlasMcpContext      opts: { db?, cache?, routes?, config?, storage?, migrationsDir?, logBuffer?, allowWrites? }
+  db.query is read-only unless allowWrites (atlas mcp: ATLAS_MCP_ALLOW_WRITES=1); write tools annotated destructiveHint
 collectTools(ctx) → Tool[]                  tools auto-register from what's in ctx
 createMcpServer(tools, ctx) → McpServer
-defineTool({ name, description, inputSchema, handler }) → Tool
+defineTool({ name, description, inputSchema, handler, annotations? }) → Tool
 McpServer: .start() .stop()
 
 Always-on tools (independent of context):
   docs.list                              list package, guide, and root documentation sources
-  docs.read({ package?, doc?, root? })   read one canonical source; docs/agents.md is the grounding guide
+  docs.read({ package?, doc?, root? })   read one canonical source (names from docs.list only); docs/agents.md is the grounding guide
 ```
 
 ## @wess/atlas/ai

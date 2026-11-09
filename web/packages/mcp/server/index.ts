@@ -63,6 +63,7 @@ export const createMcpServer = (tools: Tool[], ctx: AtlasMcpContext): McpServer 
             name: t.name,
             description: t.description,
             inputSchema: t.inputSchema,
+            ...(t.annotations ? { annotations: t.annotations } : {}),
           })),
         },
       };
