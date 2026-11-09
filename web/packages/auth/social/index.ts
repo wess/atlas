@@ -2,6 +2,7 @@ import type { Conn, PipeFn } from "../../server/index.ts";
 import { halt, putHeader, redirect } from "../../server/index.ts";
 import type { SocialIntentStore } from "./intent/index.ts";
 import type { SocialProfile, SocialProvider, TokenSet } from "./providers/index.ts";
+import { localReturnPath } from "./returnto/index.ts";
 import {
   type CookieOptions,
   clearStateCookieHeader,
@@ -19,12 +20,21 @@ export type SocialAuthConfig = {
   /** Cookie tuning (name / path / secure / sameSite). */
   readonly cookie?: CookieOptions;
   readonly intentStore?: SocialIntentStore;
+  /**
+   * Exact destinations other than a local path that `returnTo` may name,
+   * such as a native app's `myapp://auth`. Anything else must be a path on
+   * this site (`/welcome`); `authorize` and `start` throw on any other value.
+   */
+  readonly allowedReturnTo?: readonly string[];
 };
 
 export type StartOptions = {
   /** Override the scopes from the provider's default set. */
   readonly scopes?: readonly string[];
-  /** Where to send the user after a successful callback. Echoed in the state. */
+  /**
+   * Where to send the user after a successful callback. Echoed in the state.
+   * Must be a local path or listed in `allowedReturnTo`, otherwise throws.
+   */
   readonly returnTo?: string;
   /** Extra `?key=value` params appended to the authorize URL. */
   readonly extraParams?: Record<string, string>;
@@ -86,9 +96,23 @@ const errorFromConn = (conn: Conn): string | null => {
   return (conn.query.error as string | undefined) ?? (typeof body.error === "string" ? body.error : null) ?? null;
 };
 
+// a provider that answers with a cross-site form POST (Apple's form_post) only gets the cookie back with SameSite=None
+const cookieFor = (cfg: SocialAuthConfig, provider: SocialProvider): CookieOptions | undefined =>
+  provider.crossSiteCallback ? { ...cfg.cookie, sameSite: "none", secure: true } : cfg.cookie;
+
 export const socialAuth = (cfg: SocialAuthConfig): SocialAuth => {
+  const allowedReturnTo = (value: string | undefined): string | undefined =>
+    value === undefined
+      ? undefined
+      : (localReturnPath(value) ?? (cfg.allowedReturnTo?.includes(value) ? value : undefined));
+
   const authorize = async (name: string, opts: StartOptions = {}): Promise<{ url: string; cookie: string }> => {
     const provider = getProvider(cfg, name);
+    if (opts.returnTo !== undefined && allowedReturnTo(opts.returnTo) === undefined) {
+      throw new Error(
+        "returnTo must be a local path such as '/welcome', or listed in socialAuth({ allowedReturnTo }).",
+      );
+    }
     const { stateToken, codeChallenge, nonce } = await createState(cfg.secret, provider.name, opts.returnTo);
     const url = provider.authorizeUrl({
       state: nonce,
@@ -96,7 +120,7 @@ export const socialAuth = (cfg: SocialAuthConfig): SocialAuth => {
       scopes: opts.scopes,
       extraParams: opts.extraParams,
     });
-    const cookie = setStateCookieHeader(stateToken, cfg.cookie);
+    const cookie = setStateCookieHeader(stateToken, cookieFor(cfg, provider));
     if (opts.returnTo && cfg.intentStore) {
       await cfg.intentStore.remember(provider.name, nonce, opts.returnTo, Date.now() + 600_000);
     }
@@ -115,7 +139,7 @@ export const socialAuth = (cfg: SocialAuthConfig): SocialAuth => {
     const stateData = await verifyState(cfg.secret, cookieValue, state, provider.name);
     const tokens = await provider.exchange({ code, codeVerifier: stateData.codeVerifier });
     const profile = await provider.profile(tokens);
-    return { provider: provider.name, tokens, profile, returnTo: stateData.returnTo };
+    return { provider: provider.name, tokens, profile, returnTo: allowedReturnTo(stateData.returnTo) };
   };
 
   const start =
@@ -130,17 +154,23 @@ export const socialAuth = (cfg: SocialAuthConfig): SocialAuth => {
     (name: string, opts: CallbackOptions): PipeFn =>
     async (conn: Conn) => {
       let returnTo: string | undefined;
+      const clear = (): string => {
+        const provider = cfg.providers[name];
+        return clearStateCookieHeader(provider ? cookieFor(cfg, provider) : cfg.cookie);
+      };
       try {
         const { state } = codeFromConn(conn);
-        if (state && cfg.intentStore) returnTo = await cfg.intentStore.take(getProvider(cfg, name).name, state);
+        if (state && cfg.intentStore)
+          returnTo = allowedReturnTo(await cfg.intentStore.take(getProvider(cfg, name).name, state));
         const result = await complete(name, conn);
-        const cleared = putHeader(conn, "set-cookie", clearStateCookieHeader(cfg.cookie));
-        return await opts.onSuccess(cleared, result);
+        return await opts.onSuccess(putHeader(conn, "set-cookie", clear()), result);
       } catch (err) {
-        const cleared = putHeader(conn, "set-cookie", clearStateCookieHeader(cfg.cookie));
+        const cleared = putHeader(conn, "set-cookie", clear());
         const e = err instanceof Error ? err : new Error(String(err));
         if (opts.onError) return await opts.onError(cleared, e, { returnTo });
-        return halt(cleared, 400, { error: e.message });
+        // the message can carry a provider's raw response; keep it in the log, not the page
+        console.error(`[auth/social] ${name} sign-in failed:`, e.message);
+        return halt(cleared, 400, { error: "Sign-in failed. Please try again." });
       }
     };
 
@@ -164,4 +194,5 @@ export type {
   TwitterConfig,
 } from "./providers/index.ts";
 export { apple, facebook, github, google, microsoft, tiktok, twitter } from "./providers/index.ts";
+export { localReturnPath } from "./returnto/index.ts";
 export type { CookieOptions } from "./state/index.ts";

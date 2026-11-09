@@ -38,7 +38,12 @@ test("a missing auth cookie restores only an error redirect, never authenticatio
     },
   };
   const store = createMemoryIntentStore();
-  const social = socialAuth({ secret: "test-intent-secret", providers: { mock: provider }, intentStore: store });
+  const social = socialAuth({
+    secret: "test-intent-secret",
+    providers: { mock: provider },
+    intentStore: store,
+    allowedReturnTo: ["native://callback"],
+  });
   const { url } = await social.authorize("mock", { returnTo: "native://callback" });
   const state = new URL(url).searchParams.get("state")!;
   expect(state).not.toContain(".");

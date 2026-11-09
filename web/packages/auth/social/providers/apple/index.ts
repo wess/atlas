@@ -55,6 +55,7 @@ export const apple = (cfg: AppleConfig): SocialProvider<AppleConfig> => ({
   name: "apple",
   config: cfg,
   defaultScopes: DEFAULT_SCOPES,
+  crossSiteCallback: (cfg.responseMode ?? "form_post") === "form_post",
   authorizeUrl: (params) => {
     const scopes = (params.scopes ?? DEFAULT_SCOPES).join(" ");
     const query = buildQuery({
