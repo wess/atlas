@@ -2,7 +2,6 @@ import type { Conn, PipeFn } from "../../server/index.ts";
 import { halt, putHeader, redirect } from "../../server/index.ts";
 import type { SocialIntentStore } from "./intent/index.ts";
 import type { SocialProfile, SocialProvider, TokenSet } from "./providers/index.ts";
-import { localReturnPath } from "./returnto/index.ts";
 import {
   type CookieOptions,
   clearStateCookieHeader,
@@ -20,20 +19,14 @@ export type SocialAuthConfig = {
   /** Cookie tuning (name / path / secure / sameSite). */
   readonly cookie?: CookieOptions;
   readonly intentStore?: SocialIntentStore;
-  /**
-   * Exact destinations other than a local path that `returnTo` may name,
-   * such as a native app's `myapp://auth`. Anything else must be a path on
-   * this site (`/welcome`); `authorize` and `start` throw on any other value.
-   */
-  readonly allowedReturnTo?: readonly string[];
 };
 
 export type StartOptions = {
   /** Override the scopes from the provider's default set. */
   readonly scopes?: readonly string[];
   /**
-   * Where to send the user after a successful callback. Echoed in the state.
-   * Must be a local path or listed in `allowedReturnTo`, otherwise throws.
+   * Opaque app state echoed back after the callback, signed so it can't be altered.
+   * Atlas never redirects to it; validate with localReturnPath before you do.
    */
   readonly returnTo?: string;
   /** Extra `?key=value` params appended to the authorize URL. */
@@ -101,18 +94,8 @@ const cookieFor = (cfg: SocialAuthConfig, provider: SocialProvider): CookieOptio
   provider.crossSiteCallback ? { ...cfg.cookie, sameSite: "none", secure: true } : cfg.cookie;
 
 export const socialAuth = (cfg: SocialAuthConfig): SocialAuth => {
-  const allowedReturnTo = (value: string | undefined): string | undefined =>
-    value === undefined
-      ? undefined
-      : (localReturnPath(value) ?? (cfg.allowedReturnTo?.includes(value) ? value : undefined));
-
   const authorize = async (name: string, opts: StartOptions = {}): Promise<{ url: string; cookie: string }> => {
     const provider = getProvider(cfg, name);
-    if (opts.returnTo !== undefined && allowedReturnTo(opts.returnTo) === undefined) {
-      throw new Error(
-        "returnTo must be a local path such as '/welcome', or listed in socialAuth({ allowedReturnTo }).",
-      );
-    }
     const { stateToken, codeChallenge, nonce } = await createState(cfg.secret, provider.name, opts.returnTo);
     const url = provider.authorizeUrl({
       state: nonce,
@@ -139,7 +122,7 @@ export const socialAuth = (cfg: SocialAuthConfig): SocialAuth => {
     const stateData = await verifyState(cfg.secret, cookieValue, state, provider.name);
     const tokens = await provider.exchange({ code, codeVerifier: stateData.codeVerifier });
     const profile = await provider.profile(tokens);
-    return { provider: provider.name, tokens, profile, returnTo: allowedReturnTo(stateData.returnTo) };
+    return { provider: provider.name, tokens, profile, returnTo: stateData.returnTo };
   };
 
   const start =
@@ -160,8 +143,7 @@ export const socialAuth = (cfg: SocialAuthConfig): SocialAuth => {
       };
       try {
         const { state } = codeFromConn(conn);
-        if (state && cfg.intentStore)
-          returnTo = allowedReturnTo(await cfg.intentStore.take(getProvider(cfg, name).name, state));
+        if (state && cfg.intentStore) returnTo = await cfg.intentStore.take(getProvider(cfg, name).name, state);
         const result = await complete(name, conn);
         return await opts.onSuccess(putHeader(conn, "set-cookie", clear()), result);
       } catch (err) {

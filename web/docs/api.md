@@ -211,8 +211,8 @@ passwordFingerprint(secret, passwordHash) → string
 
 ## @wess/atlas/auth/social
 ```
-socialAuth({ secret, providers, cookie?, intentStore?, allowedReturnTo? }) → SocialAuth
-  returnTo must be a local path or listed in allowedReturnTo; authorize/start throw otherwise
+socialAuth({ secret, providers, cookie?, intentStore? }) → SocialAuth
+  returnTo is opaque signed state; validate with localReturnPath(value) → string | null before redirecting
 localReturnPath(value) → string | null      local-path check shared with sso (refuses control chars, `\`, `//`)
   SocialAuth: { providers,
                 authorize(name, { scopes?, returnTo?, extraParams? }?) → { url, cookie },

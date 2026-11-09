@@ -152,7 +152,7 @@ const routes = [
       // app owns the user table — upsert here
       const user = await upsertUserFromProfile(profile)
       const jwt = await token.sign({ sub: user.id }, JWT_SECRET, { expiresIn: 3600 })
-      return redirect(putHeader(conn, "set-cookie", `session=${jwt}; HttpOnly; Path=/`), returnTo ?? "/")
+      return redirect(putHeader(conn, "set-cookie", `session=${jwt}; HttpOnly; Path=/`), localReturnPath(returnTo ?? "") ?? "/")
     },
   })),
   // …same for github / apple / microsoft / facebook / twitter
@@ -167,17 +167,9 @@ automatically (a provider opts in with `crossSiteCallback: true`).
 
 #### Return destinations
 
-`returnTo` must be a local path (`/welcome`), checked by `localReturnPath`:
-control characters, backslashes, `//host`, and anything that resolves off the
-site are refused, because browsers strip tabs and newlines and `/\t/evil.example`
-would otherwise become `//evil.example`. `authorize` and `start` **throw** on
-any other value, so a misconfigured caller fails loudly instead of silently
-losing its destination. Native deep links (e.g. `myapp://auth`) must be listed
-exactly in `socialAuth({ allowedReturnTo: ["myapp://auth"] })`. `returnTo`
-values read back from the state cookie or intent store are checked again.
+`returnTo` is opaque app state, signed into the state cookie and handed back to `onSuccess` and `onError`. Atlas never redirects to it, so it can carry anything, such as a JSON intent. Before redirecting to it, check it: browsers strip tabs and newlines, so `/\t/evil.example` becomes `//evil.example`.
 
-`localReturnPath(value) → string | null` is exported for apps that redirect
-to a user-supplied path themselves.
+`localReturnPath(value) → string | null` returns the value only if it is a same-site path, refusing control characters, backslashes, `//host`, and anything that resolves off the site. Use it on every path you redirect to.
 
 The default callback error answers 400 `{ error: "Sign-in failed. Please try again." }`
 and logs the underlying message (which can carry a provider's raw response).

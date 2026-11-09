@@ -128,7 +128,7 @@ export const socialRoutes = [
 
 State and PKCE live in a signed `HttpOnly` cookie. Match accounts on the provider and `profile.id`, not on email alone.
 
-`returnTo` must be a local path like `/welcome`; anything else throws unless listed exactly in `socialAuth({ allowedReturnTo: ["myapp://auth"] })`. Use `localReturnPath` from `/auth/social` before redirecting to any user-supplied path yourself. Apple's form_post callback gets a `SameSite=None` state cookie automatically.
+`returnTo` is opaque state handed back to your callback, and Atlas never redirects to it. Pass anything you redirect to through `localReturnPath` from `/auth/social` first. Apple's form_post callback gets a `SameSite=None` state cookie automatically.
 
 ## OAuth server
 

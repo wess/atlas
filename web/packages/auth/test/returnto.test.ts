@@ -45,17 +45,12 @@ const mockProvider = (fail?: string): SocialProvider => ({
   profile: async () => ({ provider: "mock", id: "1", raw: {} }),
 });
 
-test("social returnTo must be local or explicitly allowed", async () => {
+test("social returnTo is opaque state, so apps can carry intents through it", async () => {
   const social = socialAuth({ secret: SECRET, providers: { mock: mockProvider() } });
-  await expect(social.authorize("mock", { returnTo: "/\t/evil.example" })).rejects.toThrow(/returnTo/);
-  await expect(social.authorize("mock", { returnTo: "https://evil.example" })).rejects.toThrow(/returnTo/);
-  await social.authorize("mock", { returnTo: "/welcome" });
-  const native = socialAuth({
-    secret: SECRET,
-    providers: { mock: mockProvider() },
-    allowedReturnTo: ["myapp://auth"],
-  });
-  await native.authorize("mock", { returnTo: "myapp://auth" });
+  const intent = JSON.stringify({ r: "/app", link: true });
+  const { url } = await social.authorize("mock", { returnTo: intent });
+  expect(url).toContain("state=");
+  expect(localReturnPath(intent)).toBeNull();
 });
 
 test("social callback errors don't echo provider responses to the browser", async () => {
