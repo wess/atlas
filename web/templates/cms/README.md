@@ -139,7 +139,8 @@ Payloads are signed with HMAC-SHA256. Verify using the `X-Webhook-Signature` hea
 | `order` | `desc` | Sort order (asc, desc) |
 | `fields` | all | Sparse fields, comma-separated (e.g. `?fields=title,body`) |
 | `include` | none | Include relations (e.g. `?include=author`) |
-| `status` | `published` | Filter by status |
+
+The delivery API only ever returns published entries; drafts stay behind the admin API.
 
 ### Health
 
