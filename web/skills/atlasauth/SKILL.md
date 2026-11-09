@@ -66,7 +66,7 @@ export const authRoutes = [
         table: "users",
         identity: "email",
         password: "password",
-        onSuccess: async (conn, user) => json(conn, 200, { token: await sign({ userId: user.id }, secret) }),
+        onSuccess: async (conn, user) => json(conn, 200, { token: await sign({ userId: user.id }, secret, { expiresIn: 3600 }) }),
       }),
     ),
   ),
