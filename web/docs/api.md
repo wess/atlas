@@ -436,7 +436,7 @@ Server: {base}/api/* {base}/session (POST sign in, GET state, DELETE sign out) {
 ## @wess/atlas/mcp
 ```
 createContext(opts?) → AtlasMcpContext      opts: { db?, cache?, routes?, config?, storage?, migrationsDir?, logBuffer?, allowWrites? }
-  db.query is read-only unless allowWrites (atlas mcp: ATLAS_MCP_ALLOW_WRITES=1); write tools annotated destructiveHint
+  db.query is read-only and WRITES: tools (migrate.up/down, cache.set/del/flush) are hidden unless allowWrites (atlas mcp: ATLAS_MCP_ALLOW_WRITES=1)
 collectTools(ctx) → Tool[]                  tools auto-register from what's in ctx
 createMcpServer(tools, ctx) → McpServer
 defineTool({ name, description, inputSchema, handler, annotations? }) → Tool

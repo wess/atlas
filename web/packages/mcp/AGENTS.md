@@ -43,7 +43,7 @@ Tools auto-register based on which fields are present.
 Write tools carry MCP `annotations` (`destructiveHint: true`) and a `WRITES:`
 description prefix so clients can require confirmation; read tools carry
 `readOnlyHint: true`. `createContext({ allowWrites: true })`, or
-`ATLAS_MCP_ALLOW_WRITES=1` for `atlas mcp`, lets `db.query` run writes.
+`ATLAS_MCP_ALLOW_WRITES=1` for `atlas mcp`, lets `db.query` run writes and registers the `WRITES:` tools (`migrate.up`, `migrate.down`, `cache.set`, `cache.del`, `cache.flush`), which are hidden otherwise.
 
 The `docs.*` tools are always present so an agent connected to an Atlas-built
 app can self-introspect the framework — no web fetch required.

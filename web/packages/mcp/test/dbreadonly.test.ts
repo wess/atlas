@@ -50,7 +50,7 @@ test("sqlite: allowWrites opts back in", async () => {
 });
 
 test("write tools carry destructive annotations", () => {
-  const ctx = createContext({ db: connectSqlite(":memory:"), migrationsDir: "./migrations" });
+  const ctx = createContext({ db: connectSqlite(":memory:"), migrationsDir: "./migrations", allowWrites: true });
   const tools = collectTools(ctx);
   const up = tools.find((t) => t.name === "migrate.up")!;
   expect(up.annotations?.destructiveHint).toBe(true);
