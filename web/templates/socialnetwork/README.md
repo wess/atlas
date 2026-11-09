@@ -43,6 +43,8 @@ Screens live at `/app/feed` and `/app/profile`.
 - `POST /api/media/upload` — upload image (multipart form, `file` field), returns URL (auth)
 - `GET /uploads/:key` — serves locally stored uploads (set `S3_*` env vars to use S3 instead)
 
+Uploads are typed by their first bytes (PNG, JPEG, GIF, WebP), stored under random keys, and served with `nosniff` and a sandbox CSP so nothing uploaded can run as a page on this origin.
+
 ### Health
 - `GET /health` — health check
 

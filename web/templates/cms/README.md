@@ -98,6 +98,8 @@ Content type fields are defined as JSON:
 | `POST` | `/admin/api/media` | Upload media (multipart form) |
 | `DELETE` | `/admin/api/media/:id` | Delete media |
 
+Uploads are typed by their first bytes, not the client's filename: PNG, JPEG, GIF, WebP, and PDF are accepted and everything else is refused. Files are stored under random keys and served from `/uploads/:key` with `nosniff` and a sandbox CSP; PDFs download as attachments. Widen `kinds` in `src/storage.ts` to accept more, but keep HTML and SVG off this origin.
+
 ### API Keys (Admin only, JWT)
 
 | Method | Path | Description |
