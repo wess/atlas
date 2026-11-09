@@ -26,6 +26,14 @@ Select: `.select(...cols)`, `.distinct(...cols)`, `.where(cb)`, `.join(t, on, al
 `.leftJoin(t, on, alias?)`, `.innerJoin(t, on, alias?)`, `.orderBy(col, dir?, nulls?)`,
 `.groupBy(...cols)`, `.having(cb)`, `.limit(n)`, `.offset(n)`, `.returning(...cols)`
 
+String columns are checked at compile time. In `q(col)`, `orderBy`, `groupBy`, `distinct`,
+and `returning` they must be an identifier, `table.column`, `*`, or `table.*`; pass `raw()`
+for anything else (`orderBy(raw("lower(email)"))`). `select` strings may also be
+expressions (`"COUNT(*) as total"`, `"u.name as author"`) but not contain `;`, `--`, `/* */`,
+quotes, `$` placeholders, or control characters. `orderBy` direction must be ASC/DESC and
+nulls FIRST/LAST (any case; emitted uppercase), otherwise it throws. Treat `select` strings
+and join `on` strings as trusted code, never request input.
+
 Mutate: `.insert(data)`, `.insertMany(data[])`, `.insertFrom(cols, source)`,
 `.update(data)`, `.del()`, `.truncate(cascade?)`
 

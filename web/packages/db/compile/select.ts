@@ -1,6 +1,6 @@
 import { isFragment } from "../fragment/index.ts";
 import type { Column, Query } from "../types/index.ts";
-import { validateIdentifier } from "../utils/identifiers.ts";
+import { validateColumn, validateIdentifier, validateSelectColumn } from "../utils/identifiers.ts";
 import type { ParamCounter } from "../utils/params.ts";
 import { renumberParams } from "../utils/params.ts";
 import { compileGroupBy, compileHaving, compileJoins, compileOrderBy, compileWheres } from "./clauses.ts";
@@ -17,7 +17,7 @@ const compileColumns = (cols: readonly Column[], counter: ParamCounter, values: 
         values.push(...col.values);
         return renumbered;
       }
-      return col;
+      return validateSelectColumn(col);
     })
     .join(", ");
 };
@@ -40,7 +40,7 @@ export const compileSelect = (query: Query, counter: ParamCounter, values: any[]
           values.push(...col.values);
           return renumbered;
         }
-        return col;
+        return validateColumn(col);
       })
       .join(", ");
     parts.push(`DISTINCT ON (${distinctCols})`);

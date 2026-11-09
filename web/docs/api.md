@@ -74,6 +74,9 @@ from(table: string, alias?) → Chainable<any>      dynamic / cross-table chain
   .insert(data) .insertMany(data[]) .update(data) .del() .truncate(cascade?)
   .returning(...keys) .onConflict(spec) .cte(name, sub) .recursiveCte(name, sub)
   .toSql(dialect?) → SqlResult<Selected>
+  string cols in q()/orderBy/groupBy/distinct/returning: ident | t.ident | * | t.* (else throw → use raw())
+  select strings: ident or expression without ; -- /* ' " ` $ \ control chars
+  orderBy dir: ASC|DESC, nulls: FIRST|LAST (case-insensitive, else throw)
 raw(sql, ...values) → Fragment
 defineSchema(table, columns) → Schema<T>
 column.serial() → number   .text() → string   .integer() → number

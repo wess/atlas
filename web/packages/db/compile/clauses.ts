@@ -1,6 +1,6 @@
 import { isFragment } from "../fragment/index.ts";
 import type { Column, ConflictSpec, CteSpec, JoinSpec, OrderSpec, Predicate } from "../types/index.ts";
-import { validateIdentifier } from "../utils/identifiers.ts";
+import { normalizeDirection, normalizeNulls, validateColumn, validateIdentifier } from "../utils/identifiers.ts";
 import type { ParamCounter } from "../utils/params.ts";
 import { renumberParams } from "../utils/params.ts";
 
@@ -10,7 +10,7 @@ const compileColumn = (col: Column, counter: ParamCounter, values: any[]): strin
     values.push(...col.values);
     return renumbered;
   }
-  return col;
+  return validateColumn(col);
 };
 
 const compilePredicate = (pred: Predicate, counter: ParamCounter, values: any[]): string => {
@@ -85,8 +85,8 @@ export const compileOrderBy = (specs: readonly OrderSpec[], counter: ParamCounte
 
   const parts = specs.map((spec) => {
     const col = compileColumn(spec.column, counter, values);
-    const nulls = spec.nulls ? ` NULLS ${spec.nulls}` : "";
-    return `${col} ${spec.direction}${nulls}`;
+    const nulls = spec.nulls ? ` NULLS ${normalizeNulls(spec.nulls)}` : "";
+    return `${col} ${normalizeDirection(spec.direction ?? "ASC")}${nulls}`;
   });
 
   return `ORDER BY ${parts.join(", ")}`;
