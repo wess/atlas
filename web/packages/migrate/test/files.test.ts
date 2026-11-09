@@ -14,7 +14,7 @@ afterEach(() => {
 
 test("createMigration scaffolds folder with up.sql and down.sql", async () => {
   const m = createMigration(testDir, "add_users");
-  expect(m.name).toMatch(/^\d{8}_add_users$/);
+  expect(m.name).toMatch(/^\d{14}_add_users$/);
   // Bun.write is async, await the files
   await Bun.write(`${testDir}/${m.name}/up.sql`, "");
   await Bun.write(`${testDir}/${m.name}/down.sql`, "");

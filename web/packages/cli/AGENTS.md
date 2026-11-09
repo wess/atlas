@@ -102,7 +102,7 @@ path (`./app.db`, `sqlite:./app.db`, `file:./app.db`). `new` needs no database.
 atlas migrate up               # apply pending migrations
 atlas migrate down             # roll back the most recent one
 atlas migrate status           # applied / pending per migration
-atlas migrate new add_users    # create migrations/<yyyymmdd>_add_users/{up,down}.sql
+atlas migrate new add_users    # create migrations/<yyyymmddhhmmss>_add_users/{up,down}.sql
 ```
 
 Errors (missing DATABASE_URL, unknown action, bad name, module not installed) print a

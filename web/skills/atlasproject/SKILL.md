@@ -62,6 +62,7 @@ A missing variable with no default throws at startup.
 
 ```sh
 atlas dev                       # run the Procfile
+atlas migrate up                # apply ./migrations using DATABASE_URL; also down, status, new <name>
 atlas check                     # rejects local Atlas paths and legacy aliases
 atlas docs [module]             # print a reference
 atlas mcp                       # docs and runtime inspection over MCP

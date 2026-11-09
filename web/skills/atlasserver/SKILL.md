@@ -102,12 +102,14 @@ Clients connect to `/ws` and send `{ channel, event, payload }`.
 import { get, serve } from "@wess/atlas/server"
 import { createSseChannel } from "@wess/atlas/server/sse"
 
-const events = createSseChannel()
+const events = createSseChannel({ heartbeat: 15_000 })
 
 serve({ port: 3000, routes: [get("/events", events.pipe)] })
 
 events.broadcast("notification", { text: "hello" })
 ```
+
+`heartbeat` sends `: ping` keepalives in ms. Give the channel `topic: (c) => c.query.room` and `events.publish("room1", event, data)` reaches one group. Pass an id to `broadcast(event, data, id)` and read `client.lastEventId` to resume after a reconnect.
 
 ## Security
 

@@ -1,6 +1,6 @@
 export type Target = { driver: "postgres"; url: string } | { driver: "sqlite"; path: string };
 
-const sqlitePrefix = /^(sqlite:(\/\/)?|file:(\/\/)?)/;
+const sqlitePrefix = /^(sqlite:(\/\/)?|file:(\/\/)?)/i;
 
 // postgres:// and postgresql:// go to the postgres driver, anything else is a sqlite path
 export const parseTarget = (value: string | undefined): Target => {
@@ -8,7 +8,10 @@ export const parseTarget = (value: string | undefined): Target => {
   if (!raw) {
     throw new Error("DATABASE_URL is not set. Use postgres://user:pass@host/db or a sqlite path such as ./app.db");
   }
-  if (/^postgres(ql)?:\/\//.test(raw)) return { driver: "postgres", url: raw };
+  if (/^postgres(ql)?:\/\//i.test(raw)) return { driver: "postgres", url: raw };
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(raw) && !sqlitePrefix.test(raw)) {
+    throw new Error(`Unsupported DATABASE_URL scheme in "${raw.split(":")[0]}://". Use postgres:// or a sqlite path.`);
+  }
   const path = raw.replace(sqlitePrefix, "");
   if (!path) throw new Error(`DATABASE_URL "${raw}" has no sqlite path`);
   return { driver: "sqlite", path };

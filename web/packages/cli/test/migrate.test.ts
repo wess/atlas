@@ -63,8 +63,7 @@ test("new creates a migration folder in the dir", async () => {
   await runMigrate(["new", "add_users"], { dir }, realDeps(lines));
   const made = readdirSync(dir);
   expect(made).toHaveLength(1);
-  expect(made[0]).toMatch(/^\d{8}_add_users$/);
-  await Bun.sleep(20);
+  expect(made[0]).toMatch(/^\d{14}_add_users$/);
   expect(readdirSync(join(dir, made[0]!)).sort()).toEqual(["down.sql", "up.sql"]);
   expect(lines[0]).toContain("add_users");
 });
@@ -76,7 +75,6 @@ test("up, status and down run against a sqlite file", async () => {
   const lines: string[] = [];
   const deps = realDeps(lines);
   await runMigrate(["new", "add_things"], { dir }, deps);
-  await Bun.sleep(20);
   const name = readdirSync(dir)[0]!;
   await Bun.write(join(dir, name, "up.sql"), "create table things (id integer primary key);");
   await Bun.write(join(dir, name, "down.sql"), "drop table things;");
@@ -93,4 +91,23 @@ test("up, status and down run against a sqlite file", async () => {
   expect(lines.at(-1)).toBe(`✔ rolled back ${name}`);
   await runMigrate(["down"], { dir, url }, deps);
   expect(lines.at(-1)).toBe("→ nothing to roll back");
+});
+
+test("DATABASE_URL schemes are case-insensitive, and unknown ones are refused instead of opened as files", async () => {
+  const { parseTarget } = await import("../migrate/target.ts");
+  expect(parseTarget("POSTGRES://u@h/db")).toEqual({ driver: "postgres", url: "POSTGRES://u@h/db" });
+  expect(parseTarget("SQLite:./app.db")).toEqual({ driver: "sqlite", path: "./app.db" });
+  expect(() => parseTarget("mysql://u:p@h/db")).toThrow("Unsupported DATABASE_URL scheme");
+});
+
+test("creating a migration never overwrites one that exists", async () => {
+  const { createMigration } = await import("../../migrate/files/index.ts");
+  const { mkdtempSync, readFileSync, rmSync, writeFileSync } = await import("node:fs");
+  const dir = mkdtempSync(`${(await import("node:os")).tmpdir()}/atlasmigratenew`);
+  const first = createMigration(dir, "add_x");
+  expect(first.name).toMatch(/^\d{14}_add_x$/);
+  writeFileSync(first.upPath, "CREATE TABLE x (id INTEGER);");
+  expect(() => createMigration(dir, "add_x")).toThrow("already exists");
+  expect(readFileSync(first.upPath, "utf-8")).toBe("CREATE TABLE x (id INTEGER);");
+  rmSync(dir, { recursive: true, force: true });
 });

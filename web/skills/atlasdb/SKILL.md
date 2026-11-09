@@ -70,6 +70,8 @@ export const rename = (id: number, email: string) =>
   })
 ```
 
+Nesting `tx.transaction(...)` uses a savepoint, so an inner throw rolls back only the inner block. Run nested calls one at a time, not in `Promise.all`.
+
 ## Migrations
 
 Generate them from the schema rather than writing SQL.
@@ -85,4 +87,4 @@ await migrate.up(db, "./migrations")
 
 `.unique()` becomes a constraint on new tables and a `CREATE UNIQUE INDEX` on existing ones, which fails on apply if the data already has duplicates, so clean those up first. Removing `.unique()` is flagged as a comment for you to resolve. `.default(value)` and `.defaultRaw(sql)` are both written to the DDL. Still read the generated SQL before running it.
 
-Also `migrate.plan`, `migrate.status`, `migrate.down`, and `migrate.create(dir, name)` for hand-written migrations.
+Also `migrate.plan`, `migrate.status`, `migrate.down`, and `migrate.create(dir, name)` for hand-written migrations. From the shell: `atlas migrate up|down|status` reads `DATABASE_URL`, and `atlas migrate new <name>` creates an empty migration.

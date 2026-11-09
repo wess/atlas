@@ -18,7 +18,7 @@ export const ask = async (question: string) => {
 }
 ```
 
-`provider` is `openai`, `anthropic`, or `ollama`. `key` is required except for Ollama. `addMessage` returns a new conversation rather than changing the old one.
+`provider` is `openai`, `anthropic`, or `ollama`. `key` is required except for Ollama, where it's sent as a Bearer token for Ollama Cloud (`baseUrl: "https://ollama.com"`). `baseUrl` works on all three providers. `addMessage` returns a new conversation rather than changing the old one.
 
 ## Streaming to a browser
 
