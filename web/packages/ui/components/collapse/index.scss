@@ -1,0 +1,14 @@
+.atlas-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 160ms ease;
+
+  &[data-expanded] {
+    grid-template-rows: 1fr;
+  }
+
+  > div {
+    min-height: 0;
+    overflow: hidden;
+  }
+}

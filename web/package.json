@@ -1,7 +1,7 @@
 {
   "name": "@wess/atlas",
   "private": true,
-  "version": "0.4.10",
+  "version": "0.5.0",
   "packageManager": "bun@1.4.4",
   "engines": {
     "bun": ">=1.4.4"
@@ -39,7 +39,8 @@
     "packages",
     "docs",
     "llms.txt",
-    "templates"
+    "templates",
+    "skills"
   ],
   "exports": {
     "./admin": "./packages/admin/index.ts",
@@ -68,6 +69,7 @@
     "./sso": "./packages/sso/index.ts",
     "./storage": "./packages/storage/index.ts",
     "./ui": "./packages/ui/index.ts",
+    "./ui/styles.css": "./packages/ui/styles/index.scss",
     "./ui/*": "./packages/ui/*/index.tsx",
     "./packages/*": "./packages/*",
     "./admin/ui": "./packages/admin/ui/index.ts",
@@ -100,6 +102,8 @@
     "site:build": "bun site/generator/index.ts",
     "site:dev": "bun --hot site/serve.ts",
     "distribution:build": "bun distribution/build.ts",
+    "distribution:catalog": "bun distribution/catalog.ts",
+    "skills:verify": "bun validation/skills.ts",
     "distribution:verify": "bun distribution/verify.ts",
     "distribution:dryrun": "bun distribution/publish.ts",
     "consumers:verify": "bun validation/consumers.ts",
@@ -114,9 +118,6 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "lucide-react": "^1.67.0",
-    "@mantine/core": "^9.7.4",
-    "@mantine/hooks": "^9.7.4",
-    "@mantine/form": "^9.7.4",
     "@tanstack/react-table": "^9.3.1"
   },
   "peerDependenciesMeta": {
@@ -129,24 +130,17 @@
     "lucide-react": {
       "optional": true
     },
-    "@mantine/core": {
-      "optional": true
-    },
-    "@mantine/hooks": {
-      "optional": true
-    },
-    "@mantine/form": {
-      "optional": true
-    },
     "@tanstack/react-table": {
       "optional": true
     }
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
+    "@happy-dom/global-registrator": "^21.0.4",
     "@types/bun": "^1.4.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "sass": "1.108.1",
     "typescript": "^7.0.2"
   },
   "bin": {

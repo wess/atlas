@@ -1,0 +1,3 @@
+# dev only: releases ship compiled CSS, see distribution/sass.ts
+[serve.static]
+plugins = ["./distribution/sass.ts"]

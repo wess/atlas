@@ -1,0 +1,46 @@
+@use "../../styles/mixins" as *;
+
+.atlas-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: var(--atlas-font-sm);
+
+  button {
+    @include focusring;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--atlas-border);
+    border-radius: var(--atlas-radius-sm);
+    background: var(--atlas-surface);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: var(--atlas-sunken);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &[aria-current] {
+      border-color: var(--atlas-primary);
+      background: var(--atlas-primary);
+      color: var(--atlas-primary-contrast);
+    }
+  }
+
+  span {
+    min-width: 2rem;
+    color: var(--atlas-dimmed);
+    text-align: center;
+  }
+}

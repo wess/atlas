@@ -1,6 +1,8 @@
-import { Button, Checkbox, Group, NumberInput, Paper, Stack, Textarea, TextInput, Title } from "@mantine/core";
+import { Button, Checkbox, Group, NumberInput, Paper, Stack, Textarea, TextInput, Title } from "@atlas/ui/components";
 import { ArrowLeft, Save } from "lucide-react";
 import { useState } from "react";
+import { adminFetch } from "./api.ts";
+import { paths } from "./paths.ts";
 
 type SchemaColumn = {
   name: string;
@@ -75,23 +77,23 @@ export const Create = ({ table, schema, basePath, onNavigate }: CreateProps) => 
   };
 
   const handleSave = async () => {
-    const res = await fetch(`${basePath}/api/${table}`, {
+    const res = await adminFetch(`${basePath}/api/${table}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(record),
     });
     const body = await res.json();
     if (body.data?.id) {
-      onNavigate(`detail/${table}/${body.data.id}`);
+      onNavigate(paths.detail(table, body.data.id));
     } else {
-      onNavigate(`list/${table}`);
+      onNavigate(paths.list(table));
     }
   };
 
   return (
     <div>
       <Group mb="md">
-        <Button variant="subtle" leftSection={<ArrowLeft size={16} />} onClick={() => onNavigate(`list/${table}`)}>
+        <Button variant="subtle" leftSection={<ArrowLeft size={16} />} onClick={() => onNavigate(paths.list(table))}>
           Back
         </Button>
         <Title order={2} tt="capitalize">

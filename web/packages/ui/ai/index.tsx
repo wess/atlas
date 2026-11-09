@@ -1,7 +1,11 @@
+import { Bot, Search, Send, Sparkles, User } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActionIcon,
   Badge,
   Button,
+  Code,
   Group,
   Loader,
   Paper,
@@ -11,11 +15,8 @@ import {
   Textarea,
   TextInput,
   Title,
-} from "@mantine/core";
-import { useDebouncedValue } from "@mantine/hooks";
-import { Bot, Search, Send, Sparkles, User } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+} from "../components/index.tsx";
+import { useDebounced } from "../headless/index.tsx";
 
 // MessageBubble
 
@@ -27,19 +28,19 @@ export type MessageBubbleProps = {
 
 const renderContent = (content: string) => {
   const parts = content.split(/(```[\s\S]*?```)/g);
-  return parts.map((part) => {
-    const key = part.slice(0, 40);
+  // parts of one message have no identity but their position
+  return parts.map((part, key) => {
     if (part.startsWith("```") && part.endsWith("```")) {
       const code = part.slice(3, -3).replace(/^\w*\n/, "");
       return (
-        <Paper key={key} bg="dark.8" p="xs" my="xs" radius="sm">
-          <Text size="sm" ff="monospace" style={{ whiteSpace: "pre-wrap" }}>
-            {code}
-          </Text>
-        </Paper>
+        // biome-ignore lint/suspicious/noArrayIndexKey: see above
+        <Code key={key} block>
+          {code}
+        </Code>
       );
     }
     return (
+      // biome-ignore lint/suspicious/noArrayIndexKey: see above
       <Text key={key} size="sm" style={{ whiteSpace: "pre-wrap" }}>
         {part}
       </Text>
@@ -48,32 +49,26 @@ const renderContent = (content: string) => {
 };
 
 export const MessageBubble = ({ role, content, timestamp }: MessageBubbleProps) => (
-  <Group justify={role === "user" ? "flex-end" : "flex-start"} align="flex-start" w="100%">
+  <div className="atlas-message" data-role={role}>
     {role === "assistant" && (
-      <ActionIcon variant="light" color="blue" size="sm" radius="xl" mt={4}>
-        <Bot size={14} />
-      </ActionIcon>
+      <span className="atlas-message__avatar">
+        <Bot size={14} aria-hidden="true" />
+      </span>
     )}
-    <Paper
-      p="sm"
-      radius="md"
-      bg={role === "user" ? "blue.6" : "gray.1"}
-      c={role === "user" ? "white" : undefined}
-      maw="75%"
-    >
+    <div className="atlas-message__bubble">
       {renderContent(content)}
       {timestamp && (
-        <Text size="xs" c={role === "user" ? "blue.1" : "dimmed"} mt={4}>
+        <Text size="xs" className="atlas-message__time">
           {timestamp.toLocaleTimeString()}
         </Text>
       )}
-    </Paper>
+    </div>
     {role === "user" && (
-      <ActionIcon variant="light" color="gray" size="sm" radius="xl" mt={4}>
-        <User size={14} />
-      </ActionIcon>
+      <span className="atlas-message__avatar">
+        <User size={14} aria-hidden="true" />
+      </span>
     )}
-  </Group>
+  </div>
 );
 
 // PromptInput
@@ -121,11 +116,12 @@ export const PromptInput = ({
         autosize
         minRows={1}
         maxRows={4}
-        style={{ flex: 1 }}
+        flex={1}
       />
       <ActionIcon
+        aria-label="Send message"
         size="lg"
-        color="blue"
+        color="primary"
         onClick={handleSend}
         disabled={!value.trim() || loading || disabled}
         loading={loading}
@@ -157,11 +153,11 @@ export const ChatWindow = ({
 }: ChatWindowProps) => {
   const viewport = useRef<HTMLDivElement>(null);
 
+  // new messages and the loading row are what should move the view, though neither is read here
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useEffect(() => {
-    if (viewport.current) {
-      viewport.current.scrollTo({ top: viewport.current.scrollHeight, behavior: "smooth" });
-    }
-  }, []);
+    viewport.current?.scrollTo({ top: viewport.current.scrollHeight, behavior: "smooth" });
+  }, [messages.length, loading]);
 
   return (
     <Paper p="md" withBorder radius="md" h={height} style={{ display: "flex", flexDirection: "column" }}>
@@ -170,12 +166,13 @@ export const ChatWindow = ({
           {title}
         </Title>
       )}
-      <ScrollArea flex={1} viewportRef={viewport} mb="sm">
+      <ScrollArea flex={1} ref={viewport} mb="sm">
         <Stack gap="sm" p="xs">
-          {messages.map((msg) => {
-            const key = `${msg.role}-${msg.content.slice(0, 32)}`;
-            return <MessageBubble key={key} role={msg.role} content={msg.content} />;
-          })}
+          {messages.map((msg, index) => (
+            // the list only grows, and two identical messages must not share a key
+            // biome-ignore lint/suspicious/noArrayIndexKey: see above
+            <MessageBubble key={index} role={msg.role} content={msg.content} />
+          ))}
           {loading && (
             <Group gap="xs">
               <Bot size={14} />
@@ -201,7 +198,7 @@ export const AiSearch = ({ onSearch, placeholder = "Search with AI...", debounce
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<{ id: string; text: string; score: number }[]>([]);
   const [searching, setSearching] = useState(false);
-  const [debounced] = useDebouncedValue(query, debounceMs);
+  const debounced = useDebounced(query, debounceMs);
 
   useEffect(() => {
     if (!debounced.trim()) {
@@ -242,7 +239,7 @@ export const AiSearch = ({ onSearch, placeholder = "Search with AI...", debounce
           <Stack gap="xs">
             {results.map((r) => (
               <Group key={r.id} justify="space-between">
-                <Text size="sm" truncate style={{ flex: 1 }}>
+                <Text size="sm" truncate flex={1}>
                   {r.text}
                 </Text>
                 <Badge size="sm" variant="light">
@@ -287,14 +284,14 @@ export const GenerateButton = ({
 
   if (variant === "icon") {
     return (
-      <ActionIcon onClick={handleClick} loading={loading} color="violet" variant="light">
+      <ActionIcon aria-label={label} onClick={handleClick} loading={loading} color="accent" variant="light">
         <Sparkles size={16} />
       </ActionIcon>
     );
   }
 
   return (
-    <Button onClick={handleClick} loading={loading} leftSection={<Sparkles size={16} />} color="violet" variant="light">
+    <Button onClick={handleClick} loading={loading} leftSection={<Sparkles size={16} />} color="accent" variant="light">
       {label}
     </Button>
   );

@@ -1,0 +1,30 @@
+@use "../../styles/mixins" as *;
+
+.atlas-navlink {
+  @include focusring;
+
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  border: 0;
+  border-radius: var(--atlas-radius-sm);
+  background: none;
+  color: inherit;
+  padding: 0.5rem 0.625rem;
+  font: inherit;
+  font-size: var(--atlas-font-sm);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--atlas-sunken);
+  }
+
+  &[data-active] {
+    background: var(--atlas-primary-soft);
+    color: var(--atlas-primary);
+    font-weight: 600;
+  }
+}

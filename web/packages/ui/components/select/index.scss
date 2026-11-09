@@ -1,0 +1,7 @@
+.atlas-select .atlas-field__input {
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}

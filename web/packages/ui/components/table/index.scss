@@ -1,0 +1,44 @@
+@use "../../styles/mixins" as *;
+
+.atlas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--atlas-font-sm);
+
+  th,
+  td {
+    border-block-end: 1px solid var(--atlas-border);
+    padding: 0.5rem 0.625rem;
+    text-align: start;
+  }
+
+  th {
+    font-weight: 600;
+  }
+
+  tbody tr:last-child td {
+    border-block-end: 0;
+  }
+
+  &[data-striped] tbody tr:nth-child(odd) {
+    background: var(--atlas-ground);
+  }
+
+  &[data-highlightonhover] tbody tr:hover {
+    background: var(--atlas-sunken);
+  }
+}
+
+.atlas-table__sort {
+  @include focusring;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 0;
+  background: none;
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}

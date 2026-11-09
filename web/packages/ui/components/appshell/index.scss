@@ -1,0 +1,48 @@
+@use "../../styles/mixins" as *;
+
+.atlas-appshell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 100dvh;
+
+  @media (min-width: $sm) {
+    grid-template-rows: auto 1fr;
+
+    &:has(> .atlas-appshell__navbar) {
+      grid-template-columns: var(--navbar-width) minmax(0, 1fr);
+    }
+
+    > .atlas-appshell__header {
+      grid-column: 1 / -1;
+    }
+
+    > .atlas-appshell__main {
+      grid-row: 2;
+    }
+
+    > .atlas-appshell__navbar {
+      grid-row: 2;
+      position: sticky;
+      top: 0;
+      max-height: 100dvh;
+      overflow-y: auto;
+      border-inline-end: 1px solid var(--atlas-border);
+      border-block-end: 0;
+    }
+  }
+}
+
+.atlas-appshell__header {
+  min-height: 3.75rem;
+  background: var(--atlas-surface);
+  border-block-end: 1px solid var(--atlas-border);
+}
+
+.atlas-appshell__navbar {
+  background: var(--atlas-surface);
+  border-block-end: 1px solid var(--atlas-border);
+}
+
+.atlas-appshell__main {
+  min-width: 0;
+}

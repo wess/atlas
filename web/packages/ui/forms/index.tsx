@@ -1,7 +1,8 @@
-import { Button, Select, type SelectProps, TextInput, type TextInputProps } from "@mantine/core";
-import { useForm } from "@mantine/form";
 import type React from "react";
 import type { z } from "zod";
+import { Button, Select, TextInput } from "../components/index.tsx";
+import type { FieldProps } from "../factory/index.tsx";
+import { type FormBinding, useForm } from "../headless/index.tsx";
 
 export type FormConfig<T extends Record<string, unknown>> = {
   initial?: Partial<T>;
@@ -27,29 +28,31 @@ export const createForm = <T extends Record<string, unknown>>(config: FormConfig
         : undefined,
     });
 
-    return { form, handleSubmit: form.onSubmit((values) => config.onSubmit(values as T)) };
+    return { form, handleSubmit: form.onSubmit((values) => config.onSubmit(values)) };
   };
 };
 
-export type TextFieldProps = {
-  form: ReturnType<typeof useForm>;
-  name: string;
-  label?: string;
-} & Omit<TextInputProps, "form">;
+export type TextFieldProps = FieldProps &
+  Omit<React.ComponentProps<"input">, keyof FieldProps | "form" | "value" | "onChange"> & {
+    form: FormBinding;
+    name: string;
+  };
 
 export const TextField = ({ form, name, label, ...rest }: TextFieldProps) => (
-  <TextInput label={label ?? name} {...form.getInputProps(name)} {...rest} />
+  <TextInput name={name} label={label ?? name} {...form.getInputProps(name)} {...rest} />
 );
 
-export type SelectFieldProps = {
-  form: ReturnType<typeof useForm>;
+export type SelectFieldProps = FieldProps & {
+  form: FormBinding;
   name: string;
-  label?: string;
   options: { value: string; label: string }[];
-} & Omit<SelectProps, "form" | "data">;
+  placeholder?: string;
+  clearable?: boolean;
+  disabled?: boolean;
+};
 
 export const SelectField = ({ form, name, label, options, ...rest }: SelectFieldProps) => (
-  <Select label={label ?? name} data={options} {...form.getInputProps(name)} {...rest} />
+  <Select name={name} label={label ?? name} data={options} {...form.getInputProps(name)} {...rest} />
 );
 
 export type SubmitButtonProps = {

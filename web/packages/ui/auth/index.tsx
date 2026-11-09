@@ -1,7 +1,7 @@
-import { Alert, Button, Paper, PasswordInput, Stack, TextInput, Title } from "@mantine/core";
 import { Lock, Mail, User } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import { Alert, Button, Paper, PasswordInput, Stack, TextInput, Title } from "../components/index.tsx";
 
 export type AuthPageProps = {
   onSubmit: (data: Record<string, string>) => Promise<{ error?: string } | undefined>;
@@ -29,7 +29,7 @@ export const LoginPage = ({ onSubmit, title = "Login" }: AuthPageProps) => {
         {title}
       </Title>
       {error && (
-        <Alert color="red" mb="md">
+        <Alert color="danger" mb="md">
           {error}
         </Alert>
       )}
@@ -38,6 +38,7 @@ export const LoginPage = ({ onSubmit, title = "Login" }: AuthPageProps) => {
           <TextInput
             label="Email"
             type="email"
+            autoComplete="username"
             required
             value={email}
             onChange={(e) => setEmail(e.currentTarget.value)}
@@ -45,6 +46,7 @@ export const LoginPage = ({ onSubmit, title = "Login" }: AuthPageProps) => {
           />
           <PasswordInput
             label="Password"
+            autoComplete="current-password"
             required
             value={password}
             onChange={(e) => setPassword(e.currentTarget.value)}
@@ -81,7 +83,7 @@ export const SignupPage = ({ onSubmit, title = "Sign Up" }: AuthPageProps) => {
         {title}
       </Title>
       {error && (
-        <Alert color="red" mb="md">
+        <Alert color="danger" mb="md">
           {error}
         </Alert>
       )}
@@ -140,12 +142,12 @@ export const ResetPasswordPage = ({ onSubmit, title = "Reset Password" }: AuthPa
         {title}
       </Title>
       {error && (
-        <Alert color="red" mb="md">
+        <Alert color="danger" mb="md">
           {error}
         </Alert>
       )}
       {success && (
-        <Alert color="green" mb="md">
+        <Alert color="success" mb="md">
           Check your email for reset instructions.
         </Alert>
       )}

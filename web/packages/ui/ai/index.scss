@@ -1,0 +1,52 @@
+.atlas-message {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--atlas-space-xs);
+  width: 100%;
+
+  &[data-role="user"] {
+    justify-content: flex-end;
+  }
+}
+
+.atlas-message__avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-block-start: 0.25rem;
+  border-radius: 50%;
+  background: var(--atlas-sunken);
+  color: var(--atlas-dimmed);
+
+  [data-role="assistant"] > & {
+    background: var(--atlas-primary-soft);
+    color: var(--atlas-primary);
+  }
+}
+
+.atlas-message__bubble {
+  max-width: 75%;
+  border-radius: var(--atlas-radius-lg);
+  background: var(--atlas-sunken);
+  padding: var(--atlas-space-sm);
+
+  [data-role="user"] > & {
+    background: var(--atlas-primary);
+    color: var(--atlas-primary-contrast);
+  }
+
+  // code stays readable on the filled user bubble
+  .atlas-codeblock {
+    margin-block: var(--atlas-space-xs);
+    background: var(--atlas-surface);
+    color: var(--atlas-ink);
+  }
+}
+
+.atlas-message__time {
+  margin-block-start: 0.25rem;
+  opacity: 0.8;
+}

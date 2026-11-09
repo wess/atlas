@@ -1,0 +1,45 @@
+@use "../../styles/mixins" as *;
+
+.atlas-button {
+  @include toned;
+  @include toneVariants;
+  @include focusring;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: var(--atlas-radius-md);
+  padding-inline: 1.125rem;
+  font: inherit;
+  font-size: var(--atlas-font-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+
+  @each $name, $height in $control {
+    &[data-size="#{$name}"] {
+      height: $height;
+    }
+  }
+
+  &[data-size="xs"] {
+    padding-inline: 0.75rem;
+    font-size: var(--atlas-font-xs);
+  }
+
+  &[data-fullwidth] {
+    width: 100%;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .atlas-loader {
+    color: inherit;
+  }
+}

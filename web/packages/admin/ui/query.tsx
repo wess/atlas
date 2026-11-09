@@ -1,6 +1,20 @@
-import { Button, Code, Group, MultiSelect, NumberInput, Paper, Select, Stack, Table, Text, Title } from "@mantine/core";
+import {
+  Button,
+  Code,
+  Group,
+  MultiSelect,
+  NumberInput,
+  Paper,
+  ScrollArea,
+  Select,
+  Stack,
+  Table,
+  Text,
+  Title,
+} from "@atlas/ui/components";
 import { Eye, Play } from "lucide-react";
 import { useState } from "react";
+import { adminFetch } from "./api.ts";
 import { FilterBuilder, type FilterRow } from "./components/filter.tsx";
 
 type SchemaModel = {
@@ -47,7 +61,7 @@ export const QueryBuilder = ({ models, basePath }: QueryBuilderProps) => {
   });
 
   const handlePreview = async () => {
-    const res = await fetch(`${basePath}/api/query/preview`, {
+    const res = await adminFetch(`${basePath}/api/query/preview`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(buildPayload()),
@@ -59,7 +73,7 @@ export const QueryBuilder = ({ models, basePath }: QueryBuilderProps) => {
   };
 
   const handleExecute = async () => {
-    const res = await fetch(`${basePath}/api/query`, {
+    const res = await adminFetch(`${basePath}/api/query`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(buildPayload()),
@@ -159,22 +173,22 @@ export const QueryBuilder = ({ models, basePath }: QueryBuilderProps) => {
             <Text fw={500} mb="xs">
               Results ({results.length} rows)
             </Text>
-            <Table striped highlightOnHover>
-              <Table.Thead>
-                <Table.Tr>
-                  {results[0] && Object.keys(results[0]).map((k) => <Table.Th key={k}>{k}</Table.Th>)}
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {results.map((row, i) => (
-                  <Table.Tr key={String((row as Record<string, unknown>).id ?? i)}>
-                    {Object.entries(row).map(([k, v]) => (
-                      <Table.Td key={k}>{typeof v === "object" ? JSON.stringify(v) : String(v ?? "")}</Table.Td>
-                    ))}
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
+            <ScrollArea>
+              <Table striped highlightOnHover>
+                <thead>
+                  <tr>{results[0] && Object.keys(results[0]).map((k) => <th key={k}>{k}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {results.map((row, i) => (
+                    <tr key={String((row as Record<string, unknown>).id ?? i)}>
+                      {Object.entries(row).map(([k, v]) => (
+                        <td key={k}>{typeof v === "object" ? JSON.stringify(v) : String(v ?? "")}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </ScrollArea>
           </Paper>
         )}
       </Stack>

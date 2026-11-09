@@ -18,6 +18,8 @@ test("a production UI leaf renders with required peers and no unrelated blocks",
   };
   try {
     const result = await build({ outdir: join(root, "artifacts") });
+    const entry = await Bun.file(join(result.outdir, "atlas-admin/packages/admin/ui/entry.tsx")).text();
+    expect(entry).toContain('"@wess/atlas-ui/styles/index.css"');
     const dependencies: Record<string, string> = { ...result.mapping["./ui/provider"]!.externals };
     for (const name of ["@wess/atlas", ...result.mapping["./ui/provider"]!.packages])
       dependencies[name] = join(result.outdir, result.catalog.packages[name]!.tarball!);
@@ -42,9 +44,13 @@ test("a production UI leaf renders with required peers and no unrelated blocks",
     `,
     );
     expect(await run(production, ["run", "check.tsx"])).toContain("production UI rendered");
-    for (const name of ["@mantine/hooks", "react-dom"])
-      expect(await Bun.file(join(production, "node_modules", name, "package.json")).exists()).toBe(true);
-    for (const name of ["@mantine/form", "@tanstack/react-table", "zod", "@wess/atlas-db"])
+    expect(await Bun.file(join(production, "node_modules/react-dom/package.json")).exists()).toBe(true);
+    for (const stylesheet of ["@wess/atlas/ui/styles.css", "@wess/atlas-ui/packages/ui/styles/index.css"])
+      expect(await Bun.file(join(production, "node_modules", stylesheet)).text()).toContain(".atlas-button");
+    expect(await Bun.file(join(production, "node_modules/@wess/atlas-ui/packages/ui/styles/index.scss")).exists()).toBe(
+      false,
+    );
+    for (const name of ["lucide-react", "@tanstack/react-table", "zod", "@wess/atlas-db"])
       expect(await Bun.file(join(production, "node_modules", name, "package.json")).exists()).toBe(false);
   } finally {
     await rm(root, { recursive: true, force: true });

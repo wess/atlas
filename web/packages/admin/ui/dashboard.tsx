@@ -1,12 +1,16 @@
-import { Group, Paper, SimpleGrid, Text, Title } from "@mantine/core";
+import { Group, Paper, SimpleGrid, Text, Title } from "@atlas/ui/components";
+import { isPlainClick } from "@atlas/ui/headless";
 import { Database } from "lucide-react";
+import type React from "react";
+import { hrefFor, paths } from "./paths.ts";
 
 export type DashboardProps = {
   models: { table: string; count: number }[];
+  basePath?: string;
   onNavigate: (path: string) => void;
 };
 
-export const Dashboard = ({ models, onNavigate }: DashboardProps) => (
+export const Dashboard = ({ models, basePath = "/admin", onNavigate }: DashboardProps) => (
   <div>
     <Title order={2} mb="lg">
       Dashboard
@@ -15,10 +19,16 @@ export const Dashboard = ({ models, onNavigate }: DashboardProps) => (
       {models.map((m) => (
         <Paper
           key={m.table}
+          as="a"
+          interactive
           p="lg"
           withBorder
-          style={{ cursor: "pointer" }}
-          onClick={() => onNavigate(`list/${m.table}`)}
+          {...{ href: hrefFor(basePath, paths.list(m.table)) }}
+          onClick={(event: React.MouseEvent) => {
+            if (!isPlainClick(event)) return;
+            event.preventDefault();
+            onNavigate(paths.list(m.table));
+          }}
         >
           <Group>
             <Database size={24} />

@@ -1,0 +1,12 @@
+.atlas-textarea .atlas-field__input {
+  padding-block: 0.4375rem;
+  resize: vertical;
+
+  // browsers without field-sizing keep a fixed minRows box that scrolls
+  &[data-autosize] {
+    field-sizing: content;
+    min-height: calc(var(--rows-min) * 1lh + 0.875rem + 2px);
+    max-height: calc(var(--rows-max) * 1lh + 0.875rem + 2px);
+    resize: none;
+  }
+}

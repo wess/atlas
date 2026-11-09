@@ -1,0 +1,35 @@
+@use "../../styles/mixins" as *;
+
+$sizes: (sm: 1.5rem, md: 2rem, lg: 2.25rem);
+
+.atlas-actionicon {
+  @include toned;
+  @include toneVariants;
+  @include focusring;
+
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--atlas-radius-md);
+  padding: 0;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+
+  @each $name, $size in $sizes {
+    &[data-size="#{$name}"] {
+      width: $size;
+      height: $size;
+    }
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .atlas-loader {
+    color: inherit;
+  }
+}

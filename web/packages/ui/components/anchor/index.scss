@@ -1,0 +1,8 @@
+@use "../../styles/mixins" as *;
+
+.atlas-anchor {
+  color: var(--atlas-primary);
+  text-underline-offset: 2px;
+
+  @include focusring;
+}

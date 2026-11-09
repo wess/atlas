@@ -1,4 +1,4 @@
-import { Button, Group, Text } from "@mantine/core";
+import { Button, Group, Text } from "@atlas/ui/components";
 import { Download, Trash2 } from "lucide-react";
 
 export type BulkBarProps = {
@@ -11,12 +11,12 @@ export type BulkBarProps = {
 export const BulkBar = ({ selectedCount, actions, customActions, onAction }: BulkBarProps) => {
   if (selectedCount === 0) return null;
   return (
-    <Group p="xs" bg="blue.0" mb="md" style={{ borderRadius: 4 }}>
+    <Group p="xs" mb="md" style={{ background: "var(--atlas-primary-soft)", borderRadius: "var(--atlas-radius-sm)" }}>
       <Text size="sm" fw={500}>
         {selectedCount} selected
       </Text>
       {actions.includes("delete") && (
-        <Button size="xs" color="red" leftSection={<Trash2 size={14} />} onClick={() => onAction("delete")}>
+        <Button size="xs" color="danger" leftSection={<Trash2 size={14} />} onClick={() => onAction("delete")}>
           Delete
         </Button>
       )}

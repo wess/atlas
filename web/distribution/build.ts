@@ -2,7 +2,10 @@
 // selective source packages and a facade with one entrypoint per public subpath
 import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
+import { bundleAdmin } from "../packages/admin/ui/assets.ts";
 import {
+  compiledPath,
+  isStylesEntry,
   moduleOf,
   packageImport,
   packageName,
@@ -12,6 +15,7 @@ import {
   sourceRoot,
 } from "./config.ts";
 import { createGraph, modulePeers, rewriteSource, type Selection, selectEntrypoints } from "./graph.ts";
+import sassPlugin, { compileStyles } from "./sass.ts";
 
 export type CatalogEntry = Selection & { entry: string; package: string; import: string };
 export type CatalogPackage = { directory: string; tarball?: string; integrity?: string; peers: Record<string, string> };
@@ -51,6 +55,9 @@ async function copyAssets(config: SourceConfig, dir: string, module: string): Pr
     }
   }
   if (module === "cli") {
+    for (const file of sourceFiles(join(config.root, "skills"))) {
+      await Bun.write(join(dir, relative(config.root, file)), Bun.file(file));
+    }
     for (const file of new Bun.Glob("**/*").scanSync({ cwd: join(config.root, "templates"), dot: true })) {
       if (/(^|\/)(node_modules|dist|build|\.git)(\/|$)/.test(file)) continue;
       if (/(^|\/)\.env$|\.tsbuildinfo$/.test(file)) continue;
@@ -96,11 +103,21 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const dir = join(outdir, directory);
     const peers = modulePeers(config, graph, module);
     for (const file of config.files.filter((file) => moduleOf(config.root, file) === module)) {
+      if (file.endsWith(".scss")) {
+        if (isStylesEntry(file))
+          await Bun.write(compiledPath(join(dir, relative(config.root, file))), compileStyles(file));
+        continue;
+      }
       const dest = join(dir, relative(config.root, file));
       const source = graph.get(file);
       await Bun.write(dest, source ? rewriteSource(config, file, source) : Bun.file(file));
     }
     await copyAssets(config, dir, module);
+    if (module === "admin") {
+      for (const [name, body] of Object.entries(await bundleAdmin([sassPlugin]))) {
+        await Bun.write(join(dir, "packages/admin/ui/assets", name), body);
+      }
+    }
     const bin = Object.fromEntries(
       Object.entries(config.manifests[module]?.bin ?? {}).map(([key, path]) => [
         key,
@@ -120,9 +137,14 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const exports: Record<string, string> = {};
   const facadePeers: Record<string, string> = {};
   for (const [key, entry] of Object.entries(config.entries).sort(([a], [b]) => a.localeCompare(b))) {
-    const path = key === "." ? "./index.ts" : `${key}.ts`;
+    const styles = entry.endsWith(".scss");
+    const path = key === "." ? "./index.ts" : styles ? key : `${key}.ts`;
     const target = packageImport(config.root, entry);
-    await Bun.write(join(facadeDir, path), `export * from ${JSON.stringify(target)};\n`);
+    // css has no re-export, so the facade carries its own copy of the compiled sheet
+    await Bun.write(
+      join(facadeDir, path),
+      styles ? compileStyles(entry) : `export * from ${JSON.stringify(target)};\n`,
+    );
     exports[key] = path;
     const name = packageName(moduleOf(config.root, entry)!);
     facadePeers[name] = config.manifest.version;

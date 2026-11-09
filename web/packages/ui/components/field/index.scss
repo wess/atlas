@@ -1,0 +1,103 @@
+@use "../../styles/mixins" as *;
+
+.atlas-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+
+  @each $name, $height in $control {
+    &[data-size="#{$name}"] {
+      --control: #{$height};
+    }
+  }
+
+  &[data-size="xs"] {
+    --control-font: var(--atlas-font-xs);
+  }
+}
+
+.atlas-field__label {
+  font-size: var(--atlas-font-sm);
+  font-weight: 600;
+
+  span {
+    color: var(--atlas-danger);
+  }
+}
+
+.atlas-field__description {
+  margin: 0;
+  color: var(--atlas-dimmed);
+  font-size: var(--atlas-font-xs);
+}
+
+.atlas-field__error {
+  margin: 0;
+  color: var(--atlas-danger);
+  font-size: var(--atlas-font-xs);
+}
+
+.atlas-field__control {
+  position: relative;
+}
+
+.atlas-field__input {
+  display: block;
+  width: 100%;
+  min-height: var(--control);
+  border: 1px solid var(--atlas-border);
+  border-radius: var(--atlas-radius-md);
+  background: var(--atlas-surface);
+  color: inherit;
+  padding-inline: 0.75rem;
+  font: inherit;
+  font-size: var(--control-font, var(--atlas-font-sm));
+
+  &::placeholder {
+    color: var(--atlas-dimmed);
+  }
+
+  &:focus-visible {
+    border-color: var(--atlas-primary);
+    outline: 1px solid var(--atlas-primary);
+  }
+
+  &:disabled {
+    background: var(--atlas-sunken);
+    color: var(--atlas-dimmed);
+    cursor: not-allowed;
+  }
+
+  [data-invalid] & {
+    border-color: var(--atlas-danger);
+  }
+
+  .atlas-field__section[data-side="left"] ~ & {
+    padding-inline-start: 2.25rem;
+  }
+
+  .atlas-field__control:has(.atlas-field__section[data-side="right"]) & {
+    padding-inline-end: 2.25rem;
+  }
+}
+
+.atlas-field__section {
+  position: absolute;
+  inset-block: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  color: var(--atlas-dimmed);
+
+  &[data-side="left"] {
+    inset-inline-start: 0;
+    pointer-events: none;
+  }
+
+  &[data-side="right"] {
+    inset-inline-end: 0;
+  }
+}

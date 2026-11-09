@@ -1,0 +1,20 @@
+.atlas-code {
+  border-radius: var(--atlas-radius-sm);
+  background: var(--atlas-sunken);
+  padding: 0.125rem 0.25rem;
+  font-family: var(--atlas-font-mono);
+  font-size: var(--atlas-font-xs);
+}
+
+.atlas-codeblock {
+  margin: 0;
+  overflow-x: auto;
+  border-radius: var(--atlas-radius-sm);
+  background: var(--atlas-sunken);
+  padding: var(--atlas-space-sm);
+
+  .atlas-code {
+    background: none;
+    padding: 0;
+  }
+}

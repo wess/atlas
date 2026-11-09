@@ -39,7 +39,7 @@ export const sourceFiles = (dir: string): string[] => {
       if (statSync(path).isDirectory()) return sourceFiles(path);
       if (/^(package\.json|tsconfig.*\.json|bun\.lockb?|.*\.tsbuildinfo)$/.test(name)) return [];
       if (/\.(test|spec)\.[cm]?[jt]sx?$/.test(name)) return [];
-      return /\.(?:[cm]?[jt]sx?|json|css|html|md|sql|svg|txt)$/.test(name) ? [path] : [];
+      return /\.(?:[cm]?[jt]sx?|json|s?css|html|md|sql|svg|txt)$/.test(name) ? [path] : [];
     });
 };
 
@@ -48,12 +48,16 @@ export const moduleOf = (root: string, path: string): string | undefined => {
   return parts.length > 1 && parts[0] !== ".." ? parts[0] : undefined;
 };
 
+// scss never ships: a package exposes only the css compiled from its styles/index.scss
+export const compiledPath = (path: string): string => path.replace(/\.scss$/, ".css");
+export const isStylesEntry = (path: string): boolean => /\/packages\/[^/]+\/styles\/index\.scss$/.test(path);
+
 export const packageName = (module: string): string => `@wess/atlas-${module}`;
 
 export const packageImport = (root: string, path: string): string => {
   const module = moduleOf(root, path);
   if (!module) throw new Error(`Source outside packages: ${path}`);
-  const subpath = relative(join(root, "packages", module), path);
+  const subpath = compiledPath(relative(join(root, "packages", module), path));
   return subpath === "index.ts" ? packageName(module) : `${packageName(module)}/${subpath}`;
 };
 

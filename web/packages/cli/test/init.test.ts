@@ -128,7 +128,6 @@ test("generateEnv includes storage config when selected", () => {
 test("frontend scaffolds declare the UI peer dependencies", () => {
   const pkg = JSON.parse(generatePackageJson(applyDefaults({ template: "custom", frontend: true })));
   expect(pkg.dependencies.react).toBeDefined();
-  expect(pkg.dependencies["@mantine/core"]).toBeDefined();
   expect(pkg.dependencies["@wess/atlas"]).toBe(releaseUrl("@wess/atlas", source.version));
   expect(pkg.dependencies["@wess/atlas-ui"]).toBe(releaseUrl("@wess/atlas-ui", source.version));
   expect(pkg.dependencies["@tanstack/react-table"]).toBeUndefined();
