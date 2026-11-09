@@ -49,6 +49,20 @@ const introspectPostgres = async (db: Connection): Promise<LiveTable[]> => {
     values: [],
   });
 
+  // single-column unique indexes only: a composite index doesn't make one column unique
+  const uniques: any[] = await db.all({
+    text: `
+      SELECT t.relname AS table_name, a.attname AS column_name
+      FROM pg_index i
+      JOIN pg_class t ON t.oid = i.indrelid
+      JOIN pg_namespace n ON n.oid = t.relnamespace
+      JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = i.indkey[0]
+      WHERE n.nspname = 'public' AND i.indisunique AND NOT i.indisprimary AND i.indnatts = 1 AND i.indpred IS NULL
+    `,
+    values: [],
+  });
+  const unique = new Set(uniques.map((r) => `${r.table_name}.${r.column_name}`));
+
   const byTable = new Map<string, LiveColumn[]>();
   for (const r of rows) {
     if (isInternal(r.table_name)) continue;
@@ -58,6 +72,7 @@ const introspectPostgres = async (db: Connection): Promise<LiveTable[]> => {
       type: pgType(r.data_type, r.udt_name),
       nullable: String(r.is_nullable).toUpperCase() === "YES",
       primary: r.is_primary === true || r.is_primary === "t",
+      unique: unique.has(`${r.table_name}.${r.column_name}`),
       hasDefault: r.column_default !== null && r.column_default !== undefined,
       defaultSql: r.column_default ?? null,
     });
@@ -91,6 +106,13 @@ const introspectSqlite = async (db: Connection): Promise<LiveTable[]> => {
     // PRAGMA can't be parameterized; the table name comes from sqlite_master so
     // it's only ever a real table name (not user-supplied).
     const cols: any[] = await db.all({ text: `PRAGMA table_info(${name})`, values: [] });
+    const indexes: any[] = await db.all({ text: `PRAGMA index_list(${name})`, values: [] });
+    const unique = new Set<string>();
+    for (const index of indexes) {
+      if (index.unique !== 1 || index.partial === 1 || index.origin === "pk") continue;
+      const parts: any[] = await db.all({ text: `PRAGMA index_info(${index.name})`, values: [] });
+      if (parts.length === 1) unique.add(parts[0].name);
+    }
     result.push({
       name,
       columns: cols.map((c) => ({
@@ -98,6 +120,7 @@ const introspectSqlite = async (db: Connection): Promise<LiveTable[]> => {
         type: sqliteType(String(c.type ?? "")),
         nullable: c.notnull === 0,
         primary: c.pk > 0,
+        unique: unique.has(c.name),
         hasDefault: c.dflt_value !== null && c.dflt_value !== undefined,
         defaultSql: c.dflt_value != null ? String(c.dflt_value) : null,
       })),
