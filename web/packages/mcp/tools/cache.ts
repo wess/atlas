@@ -5,6 +5,7 @@ export const cacheTools: Tool[] = [
   defineTool({
     name: "cache.get",
     description: "Get a value from the cache by key",
+    annotations: { readOnlyHint: true },
     inputSchema: {
       type: "object",
       properties: { key: { type: "string", description: "Cache key" } },
@@ -17,7 +18,8 @@ export const cacheTools: Tool[] = [
   }),
   defineTool({
     name: "cache.set",
-    description: "Set a value in the cache",
+    description: "WRITES: set a value in the cache",
+    annotations: { readOnlyHint: false, destructiveHint: true },
     inputSchema: {
       type: "object",
       properties: {
@@ -36,7 +38,8 @@ export const cacheTools: Tool[] = [
   }),
   defineTool({
     name: "cache.del",
-    description: "Delete a cache key",
+    description: "WRITES: delete a cache key",
+    annotations: { readOnlyHint: false, destructiveHint: true },
     inputSchema: {
       type: "object",
       properties: { key: { type: "string" } },
@@ -49,7 +52,8 @@ export const cacheTools: Tool[] = [
   }),
   defineTool({
     name: "cache.flush",
-    description: "Flush all cache entries",
+    description: "WRITES: flush every cache entry",
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
     inputSchema: { type: "object", properties: {} },
     handler: async (_params, ctx) => {
       await ctx.cache!.flush();

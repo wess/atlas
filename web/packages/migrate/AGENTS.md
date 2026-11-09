@@ -32,7 +32,8 @@ else console.log(`wrote ${result.path}`)
 
 Postgres uses `information_schema`; SQLite uses `pragma table_info`. Type/nullability
 mismatches are emitted as `-- ALTER table.col …` comments so destructive migrations
-land in front of the user instead of running silently. `serial`/`integer` and PK
+land in front of the user instead of running silently (line breaks and control
+characters in live names are replaced with spaces so a name can't end the comment). `serial`/`integer` and PK
 nullability quirks are normalized — they won't show up as spurious diffs.
 
 ### Convenience

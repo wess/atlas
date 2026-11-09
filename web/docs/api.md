@@ -74,7 +74,10 @@ from(table: string, alias?) → Chainable<any>      dynamic / cross-table chain
   .insert(data) .insertMany(data[]) .update(data) .del() .truncate(cascade?)
   .returning(...keys) .onConflict(spec) .cte(name, sub) .recursiveCte(name, sub)
   .toSql(dialect?) → SqlResult<Selected>
-raw(sql, ...values) → Fragment
+  string cols in q()/orderBy/groupBy/distinct/returning: ident | t.ident | * | t.* (else throw → use raw())
+  select strings: ident or expression without ; -- /* ' " ` $ \ control chars
+  orderBy dir: ASC|DESC, nulls: FIRST|LAST (case-insensitive, else throw)
+raw(sql, ...values) → Fragment   $n = n-th value (repeatable); highest $n must equal values.length
 defineSchema(table, columns) → Schema<T>
 column.serial() → number   .text() → string   .integer() → number
   .bigint() → bigint   .real() → number   .boolean() → boolean
@@ -123,7 +126,7 @@ json(conn, status, data) → Conn
 text(conn, status, body) → Conn
 redirect(conn, location, status?) → Conn
 stream(conn, status, readable) → Conn
-parseJson | parseForm | parseMultipart   built-in parser pipes
+parseJson | parseForm | parseMultipart   built-in parser pipes (parseJson: essence application/json or */*+json)
 onError(handler) → error pipe
 createAdapter(name, start) → ServerAdapter
 compose(adapters) → ComposedServer
@@ -135,7 +138,7 @@ getR | postR | putR | patchR | delR(path, schemas, handler) → Route
     (Zod, plain functions, or any Standard-Schema-shape qualify)
   - before: PipeFn[] (run ahead of validation; e.g., requireAuth)
   - assigns: phantom — `{} as MyClaims` types c.assigns for the handler
-  body schema auto-parses JSON; rejects non-application/json content-types.
+  body schema auto-parses JSON; rejects content-types whose MIME essence isn't application/json or */*+json.
   validation failures → unprocessable("Invalid <where>", VALIDATION_FAILED)
 
 httpError(status, message, { code?, details?, headers? }) → HttpError
@@ -151,7 +154,8 @@ serviceUnavailable(message?, opts?) → HttpError
 ```
 defineEdge(config) → { ...config, listen() → Promise<RunningEdge> }
 runEdge(config) → Promise<RunningEdge>          { mode: "tls"|"plain", stop() }
-proxy(upstream, { preserveHost? }) → EdgeHandler   reverse proxy with X-Forwarded-*
+proxy(upstream, { preserveHost?, trustForwarded? }) → EdgeHandler   reverse proxy with X-Forwarded-*
+  X-Forwarded-For = peer IP, client Forwarded dropped; trustForwarded: true appends to an upstream chain
 forward(req, options, ctx) → Promise<Response>     low-level proxy primitive
 files({ root, index?, stripPrefix? }) → EdgeHandler   static file serving via Bun.file
 compressResponse(res, accept, allow) → Response    apply gzip/zstd
@@ -179,7 +183,9 @@ ForwardContext: { remoteIp, tls, host }
 
 ## @wess/atlas/server/ws
 ```
-ws(config) → { websocket, rooms, upgrade }
+ws(config) → { websocket, rooms, upgrade, upgradeFrom }
+WsConfig: { channels?, onOpen?, onMessage?, onClose?, upgradeData?(req) → ws.data, onError?(err, ws) }
+  handler throw/rejection → onError + close(1011); handle runs only after join → true (channels with join)
 channel(name, handlers) → Channel
 createRooms() → { join, leave, leaveAll, broadcast, members }
 WsConn<T>: wrapped ws with auto-JSON send
@@ -255,7 +261,8 @@ renderShareEmailMessage(opts) → { subject, html, text }   pure preview/render
 ```
 createEmailer({ apiKey?, from? }) → Emailer    auto-picks Resend if both set, else console
 createResendEmailer({ apiKey, from }) → Emailer
-createConsoleEmailer() → Emailer               dev fallback; logs and returns ok:true
+createConsoleEmailer({ redact? }) → Emailer    dev fallback; logs and returns ok:true
+  NODE_ENV=production: warns once, redacts URLs/tokens in logged mail
 Emailer: { enabled, send(msg) → Promise<SendResult> }
 EmailMessage: { to, subject, html, text?, replyTo?, from? }
 SendResult: { ok: true, id?, logged? } | { ok: false, error }
@@ -364,6 +371,7 @@ invalidate(cache, prefix, ...args) → Promise
 request(url, opts?) → Promise<Response>     opts: { json, headers, method, body, retry, timeout (ms) }
 createClient({ baseUrl, headers?, retry?, interceptors?, timeout? }) → Client
   Client: .get .post .put .patch .del .request — all return Promise<Response>
+  paths start with "/" (or same-origin absolute URL); cross-origin paths throw
 withRetry(fn, { attempts?, delay?, backoff?, retryOn? })
 github({ token }) | stripe({ key }) | openai({ key }) | resend({ key })
   preconfigured clients — import from @wess/atlas/request/providers
@@ -427,15 +435,16 @@ Server: {base}/api/* {base}/session (POST sign in, GET state, DELETE sign out) {
 
 ## @wess/atlas/mcp
 ```
-createContext(opts?) → AtlasMcpContext      opts: { db?, cache?, routes?, config?, storage?, migrationsDir?, logBuffer? }
+createContext(opts?) → AtlasMcpContext      opts: { db?, cache?, routes?, config?, storage?, migrationsDir?, logBuffer?, allowWrites? }
+  db.query is read-only unless allowWrites (atlas mcp: ATLAS_MCP_ALLOW_WRITES=1); write tools annotated destructiveHint
 collectTools(ctx) → Tool[]                  tools auto-register from what's in ctx
 createMcpServer(tools, ctx) → McpServer
-defineTool({ name, description, inputSchema, handler }) → Tool
+defineTool({ name, description, inputSchema, handler, annotations? }) → Tool
 McpServer: .start() .stop()
 
 Always-on tools (independent of context):
   docs.list                              list package, guide, and root documentation sources
-  docs.read({ package?, doc?, root? })   read one canonical source; docs/agents.md is the grounding guide
+  docs.read({ package?, doc?, root? })   read one canonical source (names from docs.list only); docs/agents.md is the grounding guide
 ```
 
 ## @wess/atlas/ai

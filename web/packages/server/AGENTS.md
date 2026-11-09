@@ -68,7 +68,7 @@ schema is provided — no need to add `parseJson` to `before`.
 - `stream(conn, status, readable)` — streaming response
 
 ### Parsers (`parsers/index.ts`)
-- `parseJson` — pipe that parses JSON body
+- `parseJson` — pipe that parses JSON body when the content-type essence is `application/json` or `*/*+json` (parameters ignored; `text/plain; x=application/json` is not JSON)
 - `parseForm` — pipe that parses URL-encoded form body
 - `parseMultipart` — pipe that parses multipart form data
 
@@ -107,7 +107,10 @@ logged server-side only.
 - `WsConn<T>` — wrapped websocket connection with auto-JSON send
 - `channel(name, handlers)` — define a typed pub/sub channel
 - `createRooms()` — room manager with join/leave/broadcast/members
-- `ws(config)` — build websocket handler + rooms + upgrade helper
+- `ws(config)` — build websocket handler + rooms + `upgrade(req, server, data?)` / `upgradeFrom(req, server)` helpers
+- `WsConfig.upgradeData(req)` — build `ws.data` from the upgrade request (cookies, headers, session); `serve()` and `wsAdapter` call it
+- `WsConfig.onError(error, ws)` — called when any handler throws or rejects; the socket is then closed with 1011 (default: `console.error`). A failing handler never crashes the process
+- Channels with a `join` hook only dispatch `handle` for sockets whose join resolved `true`; `leave` revokes it. Channels without `join` dispatch to every socket
 - `wsAdapter` — standalone WS adapter for use with `compose()`
 
 ### SSE (`sse/index.ts`) — import from `@wess/atlas/server/sse`

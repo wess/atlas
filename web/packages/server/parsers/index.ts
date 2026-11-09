@@ -1,9 +1,21 @@
 import { badRequest } from "../errors/index.ts";
 import type { PipeFn } from "../pipe/index.ts";
 
+const JSON_SUFFIX = /^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+\+json$/;
+
+/**
+ * True for application/json and any type/subtype+json, judged on the MIME
+ * essence. A substring match also accepted "text/plain; x=application/json",
+ * which a cross-site form can send without a CORS preflight.
+ */
+export const isJsonContentType = (header: string | null | undefined): boolean => {
+  const essence = (header ?? "").split(";")[0]!.trim().toLowerCase();
+  return essence === "application/json" || JSON_SUFFIX.test(essence);
+};
+
 export const parseJson: PipeFn = async (conn) => {
   const req = conn.request;
-  if (req.headers.get("content-type")?.includes("application/json")) {
+  if (isJsonContentType(req.headers.get("content-type"))) {
     let body: unknown;
     try {
       body = await req.json();

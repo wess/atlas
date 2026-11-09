@@ -2,7 +2,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import { command, flag } from "../command/index.ts";
 import type { Answers } from "./questions.ts";
 import { applyDefaults, askQuestions } from "./questions.ts";
-import { generateProject, scaffoldFromTemplate } from "./templates.ts";
+import { generateProject, scaffoldFromTemplate, writeProjectFile } from "./templates.ts";
 
 export const initCommand = command("init", {
   description: "Create a new Atlas project",
@@ -63,7 +63,7 @@ export const initCommand = command("init", {
         const fullPath = `${projectDir}/${file.path}`;
         const dir = fullPath.substring(0, fullPath.lastIndexOf("/"));
         if (dir !== projectDir) mkdirSync(dir, { recursive: true });
-        await Bun.write(fullPath, file.content);
+        await writeProjectFile(fullPath, file.content);
         console.log(`  created ${file.path}`);
       }
     }

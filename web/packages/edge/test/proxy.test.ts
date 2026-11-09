@@ -49,13 +49,29 @@ test("forward preserves method, path, query", async () => {
 test("forward injects X-Real-IP, X-Forwarded-For, X-Forwarded-Proto, X-Forwarded-Host", async () => {
   seen.length = 0;
   const ctx: ForwardContext = { remoteIp: "9.9.9.9", tls: true, host: "edge.example.com" };
-  const req = new Request("https://edge.example.com/", { headers: { "x-forwarded-for": "1.1.1.1" } });
+  const req = new Request("https://edge.example.com/", {
+    headers: { "x-forwarded-for": "1.1.1.1", forwarded: "for=1.1.1.1", "x-forwarded-proto": "http" },
+  });
   await forward(req, { upstream: upstreamUrl }, ctx);
   const recv = seen[0]!;
   expect(recv.headers["x-real-ip"]).toBe("9.9.9.9");
-  expect(recv.headers["x-forwarded-for"]).toBe("1.1.1.1, 9.9.9.9");
+  // a client-supplied address is discarded: the edge is the outermost hop
+  expect(recv.headers["x-forwarded-for"]).toBe("9.9.9.9");
+  expect(recv.headers.forwarded).toBeUndefined();
   expect(recv.headers["x-forwarded-proto"]).toBe("https");
   expect(recv.headers["x-forwarded-host"]).toBe("edge.example.com");
+});
+
+test("trustForwarded appends to an upstream proxy's X-Forwarded-For", async () => {
+  seen.length = 0;
+  const ctx: ForwardContext = { remoteIp: "9.9.9.9", tls: true, host: "edge.example.com" };
+  const req = new Request("https://edge.example.com/", {
+    headers: { "x-forwarded-for": "1.1.1.1", forwarded: "for=1.1.1.1" },
+  });
+  await forward(req, { upstream: upstreamUrl, trustForwarded: true }, ctx);
+  const recv = seen[0]!;
+  expect(recv.headers["x-forwarded-for"]).toBe("1.1.1.1, 9.9.9.9");
+  expect(recv.headers.forwarded).toBe("for=1.1.1.1");
 });
 
 test("forward rewrites Host to upstream by default", async () => {

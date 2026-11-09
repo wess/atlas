@@ -168,17 +168,18 @@ export const serve = (options: ServeOptions) => {
     ("channels" in options.websocket ||
       "onOpen" in options.websocket ||
       "onMessage" in options.websocket ||
-      "onClose" in options.websocket)
+      "onClose" in options.websocket ||
+      "upgradeData" in options.websocket)
   ) {
-    const { websocket, upgrade } = createWs(options.websocket as WsConfig);
+    const { websocket, upgradeFrom } = createWs(options.websocket as WsConfig);
     return Bun.serve({
       development: options.development ?? false,
       maxRequestBodySize: options.maxRequestBodySize ?? 1024 * 1024,
       port: options.port ?? 3000,
       hostname: options.hostname ?? "0.0.0.0",
-      fetch(req, server) {
-        if (req.headers.get("upgrade") === "websocket") {
-          if (upgrade(req, server)) return undefined as any;
+      async fetch(req, server) {
+        if (req.headers.get("upgrade")?.toLowerCase() === "websocket") {
+          if (await upgradeFrom(req, server)) return undefined as any;
         }
         return fetch(req, server);
       },

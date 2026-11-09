@@ -17,7 +17,7 @@ compatible with Zod, without a mandatory Zod runtime or type dependency.
 
 ### Query Builder
 - `from(table: string | Schema, alias?: string) => Chainable` - entry point for all queries
-- `raw(sql: string, ...values: any[]) => Fragment` - raw SQL fragment with bind values
+- `raw(sql: string, ...values: any[]) => Fragment` - raw SQL fragment with bind values. `$n` is the fragment's n-th value, so `raw("a = $1 OR b = $1", x)` binds `x` twice; the highest `$n` must equal the number of values or compiling throws
 - `isFragment(value: unknown) => boolean` - type guard for Fragment
 - `createWhereBuilder() => WhereBuilder` - standalone predicate builder
 
@@ -25,6 +25,14 @@ compatible with Zod, without a mandatory Zod runtime or type dependency.
 Select: `.select(...cols)`, `.distinct(...cols)`, `.where(cb)`, `.join(t, on, alias?)`,
 `.leftJoin(t, on, alias?)`, `.innerJoin(t, on, alias?)`, `.orderBy(col, dir?, nulls?)`,
 `.groupBy(...cols)`, `.having(cb)`, `.limit(n)`, `.offset(n)`, `.returning(...cols)`
+
+String columns are checked at compile time. In `q(col)`, `orderBy`, `groupBy`, `distinct`,
+and `returning` they must be an identifier, `table.column`, `*`, or `table.*`; pass `raw()`
+for anything else (`orderBy(raw("lower(email)"))`). `select` strings may also be
+expressions (`"COUNT(*) as total"`, `"u.name as author"`) but not contain `;`, `--`, `/* */`,
+quotes, `$` placeholders, or control characters. `orderBy` direction must be ASC/DESC and
+nulls FIRST/LAST (any case; emitted uppercase), otherwise it throws. Treat `select` strings
+and join `on` strings as trusted code, never request input.
 
 Mutate: `.insert(data)`, `.insertMany(data[])`, `.insertFrom(cols, source)`,
 `.update(data)`, `.del()`, `.truncate(cascade?)`
@@ -119,3 +127,5 @@ Sibling: none. External: none. Runtime: `Bun.sql` (postgres), `bun:sqlite`.
 Nested `tx.transaction(...)` uses a savepoint on both drivers, so an inner throw rolls back only the inner block. Run nested calls one at a time; concurrent savepoints on one connection are unsupported.
 
 SQLite caches up to 256 prepared statements per connection. Async transactions serialize with other operations on that connection; use the provided `tx` for every operation inside the callback. Nested `tx.transaction` calls use savepoints on both drivers (Postgres via Bun.sql `savepoint`); an inner failure rolls back only the inner scope. The nested Postgres test runs when `ATLAS_TEST_POSTGRES_URL` is set, otherwise it is skipped.
+
+On Postgres, builder queries always run as a single prepared statement, even with no bound values, so text smuggled into a builder query cannot stack a second statement. Plain `{ text, values: [] }` objects still use the simple protocol and may contain several statements (migrations rely on this); keep request input out of them.

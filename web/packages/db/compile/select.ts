@@ -1,8 +1,8 @@
 import { isFragment } from "../fragment/index.ts";
 import type { Column, Query } from "../types/index.ts";
-import { validateIdentifier } from "../utils/identifiers.ts";
+import { validateColumn, validateIdentifier, validateSelectColumn } from "../utils/identifiers.ts";
 import type { ParamCounter } from "../utils/params.ts";
-import { renumberParams } from "../utils/params.ts";
+import { bindFragment } from "../utils/params.ts";
 import { compileGroupBy, compileHaving, compileJoins, compileOrderBy, compileWheres } from "./clauses.ts";
 
 const compileColumns = (cols: readonly Column[], counter: ParamCounter, values: any[]): string => {
@@ -13,11 +13,10 @@ const compileColumns = (cols: readonly Column[], counter: ParamCounter, values: 
   return cols
     .map((col) => {
       if (isFragment(col)) {
-        const renumbered = renumberParams(col.sql, counter);
-        values.push(...col.values);
+        const renumbered = bindFragment(col, counter, values);
         return renumbered;
       }
-      return col;
+      return validateSelectColumn(col);
     })
     .join(", ");
 };
@@ -36,11 +35,10 @@ export const compileSelect = (query: Query, counter: ParamCounter, values: any[]
     const distinctCols = (query.distinct as readonly Column[])
       .map((col) => {
         if (isFragment(col)) {
-          const renumbered = renumberParams(col.sql, counter);
-          values.push(...col.values);
+          const renumbered = bindFragment(col, counter, values);
           return renumbered;
         }
-        return col;
+        return validateColumn(col);
       })
       .join(", ");
     parts.push(`DISTINCT ON (${distinctCols})`);

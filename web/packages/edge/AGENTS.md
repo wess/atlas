@@ -8,7 +8,7 @@ Replaces a Caddy/nginx layer in front of a Bun app.
 ### Top-level (`index.ts`)
 - `defineEdge(config)` — build a config object with a `.listen()` method
 - `runEdge(config)` — start the edge directly, returns `RunningEdge`
-- `proxy(upstream, opts?)` — handler that forwards to an upstream URL
+- `proxy(upstream, opts?)` — handler that forwards to an upstream URL; opts `{ preserveHost?, trustForwarded? }`
 - `files(options)` — handler that serves files from disk
 - `forward(req, options, ctx)` — low-level proxy primitive
 - `compressResponse(res, accept, allow)` — apply gzip/zstd to a Response
@@ -86,7 +86,11 @@ defineEdge({
   days before `notAfter` and `server.reload({ tls })` swaps in the new
   pair without dropping connections.
 - **Proxy headers** — every forwarded request gets `X-Real-IP`,
-  `X-Forwarded-For` (appended), `X-Forwarded-Proto`, `X-Forwarded-Host`.
+  `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`. As the outermost
+  hop the edge sets `X-Forwarded-For` to the peer address and drops
+  client-sent `Forwarded`, `X-Forwarded-Port`, and `X-Forwarded-Prefix`. Behind
+  a load balancer or CDN you control, `proxy(url, { trustForwarded: true })`
+  keeps and appends to the incoming chain instead.
   Hop-by-hop headers are stripped. `Host` is rewritten to the upstream
   unless `proxy(url, { preserveHost: true })`.
 - **Compression** — gzip is always available; zstd is enabled only when
