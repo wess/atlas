@@ -2,8 +2,10 @@ import { afterEach, beforeAll, expect, test } from "bun:test";
 import { sign } from "../../auth/token/index.ts";
 import type { Connection } from "../../db/index.ts";
 import { column, connect, defineSchema } from "../../db/index.ts";
+import { parseTrustedProxies } from "../../security/ratelimit/index.ts";
 import { router } from "../../server/index.ts";
 import { type AdminConfig, admin, model } from "../config/index.ts";
+import { createDbRevocations, createMemoryRevocations } from "../revocations/index.ts";
 
 const users = defineSchema("users", { id: column.serial().primaryKey(), email: column.text() });
 const secret = "a-test-secret-that-is-long-enough-for-hmac";
@@ -109,26 +111,100 @@ test("malformed or oversized credentials stop before login runs", async () => {
   expect(calls).toBe(0);
 });
 
-test("repeated failures for one account are throttled, others are not, and success clears the count", async () => {
+const from = (ip: string) => ({ headers: { "x-forwarded-for": ip } });
+const loginFrom = (app: (req: Request) => Promise<Response>, ip: string, email: string, password: string) =>
+  app(
+    Object.assign(
+      new Request(`${origin}/admin/session`, {
+        method: "POST",
+        headers: { host: "admin.test", origin, "content-type": "application/json", ...from(ip).headers },
+        body: JSON.stringify({ email, password }),
+      }),
+      { peerIp: "10.0.0.1" },
+    ),
+  );
+
+test("failures throttle one address on one account, without locking that account out elsewhere", async () => {
   let calls = 0;
   const base = auth();
   const app = appWith(
     auth({
+      trustedProxies: parseTrustedProxies("10.0.0.1"),
       login: (credentials) => {
         calls += 1;
         return base.login!(credentials);
       },
     }),
   );
-  for (let attempt = 0; attempt < 10; attempt++) expect((await login(app, "admin@x.co", "wrong")).status).toBe(401);
-  const blocked = await login(app, "ADMIN@x.co ", "right");
+  for (let attempt = 0; attempt < 10; attempt++) {
+    expect((await loginFrom(app, "203.0.113.9", "admin@x.co", "wrong")).status).toBe(401);
+  }
+  const blocked = await loginFrom(app, "203.0.113.9", " ADMIN@x.co", "right");
   expect(blocked.status).toBe(429);
   expect(blocked.headers.get("retry-after")).toBeTruthy();
   expect(calls).toBe(10);
-  expect((await login(app, "admin2@x.co", "right")).status).toBe(200);
+  expect((await loginFrom(app, "198.51.100.4", "admin@x.co", "right")).status).toBe(200);
+});
+
+test("one address spraying many accounts is throttled", async () => {
+  const app = appWith(auth({ trustedProxies: parseTrustedProxies("10.0.0.1") }));
+  for (let attempt = 0; attempt < 50; attempt++) {
+    await loginFrom(app, "203.0.113.20", `admin${attempt}@x.co`, "wrong");
+  }
+  expect((await loginFrom(app, "203.0.113.20", "admin-new@x.co", "right")).status).toBe(429);
+  expect((await loginFrom(app, "203.0.113.21", "admin-new@x.co", "right")).status).toBe(200);
+});
+
+test("X-Forwarded-For is ignored unless the peer is a trusted proxy", async () => {
+  const app = appWith(auth());
+  for (let attempt = 0; attempt < 10; attempt++) {
+    await loginFrom(app, `203.0.113.${attempt}`, "admin@x.co", "wrong");
+  }
+  expect((await loginFrom(app, "203.0.113.99", "admin@x.co", "right")).status).toBe(429);
+});
+
+test("a success clears that address's count for the account", async () => {
+  const app = appWith(auth());
   for (let attempt = 0; attempt < 9; attempt++) await login(app, "admin3@x.co", "wrong");
   expect((await login(app, "admin3@x.co", "right")).status).toBe(200);
   for (let attempt = 0; attempt < 9; attempt++) expect((await login(app, "admin3@x.co", "wrong")).status).toBe(401);
+});
+
+test("signing out revokes the session, so a copied cookie stops working", async () => {
+  const app = appWith(auth());
+  const cookie = cookieOf(await login(app));
+  expect((await send(app, "/admin/api/schema", { cookie })).status).toBe(200);
+  expect((await send(app, "/admin/session", { method: "DELETE", cookie })).status).toBe(200);
+  expect((await send(app, "/admin/api/schema", { cookie })).status).toBe(401);
+  expect(await (await send(app, "/admin/session", { cookie })).json()).toMatchObject({ authenticated: false });
+  const fresh = cookieOf(await login(app));
+  expect(fresh).not.toBe(cookie);
+  expect((await send(app, "/admin/api/schema", { cookie: fresh })).status).toBe(200);
+});
+
+test("a signed cookie without a session id is not a session", async () => {
+  const app = appWith(auth());
+  const bare = await sign({ role: "admin" }, secret, { expiresIn: 60 });
+  expect((await send(app, "/admin/api/schema", { cookie: `atlas_admin_session=${bare}` })).status).toBe(401);
+});
+
+test("database revocations are shared between admin instances and survive a new process", async () => {
+  const shared = createDbRevocations({ db });
+  const first = appWith(auth({ revocations: shared }));
+  const second = appWith(auth({ revocations: createDbRevocations({ db }) }));
+  const cookie = cookieOf(await login(first));
+  expect((await send(second, "/admin/api/schema", { cookie })).status).toBe(200);
+  await send(first, "/admin/session", { method: "DELETE", cookie });
+  expect((await send(second, "/admin/api/schema", { cookie })).status).toBe(401);
+});
+
+test("revocation stores forget entries once they expire, and reject unsafe table names", async () => {
+  const memory = createMemoryRevocations();
+  await memory.revoke("old", Math.floor(Date.now() / 1000) - 1);
+  await memory.revoke("live", Math.floor(Date.now() / 1000) + 60);
+  expect(await memory.isRevoked("old")).toBe(false);
+  expect(await memory.isRevoked("live")).toBe(true);
+  expect(() => createDbRevocations({ db, table: "x; drop table users" })).toThrow();
 });
 
 test("cross-origin sign-in is refused", async () => {
@@ -241,5 +317,5 @@ test("a shared rate limiter can replace the per-process one", async () => {
   };
   const response = await login(appWith(auth({ rateLimit })));
   expect(response.status).toBe(429);
-  expect(calls).toEqual(["admin-login:admin@x.co"]);
+  expect(calls).toEqual(["admin-login:unknown:admin@x.co"]);
 });

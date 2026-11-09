@@ -398,7 +398,8 @@ CLI surface:
 ## @wess/atlas/admin
 ```
 admin({ db, models, basePath?, auth?, allowUnauthenticated? }) → { mount, routes }
-  auth: { secret, authorize(claims), login?({ email, password }) → claims | null, sessionSeconds?, rateLimit?, trustedOrigins? }
+  auth: { secret, authorize(claims), login?({ email, password }) → claims | null, sessionSeconds?, rateLimit?, revocations?, trustedProxies?, trustedOrigins? }
+createMemoryRevocations() | createDbRevocations({ db, table? }) → Revocations   signed-out session ids
 model({ schema, listFields?, searchFields?, filterFields?, relations?, actions?, bulkActions?, readOnly? }) → ModelConfig
 @wess/atlas/admin/ui: AdminApp AdminSidebar Dashboard ModelList Detail Create FilterBuilder QueryBuilder BulkBar
 Screens: {base} {base}/login {base}/query {base}/models/:table {base}/models/:table/new {base}/models/:table/records/:id
@@ -461,4 +462,4 @@ after success, failure, or cancellation. Keys preserve reserved characters and U
 dot path segments are rejected. `/storage/signing#signRequest` accepts a precomputed
 `payloadHash` when signing a body hashed by the caller.
 
-Admin auth requires `{ secret, authorize: claims => boolean | Promise<boolean> }`; authenticated users without permission receive 403. Add `login` to enable the sign-in screen, which issues an `HttpOnly`, `SameSite=Strict` session cookie; cookie writes must be same-origin and attempts are limited to 10 per email per 15 minutes (`rateLimit` shares the count across processes). The browser bundle ships prebuilt, so serving admin needs no React in the application. Anonymous admin configuration requires explicit `allowUnauthenticated: true` for local development and is rejected in production. Browser admin components are exported from `@wess/atlas/admin/ui`, keeping UI dependencies out of server startup. CMS administrator registration requires the generated `ADMIN_SETUP_SECRET` via `X-Setup-Token`.
+Admin auth requires `{ secret, authorize: claims => boolean | Promise<boolean> }`; authenticated users without permission receive 403. Add `login` to enable the sign-in screen, which issues an `HttpOnly`, `SameSite=Strict` session cookie; cookie writes must be same-origin and sign-out revokes the session id; attempts are limited per address and account, per address, and per account, so one client can't lock an account out (`rateLimit` and `revocations` share state across processes). The browser bundle ships prebuilt, so serving admin needs no React in the application. Anonymous admin configuration requires explicit `allowUnauthenticated: true` for local development and is rejected in production. Browser admin components are exported from `@wess/atlas/admin/ui`, keeping UI dependencies out of server startup. CMS administrator registration requires the generated `ADMIN_SETUP_SECRET` via `X-Setup-Token`.

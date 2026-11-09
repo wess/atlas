@@ -3,6 +3,7 @@ import { verify } from "../../auth/token/index.ts";
 import type { Conn, PipeFn } from "../../server/index.ts";
 import { assign, halt, pipeline } from "../../server/index.ts";
 import type { AdminConfig } from "../config/index.ts";
+import { createMemoryRevocations, type Revocations } from "../revocations/index.ts";
 
 export const sessionCookie = "atlas_admin_session";
 
@@ -29,14 +30,31 @@ export const isSameOrigin = (conn: Conn, auth: AdminAuth): boolean => {
   }
 };
 
+const defaultRevocations = new WeakMap<AdminAuth, Revocations>();
+
+// one store per admin config, so every route of the same admin sees the same sign-outs
+export const revocationsFor = (auth: AdminAuth): Revocations => {
+  if (auth.revocations) return auth.revocations;
+  let store = defaultRevocations.get(auth);
+  if (!store) {
+    store = createMemoryRevocations();
+    defaultRevocations.set(auth, store);
+  }
+  return store;
+};
+
 export const sessionClaims = async (conn: Conn, auth: AdminAuth): Promise<Record<string, unknown> | null> => {
   const session = readCookie(conn.headers.get("cookie"), sessionCookie);
   if (!session) return null;
+  let claims: Record<string, unknown>;
   try {
-    return (await verify(session, auth.secret)) as Record<string, unknown>;
+    claims = (await verify(session, auth.secret)) as Record<string, unknown>;
   } catch {
     return null;
   }
+  // a cookie without an id can never be signed out, so it isn't accepted as a session
+  if (typeof claims.jti !== "string" || (await revocationsFor(auth).isRevoked(claims.jti))) return null;
+  return claims;
 };
 
 const readMethods = new Set(["GET", "HEAD", "OPTIONS"]);

@@ -54,8 +54,8 @@ Put your own routes first if any wildcard could overlap. In `relations`, `schema
 - **Without `login`,** the screen explains that sign-in isn't set up. Bearer tokens still work for scripts.
 - **The session** is an `HttpOnly`, `SameSite=Strict` cookie scoped to `basePath`, `Secure` in production, lasting 8 hours (`sessionSeconds`).
 - **Writes** with a cookie must come from the same origin. If a proxy rewrites `Host`, add the public origin to `trustedOrigins`.
-- **Signing out** clears the cookie but can't revoke the token, so a copied cookie works until it expires.
-- **Attempts** are limited to 10 per email per 15 minutes. Pass `rateLimit: createDbRateLimit({ db })` when running more than one process.
+- **Signing out** revokes the session, so a copied cookie stops working. Pass `revocations: createDbRevocations({ db })` (from `@wess/atlas/admin`) when running more than one process.
+- **Attempts** are limited per address and account, so one client can't lock an account out. Pass `rateLimit: createDbRateLimit({ db })` when running more than one process, and `trustedProxies` behind a proxy.
 - **Scaffolds:** the `admin` template and `atlas init` admin feature sign in with `ADMIN_EMAIL` and `ADMIN_PASSWORD` from `.env`.
 
 Local development without auth needs an explicit `allowUnauthenticated: true`, which is refused when `NODE_ENV=production`.
