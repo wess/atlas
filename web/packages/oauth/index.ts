@@ -25,6 +25,7 @@ export {
   ID_TOKEN_TTL_SECONDS,
   includesScopes,
   isAllowedRedirect,
+  issuerFor,
   issuerFromRequest,
   newUserCode,
   normalizeUserCode,
