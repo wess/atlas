@@ -196,18 +196,24 @@ SseClient: { id, topic?, lastEventId?, send(event, data, id?), close }
 ```
 hash(password) → Promise<string>           Argon2id via Bun.password
 verify(password, hashed) → Promise<bool>
-token.sign(payload, secret, opts?) → Promise<string>   opts: { expiresIn: seconds }
+token.sign(payload, secret, opts?) → Promise<string>   opts: { expiresIn: seconds, typ? } — always set expiresIn; verify doesn't require exp
 token.verify(jwt, secret) → Promise<TokenPayload>
+token.headerOf(jwt) | token.isAccessToken(header, claims) | token.ACCESS_TOKEN_TYP ("at+jwt")
 createMemoryStore({ ttl?, maxEntries? }) → SessionStore dev/testing session store; ttl seconds expires entries
-signup({ db, table, fields, onSuccess }) → PipeFn      onSuccess gets the new row without its password
-login({ db, table, identity, password, onSuccess }) → PipeFn  same; the password column must be named as given
-requireAuth({ secret }) → PipeFn           reads Bearer token, sets conn.assigns.auth
-passwordReset({ db, table, secret, transport, expiresIn? }) → PipeFn
+signup({ db, table, fields, onSuccess }) → PipeFn      onSuccess gets the new row without its password; 409 on duplicate reveals the account exists
+login({ db, table, identity, password, onSuccess }) → PipeFn  same; the password column must be named as given; unknown accounts cost one dummy verify
+requireAuth({ secret, acceptAccessTokens? }) → PipeFn  reads Bearer token, sets conn.assigns.auth; refuses OAuth access tokens and `purpose` tokens
+isSessionToken(jwt, claims, { acceptAccessTokens? }) → bool   requireAuth's check, for custom guards
+passwordReset({ db, table, secret, transport, expiresIn?, passwordField? }) → PipeFn  transport not awaited; token bound to the current hash
+verifyPasswordReset(token, secret, currentHash(email)) → { email }   throws once the password has changed
+passwordFingerprint(secret, passwordHash) → string
 ```
 
 ## @wess/atlas/auth/social
 ```
-socialAuth({ secret, providers, cookie? }) → SocialAuth
+socialAuth({ secret, providers, cookie?, intentStore?, allowedReturnTo? }) → SocialAuth
+  returnTo must be a local path or listed in allowedReturnTo; authorize/start throw otherwise
+localReturnPath(value) → string | null      local-path check shared with sso (refuses control chars, `\`, `//`)
   SocialAuth: { providers,
                 authorize(name, { scopes?, returnTo?, extraParams? }?) → { url, cookie },
                 complete(name, conn) → { provider, tokens, profile, returnTo? },
@@ -226,6 +232,7 @@ SocialProfile: { provider, id, email?, emailVerified?, name?, picture?, username
 TokenSet: { accessToken, tokenType?, expiresIn?, refreshToken?, idToken?, scope?, raw }
 State + PKCE verifier live in a signed, HttpOnly, SameSite=lax cookie
   (`_atlas_oauth_state`, 10 min TTL). Override via cookie: { name?, path?, secure?, sameSite? }.
+  Apple form_post (provider.crossSiteCallback) gets SameSite=None; Secure. Default callback errors are generic; details are logged.
 ```
 
 ## @wess/atlas/share
@@ -275,11 +282,16 @@ bearer token. Subprocess configuration travels over stdin rather than command ar
 ## @wess/atlas/oauth
 ```
 oauthRoutes(cfg, { basePath?, adminBasePath? }) → Route[]   all OAuth endpoints
+  cfg.secret: a dedicated OAUTH_SECRET; access tokens are typ at+jwt and refused by requireAuth by default
+  cfg.issuer?: public issuer URL (default from Host — set it in production)
+  /revoke authenticates confidential clients; a replayed auth code revokes that client's refresh tokens for the user
+  /end_session (GET or POST) ends a session only for a valid id_token_hint for client_id;
+    onEndSession({ userId, logoutToken, issuer, clientId, backchannelLogoutUri })
 oauthAuthorizeRoutes(cfg, base) | oauthTokenRoutes | oauthRevokeRoutes
 oauthDeviceRoutes | oauthDiscoveryRoutes | oauthClientRoutes(cfg, adminBase)
 findClient(db, id) | verifyClientCredentials(db, id, secret)
 sweepExpired(cfg) | sweepExpiredAuthCodes | sweepExpiredRefreshTokens | sweepExpiredDeviceCodes(cfg)
-helpers: parseScope, formatScope, includesScopes, isAllowedRedirect,
+helpers: parseScope, formatScope, includesScopes, isAllowedRedirect, issuerFor(cfg, req), issuerFromRequest,
          verifyPkceS256, randomId, shortId, sha256, newUserCode, normalizeUserCode
 constants: ACCESS_TOKEN_TTL_SECONDS, REFRESH_TOKEN_TTL_SECONDS,
            AUTH_CODE_TTL_SECONDS, DEVICE_CODE_TTL_SECONDS, DEVICE_POLL_INTERVAL_SECONDS
@@ -297,10 +309,11 @@ clearDiscoveryCache()                                  for tests / hot-reload
 SsoConfig: { db, issuerUrl, clientId, clientSecret,
              onAuthenticated(db, claims) → { localUserId, displayName? },
              issueSession(conn, user, claims) → Conn,
-             redirectUri?, scopes?, basePath?, defaultPostLoginPath?, stateTable?,
+             redirectUri? (set in production; default trusts Host), scopes?, basePath?, defaultPostLoginPath?, stateTable?,
              findLocalUserBySub?(db, sub), invalidateSessions?(db, { sub, localUserId }) }
 IdTokenClaims: { sub, iss, aud, email?, email_verified?, name?, preferred_username?, picture?, ... }
 DiscoveryDoc: { issuer, authorization_endpoint, token_endpoint, jwks_uri, userinfo_endpoint?, end_session_endpoint? }
+return_to must pass localReturnPath, else defaultPostLoginPath; error descriptions are generic, details logged
 ```
 
 ## @wess/atlas/security
@@ -309,16 +322,19 @@ withSecurityHeaders(fetch, { dev?, csp?, disableCsp? }) → fetch     HSTS/CSP/C
 developmentCsp | productionCsp                                       string CSP presets
 decideInline(mime, name, wantInline) → { contentType, disposition }  safe-MIME allowlist for inline
 createDbRateLimit({ db }) | createMemoryRateLimit({ maxEntries? }) → RateLimit      .check(bucket, max, windowSec) .reset(bucket) .sweep(olderThanSec)
+  memory limiter evicts the oldest bucket at capacity, never refuses
 clientIp(req, { trustedProxies? }) → string                          honors X-Forwarded-For only via trusted proxy
+addressKey(ip) → string                                              IPv6 grouped by /64 for rate-limit keys
 userAgent(req) → string | undefined
 parseTrustedProxies(env) → string[]
 createAuditLogger({ db }) → { log(event), ... }                      fire-and-forget; never throws
-createSessionStore<U>({ db, secret, ttlSeconds }) → SessionStore     DB-backed JWT sessions
+createSessionStore<U>({ db, secret, ttlSeconds, payload? }) → SessionStore     DB-backed JWT sessions; default payload drops /password|secret|token/i fields
   .issue(user, ctx) .isActive(jti) .touch(jti) .revoke(jti, userId) .revokeAll(userId, keep?) .sweepExpired()
 newJti() → string
 generateSecret() → string                       TOTP base32 secret
 totpAt(secret, epochSec) → string               6-digit code at time
-verifyTotp(secret, code, { window? }) → bool    window=1 accepts ±30s
+verifyTotp(secret, code, { window?, afterStep? }) → bool    window=1 accepts ±30s
+matchTotp(secret, code, { window?, afterStep? }) → step | null   store the step, pass it as afterStep to stop replays
 otpauthUrl({ secret, account, issuer }) → string
 generateBackupCodes(n?) → string[]              store hashed
 base32Encode(bytes) | base32Decode(str)
@@ -401,7 +417,9 @@ CLI surface:
 admin({ db, models, basePath?, auth?, allowUnauthenticated? }) → { mount, routes }
   auth: { secret, authorize(claims), login?({ email, password }) → claims | null, sessionSeconds?, rateLimit?, revocations?, trustedProxies?, trustedOrigins? }
 createMemoryRevocations() | createDbRevocations({ db, table? }) → Revocations   signed-out session ids
-model({ schema, listFields?, searchFields?, filterFields?, relations?, actions?, bulkActions?, readOnly? }) → ModelConfig
+model({ schema, listFields?, searchFields?, filterFields?, relations?, actions?, bulkActions?, readOnly?, editableFields? }) → ModelConfig
+  create/update write schema columns only (minus primary keys), narrowed by editableFields; action ids must be an array
+  bearer and cookie auth refuse OAuth access tokens and purpose tokens; login throttling keys IPv6 by /64
 @wess/atlas/admin/ui: AdminApp AdminSidebar Dashboard ModelList Detail Create FilterBuilder QueryBuilder BulkBar
 Screens: {base} {base}/login {base}/query {base}/models/:table {base}/models/:table/new {base}/models/:table/records/:id
 Server: {base}/api/* {base}/session (POST sign in, GET state, DELETE sign out) {base}/assets/entry.js|entry.css

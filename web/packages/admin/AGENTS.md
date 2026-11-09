@@ -10,7 +10,7 @@ Django-style admin panel that auto-generates CRUD API routes from @wess/atlas/db
 
 ### Types
 - `AdminConfig` — top-level config: `{ db, models, basePath?, auth? }`
-- `ModelConfig` — per-model config: `{ schema, listFields?, searchFields?, filterFields?, relations?, actions?, bulkActions?, readOnly? }`
+- `ModelConfig` — per-model config: `{ schema, listFields?, searchFields?, filterFields?, relations?, actions?, bulkActions?, readOnly?, editableFields? }`
 - `CustomAction<T>` — custom action: `{ name, label, handler }`
 - `BulkAction` — `"delete" | "export"`
 - `RelationConfig` — relation: `{ schema, foreignKey, label? }`
@@ -36,6 +36,17 @@ For each model with table name `T` at `basePath` (default `/admin`):
 | POST | `{base}/api/query/preview` | Preview SQL without executing |
 
 List endpoint query params: `?page=1&limit=20&sort=name&order=asc&search=foo&filter.status=active`
+
+Create and update write only the model's schema columns: request fields outside
+the schema are dropped, and primary keys (and `id`) are never written on
+update. `editableFields` narrows writes to the listed columns; a primary key
+listed there is writable on create only (for natural keys without a default).
+A body that isn't an object, or with nothing editable left, gets 400. Keep
+sensitive columns (roles, password hashes) out of the schema you pass, or out
+of `editableFields`.
+
+Bulk and custom actions require `ids` to be an array of strings or numbers;
+anything else gets 400 before the handler runs.
 
 ## Usage
 
@@ -142,6 +153,6 @@ admin({
 
 `POST`, `GET`, and `DELETE {basePath}/session` sign in, report state, and sign out. A successful login sets a signed `HttpOnly`, `SameSite=Strict` cookie scoped to `basePath`, `Secure` in production, lasting `sessionSeconds` (default 8 hours). Claims must pass `authorize` before a cookie is issued, and again on every request.
 
-Cookie-authenticated writes must carry an `Origin` matching the `Host` header, or one listed in `trustedOrigins` for a proxy that rewrites `Host`. `Authorization: Bearer` keeps working and takes precedence, without the origin check. Sign-in attempts are limited to 10 per address and account per 15 minutes, 50 per address per 15 minutes, and 100 per account per hour, so one person can't lock an account out. Counts are in memory by default; pass `rateLimit: createDbRateLimit({ db })` when running more than one process. Behind a proxy, pass `trustedProxies: parseTrustedProxies(...)` so the real client address is used. Each session carries an id, and signing out revokes it, so a copied cookie stops working. Revocations live in memory by default; pass `revocations: createDbRevocations({ db })` to share them across processes and restarts (it creates `admin_revoked_sessions` on first use). Without `login`, the screen explains that sign-in isn't set up and Bearer tokens still work.
+Cookie-authenticated writes must carry an `Origin` matching the `Host` header, or one listed in `trustedOrigins` for a proxy that rewrites `Host`. `Authorization: Bearer` keeps working and takes precedence, without the origin check. Bearer and cookie auth both refuse OAuth access tokens (`typ: at+jwt`, or `client_id` + `scope` claims) and tokens with a `purpose` claim, even when signed with `auth.secret`. Sign-in attempts are limited to 10 per address and account per 15 minutes, 50 per address per 15 minutes, and 100 per account per hour, so one person can't lock an account out. Counts are in memory by default; pass `rateLimit: createDbRateLimit({ db })` when running more than one process. Behind a proxy, pass `trustedProxies: parseTrustedProxies(...)` so the real client address is used. IPv6 clients are counted per /64 (`addressKey`). Each session carries an id, and signing out revokes it, so a copied cookie stops working. Revocations live in memory by default; pass `revocations: createDbRevocations({ db })` to share them across processes and restarts (it creates `admin_revoked_sessions` on first use). Without `login`, the screen explains that sign-in isn't set up and Bearer tokens still work.
 
 Query payloads accept registered schema fields only, including sort/filter/group fields. Limits default to 100 and must be integers from 1 to 1000. List pages accept positive integer page/limit values, with at most 100 rows. When auth is configured, `auth.authorize(claims)` is required and must explicitly grant administrator access. Missing auth is rejected by default. Tests and local development can opt in with `allowUnauthenticated: true`; production always requires auth. Import browser components from `@wess/atlas/admin/ui`; the server entry point does not load React.

@@ -29,7 +29,7 @@ SsoConfig {
   issuerUrl: string                          // base URL — discovery doc lives at ${issuerUrl}/.well-known/openid-configuration
   clientId: string
   clientSecret: string
-  redirectUri?: string                       // default: ${request.origin}${basePath}/callback
+  redirectUri?: string                       // default: ${request.origin}${basePath}/callback — set it in production (the default trusts Host)
   scopes?: readonly string[]                 // default: ["openid","email","profile"] — openid is always added
   basePath?: string                          // default: "/auth/sso"
   defaultPostLoginPath?: string              // default: "/"
@@ -119,4 +119,4 @@ setInterval(() => sweepExpiredSsoState(db), 60 * 60 * 1000)  // hourly
 - `@wess/atlas/auth/social` — provider-specific factories (Google, GitHub, Apple, …). Best for consumer apps with named providers.
 - `@wess/atlas/sso` — generic OIDC relying-party. Best for enterprise SSO (Keycloak, Auth0, Okta, Castle, anything OIDC-conformant).
 
-Login state is bound to an HttpOnly SameSite=Lax browser cookie and consumed once. Post-login destinations must be local paths. Discovery validates the issuer and HTTPS endpoints (HTTP is permitted on loopback), shares concurrent fetches, and bounds its cache. ID tokens require issuer, audience, subject, expiry, issued-at, and nonce bindings. Back-channel logout validates issuer/audience, rejects tokens older than five minutes, and tracks replays in process memory. Hosts with multiple instances should also deduplicate logout `jti` values in shared storage.
+Login state is bound to an HttpOnly SameSite=Lax browser cookie and consumed once. Post-login destinations must be local paths, checked by `localReturnPath` from `@wess/atlas/auth/social`: control characters (a tab would turn `/\t/evil.example` into `//evil.example`), backslashes, `//host`, and anything that resolves off the site fall back to `defaultPostLoginPath`. Discovery, id_token, back-channel and `onAuthenticated` failures answer a fixed `error_description` and log the detail server-side, so IdP responses and provisioning errors never reach the browser. Without `redirectUri` the callback URL is built from the Host header; set it explicitly in production. Discovery validates the issuer and HTTPS endpoints (HTTP is permitted on loopback), shares concurrent fetches, and bounds its cache. ID tokens require issuer, audience, subject, expiry, issued-at, and nonce bindings. Back-channel logout validates issuer/audience, rejects tokens older than five minutes, and tracks replays in process memory. Hosts with multiple instances should also deduplicate logout `jti` values in shared storage.
