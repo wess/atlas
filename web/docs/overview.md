@@ -296,9 +296,13 @@ Tracks applied migrations in `schema_migrations` table. Works with Postgres and 
 
 ### UI
 
-`@wess/atlas/ui` is a modular React + Mantine package with independent blocks:
+`@wess/atlas/ui` is a modular React package with its own components and independent blocks:
 
-- `@wess/atlas/ui/provider` — Theme and layout shell
+- `@wess/atlas/ui/styles.css` — The compiled stylesheet; import it once
+- `@wess/atlas/ui/components` — Primitives (Button, TextInput, Table, Tabs, ...)
+- `@wess/atlas/ui/headless` — Behavior hooks with no markup or styles
+- `@wess/atlas/ui/factory` — `component()` and `createField()` for building new primitives
+- `@wess/atlas/ui/provider` — Color scheme, light/dark/system mode, and layout shell
 - `@wess/atlas/ui/forms` — Form primitives and helpers
 - `@wess/atlas/ui/table` — Data tables with sort/filter/pagination
 - `@wess/atlas/ui/auth` — Login, signup, password reset pages
@@ -421,42 +425,34 @@ serve({
 
 ### Full Stack
 
-Use `@wess/atlas/ui` blocks on the client:
+Use `@wess/atlas/ui` on the client, and serve the same HTML for every client path:
 
 ```tsx
 // server.ts
-import { get, halt, pipe, putHeader, serve } from "@wess/atlas/server"
+import { get, pipe, putHeader, serve, text } from "@wess/atlas/server"
 
-const page = await Bun.file("./admin.html").text() // HTML file that loads the React SPA
-const spa = pipe((c) => putHeader(halt(c, 200, page), "content-type", "text/html; charset=utf-8"))
+const page = await Bun.file("./index.html").text()
+const shell = pipe((c) => putHeader(text(c, 200, page), "content-type", "text/html; charset=utf-8"))
 
 serve({
-  routes: [
-    get("/admin", spa),
-    get("/admin/*", spa),
-    ...apiRoutes,
-  ],
+  routes: [...apiRoutes, get("/", shell), get("/app/*", shell)],
 })
 ```
 
-```html
-<!-- admin.html -->
-<html>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="./admin.tsx"></script>
-  </body>
-</html>
-```
-
 ```tsx
-// admin.tsx
-import { AdminApp } from "@wess/atlas/admin"
+// app.tsx
+import "@wess/atlas/ui/styles.css"
+import { AtlasProvider } from "@wess/atlas/ui/provider"
 import { createRoot } from "react-dom/client"
 
-const root = createRoot(document.getElementById("root")!)
-root.render(<AdminApp />)
+createRoot(document.getElementById("root")!).render(<AtlasProvider><App /></AtlasProvider>)
 ```
+
+The admin panel needs none of this: `admin()` returns routes that serve its own prebuilt shell, bundle, and sign-in screen.
+
+## Skills
+
+`skills/` holds small, task-focused instructions for coding agents, one directory per kind of work, shipped with the CLI. `atlas skills install` copies them into a project. They cost far less context than the references, which remain canonical, and `bun run skills:verify` typechecks every snippet against the source.
 
 ## AGENTS.md Convention
 
@@ -511,12 +507,12 @@ LLMs can read `packages/db/AGENTS.md` instead of traversing 20+ source files. Th
 | request | none |
 | sso | none |
 | cli | none |
-| ui | `react`, `@mantine/*`, `@tanstack/*`, `lucide-react` |
-| admin | `react`, `@mantine/*`, `@tanstack/*`, `lucide-react` |
+| ui | `react`, `react-dom`, `@tanstack/*`, `lucide-react` |
+| admin | `react`, `react-dom`, `@tanstack/*`, `lucide-react` |
 | mcp | none |
 | ai | none |
 
-Total: Only `zod` on the backend. Frontend uses React + Mantine + TanStack.
+Total: Only `zod` on the backend. Frontend uses React + TanStack + lucide-react.
 
 ## Development Environment
 

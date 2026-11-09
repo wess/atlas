@@ -52,7 +52,8 @@ export const users = defineSchema("users", {
   id: column.serial().primaryKey(),
   email: column.text().unique(),
   name: column.text(),
-  passwordHash: column.text(),
+  password: column.text(),
+  role: column.text().defaultRaw("'user'"),
   createdAt: column.timestamp().defaultRaw("CURRENT_TIMESTAMP"),
 })
 
@@ -121,7 +122,8 @@ CREATE TABLE users (
   id INTEGER PRIMARY KEY,
   email TEXT NOT NULL,
   name TEXT NOT NULL,
-  passwordHash TEXT NOT NULL,
+  password TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'user',
   createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -156,7 +158,8 @@ import {
   post,
   parseJson,
 } from "@wess/atlas/server"
-import { token, signup, login, requireAuth } from "@wess/atlas/auth"
+import { token, signup, login, requireAuth, verify } from "@wess/atlas/auth"
+import { from } from "@wess/atlas/db/query"
 import { createStore, upload as uploadFile, presign } from "@wess/atlas/storage"
 import { admin, model } from "@wess/atlas/admin"
 
@@ -236,7 +239,14 @@ const uploadRoute = post(
 const adminPanel = admin({
   db,
   basePath: "/admin",
-  auth: { secret: config.secret },
+  auth: {
+    secret: config.secret,
+    authorize: (claims) => claims.role === "admin",
+    login: async ({ email, password }) => {
+      const user = await db.one(from(users).where((q) => q("email").equals(email)))
+      return user && (await verify(password, user.password)) ? { userId: user.id, role: user.role } : null
+    },
+  },
   models: [
     model({
       schema: users,
@@ -379,7 +389,7 @@ curl -X GET http://localhost:3000/api/files \
 
 ## Step 8: Access the Admin Panel
 
-Open http://localhost:3000/admin in your browser.
+Open http://localhost:3000/admin in your browser and sign in. The `login` function above decides who gets in, and `authorize` must accept the claims it returns, so give your account the `admin` role first: `UPDATE users SET role = 'admin' WHERE email = 'you@example.com';`. Without `login`, the admin only accepts `Authorization: Bearer` tokens.
 
 You'll see:
 - **Users** list with email and name search
@@ -395,57 +405,60 @@ Create a React frontend using `@wess/atlas/ui` blocks:
 
 ```tsx
 // frontend.tsx
-import React from "react"
-import { createRoot } from "react-dom/client"
-import { AtlasProvider, AppShell } from "@wess/atlas/ui/provider"
+import "@wess/atlas/ui/styles.css"
 import { LoginPage } from "@wess/atlas/ui/auth"
+import { navigate, useLocation } from "@wess/atlas/ui/headless"
+import { AppShell, AtlasProvider } from "@wess/atlas/ui/provider"
 import { FileUpload } from "@wess/atlas/ui/storage"
+import { createRoot } from "react-dom/client"
 
-export default function App() {
-  const [token, setToken] = React.useState<string | null>(null)
+const authHeader = () => ({ authorization: `Bearer ${sessionStorage.getItem("token")}` })
 
-  if (!token) {
-    return (
-      <LoginPage
-        onSubmit={async ({ email, password }) => {
-          const res = await fetch("/auth/login", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ email, password }),
-          })
-          const data = await res.json()
-          if (data.token) {
-            setToken(data.token)
-            return {}
-          }
-          return { error: "Login failed" }
-        }}
-      />
-    )
-  }
+const Login = () => (
+  <LoginPage
+    onSubmit={async ({ email, password }) => {
+      const res = await fetch("/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json()
+      if (!data.token) return { error: "That email and password don't match." }
+      sessionStorage.setItem("token", data.token)
+      navigate("/", { replace: true })
+      return undefined
+    }}
+  />
+)
+
+const App = () => {
+  const { pathname } = useLocation()
+  const signedIn = Boolean(sessionStorage.getItem("token"))
+  if (!signedIn && pathname !== "/login") navigate("/login", { replace: true })
 
   return (
     <AtlasProvider>
-      <AppShell>
-        <FileUpload
-          onUpload={async (file) => {
-            const form = new FormData()
-            form.append("file", file)
-            await fetch("/api/upload", {
-              method: "POST",
-              headers: { authorization: `Bearer ${token}` },
-              body: form,
-            })
-          }}
-        />
-      </AppShell>
+      {pathname === "/login" ? (
+        <Login />
+      ) : (
+        <AppShell>
+          <FileUpload
+            onUpload={async (file) => {
+              const form = new FormData()
+              form.append("file", file)
+              await fetch("/api/upload", { method: "POST", headers: authHeader(), body: form })
+            }}
+          />
+        </AppShell>
+      )}
     </AtlasProvider>
   )
 }
 
-const root = createRoot(document.body)
-root.render(<App />)
+createRoot(document.getElementById("root")!).render(<App />)
 ```
+
+Every screen is a real path, so serve the same HTML for `/` and `/login`. Bundle this with `Bun.build` or import the HTML file in `Bun.serve`.
 
 ### Add Caching
 

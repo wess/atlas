@@ -5,6 +5,9 @@ smallest transport and context set that can answer the task.
 
 ## Fast Path
 
+If your tool supports skills, run `atlas skills install` and start from the `atlas` skill. Each skill holds
+the imports and patterns for one kind of work, which usually removes the need for the steps below.
+
 1. Fetch `https://wess.io/atlas/llms.txt`.
 2. Read this guide and the reference for each package the task actually uses.
 3. Use the API reference only when a signature is still unclear.
@@ -22,6 +25,7 @@ need two or three packages.
 | Complete web context | `/atlas/llms-full.txt` | One-fetch offline indexing or large-context work |
 | Page Markdown | `/atlas/docs/<name>/index.md` | Fetch one canonical guide or package reference |
 | Search index | `/atlas/search.json` | Programmatic title, description, kind, and text search |
+| Skills | `atlas skills [name]` | Task patterns at the lowest token cost; `atlas skills install` copies them into a project |
 | Installed CLI | `atlas docs [name]` | Read package-local docs without network access |
 | MCP | `atlas mcp` | Discover docs and inspect a running Atlas application |
 
@@ -33,7 +37,7 @@ the document head.
 Select released library modules with the Atlas installer:
 
 ```sh
-bunx --package https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-cli-0.4.10.tgz atlas add server config db/postgres db/query
+bunx --package https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz atlas add server config db/postgres db/query
 ```
 
 See README.md for the release candidate's publication status. Import public
@@ -75,6 +79,7 @@ When writing Atlas code:
 - Compose HTTP behavior with `pipeline()`; use `halt()` for deliberate short-circuiting.
 - Use typed `route()` validation rather than parsing the same request body manually.
 - Keep filenames lowercase with no dashes, underscores, or spaces.
+- Route web apps with real paths through the History API, never `#` routes or in-memory view state.
 - Put tests under `packages/<name>/test/` when changing Atlas itself.
 
 If a requested export is absent from the package reference and API lookup, treat it as absent. Do
@@ -136,6 +141,8 @@ For documentation work, also run:
 bun run site:build
 bun test site/test/site.test.ts
 ```
+
+For skills, also run `bun run skills:verify`, which typechecks every snippet against the source.
 
 Generated code is not grounded until its imports exist, its package references agree with the
 usage, and the relevant checks pass.

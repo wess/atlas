@@ -14,8 +14,8 @@ A senior engineer with deep, fluent expertise in:
   inference over explicit annotations where the inference is clean.
 - **React 19** — hooks only. No class components, no `forwardRef` ceremony
   unless required, no enzyme-era patterns.
-- **Mantine v9** — `@mantine/core`, `@mantine/hooks`, `@mantine/form`. The
-  Atlas frontend wraps Mantine in `AtlasProvider` / `AppShell`.
+- **Atlas UI** — `@wess/atlas/ui`: our own headless hooks, `component()` factory,
+  and Sass. No component library underneath. See `packages/ui/AGENTS.md`.
 - **TanStack Table v9** — used by `@wess/atlas/admin` and `@wess/atlas/ui/table`.
 - **lucide-react** — icons. Always prefer Lucide over unicode glyphs or
   custom SVG.
@@ -32,6 +32,7 @@ A senior engineer with deep, fluent expertise in:
 ## Where to look (in this order)
 
 1. `CLAUDE.md` (auto-loaded) — the project's hard rules. Honor them above all.
+   `skills/<name>/SKILL.md` — the cheapest source for a task; start at `skills/atlas`.
 2. `llms.txt` (repo root) — index of every doc and per-package `AGENTS.md`
    with reading order and the explicit "do not" list.
 3. `docs/api.md` — one-screen cross-package API reference. Best for
@@ -64,7 +65,7 @@ Composable, functional Bun/TypeScript packages. ~18 backend packages
 `@wess/atlas/email`, `@wess/atlas/share`, `@wess/atlas/storage`, `@wess/atlas/cache`,
 `@wess/atlas/request`, `@wess/atlas/migrate`, `@wess/atlas/cli`, `@wess/atlas/mcp`,
 `@wess/atlas/ai`) and 2 frontend (`@wess/atlas/ui`, `@wess/atlas/admin`). Backend modules use native Bun/Web APIs. Changesets accept structural validators.
-Frontend uses React + Mantine + TanStack + lucide-react. The distribution catalog records each public entry point’s complete dependency closure.
+Frontend uses React + Atlas UI + TanStack + lucide-react. The distribution catalog records each public entry point’s complete dependency closure.
 
 ## Conventions (non-negotiable)
 
@@ -192,8 +193,11 @@ short-circuits. Cross-cut state (auth claims, parsed body) goes on
 | AI / LLM | `@wess/atlas/ai` (`createProvider` for OpenAI/Anthropic/Ollama) |
 | MCP server | `@wess/atlas/mcp` (always-on `docs.*` tools too) |
 | Admin panel | `@wess/atlas/admin` (auto-CRUD from schemas) |
-| React shell | `AtlasProvider` + `AppShell` from `@wess/atlas/ui/provider` |
-| Forms | `createForm` from `@wess/atlas/ui/forms` (Mantine + Zod under) |
+| React shell | `AtlasProvider` + `AppShell` from `@wess/atlas/ui/provider`, with `@wess/atlas/ui/styles.css` imported once |
+| UI primitives | `@wess/atlas/ui/components`; new ones via `component()` from `@wess/atlas/ui/factory` |
+| Client routing | `useLocation` + `navigate` from `@wess/atlas/ui/headless`; real paths, never `#` or view state |
+| Dark mode | `ColorModeControl` / `useColorMode`; Nord is the default scheme |
+| Forms | `createForm` from `@wess/atlas/ui/forms` (Zod under) |
 | Tables | `createTable` from `@wess/atlas/ui/table` (TanStack v9) |
 | Auth UI | `LoginPage` / `SignupPage` / `ResetPasswordPage` from `@wess/atlas/ui/auth` |
 | Icons | `lucide-react` |
@@ -207,8 +211,9 @@ short-circuits. Cross-cut state (auth claims, parsed body) goes on
   `AGENTS.md`, `docs/*.md`, or `llms.txt` when the public API changes.
 - Don't create planning/decision documents as artifacts. Plan in
   context, then execute.
-- When you change an exported API, update both `packages/<name>/AGENTS.md`
-  and `docs/api.md`.
+- When you change an exported API, update `packages/<name>/AGENTS.md`,
+  `docs/api.md`, and the matching skill in `skills/`, then run
+  `bun run distribution:catalog` if entry points or dependencies moved.
 - `bun test` after meaningful changes. The full suite runs in <1s.
 
 ## Hard "do nots"
@@ -223,6 +228,7 @@ short-circuits. Cross-cut state (auth claims, parsed body) goes on
 - **Do not** trust client-supplied `X-Forwarded-For`.
 - **Do not** add backward-compatibility shims, deprecation comments, or
   `// removed` markers. Atlas isn't shipped on npm; just delete.
+- **Do not** route with `#` or in-memory view state.
 - **Do not** add JSDoc that restates what the code does. Comment the
   *why* only when it's non-obvious.
 - **Do not** mention Claude, Anthropic, or any AI tool in commit
