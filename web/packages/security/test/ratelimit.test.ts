@@ -1,6 +1,13 @@
 import { expect, test } from "bun:test";
 import { connect } from "../../db/index.ts";
-import { clientIp, createDbRateLimit, createMemoryRateLimit, parseTrustedProxies, userAgent } from "../ratelimit";
+import {
+  addressKey,
+  clientIp,
+  createDbRateLimit,
+  createMemoryRateLimit,
+  parseTrustedProxies,
+  userAgent,
+} from "../ratelimit";
 
 const reqWith = (headers: Record<string, string>, peerIp?: string): Request => {
   const r = new Request("http://localhost/", { headers });
@@ -147,11 +154,29 @@ test("a trusted edge cannot make the leftmost spoofed address trustworthy", () =
   expect(clientIp(req, { trustedProxies: parseTrustedProxies("10.0.0.0/8") })).toBe("203.0.113.9");
 });
 
-test("memory limiter refuses new buckets at capacity without resetting existing limits", async () => {
-  const limiter = createMemoryRateLimit({ maxEntries: 1 });
+test("memory limiter evicts the oldest bucket at capacity instead of refusing new clients", async () => {
+  const limiter = createMemoryRateLimit({ maxEntries: 2 });
   expect((await limiter.check("a", 1, 60)).ok).toBe(true);
-  expect((await limiter.check("b", 1, 60)).ok).toBe(false);
-  expect((await limiter.check("a", 1, 60)).ok).toBe(false);
-  await limiter.reset("a");
   expect((await limiter.check("b", 1, 60)).ok).toBe(true);
+  expect((await limiter.check("b", 1, 60)).ok).toBe(false);
+  // a new client is admitted; "a", the oldest, makes room
+  expect((await limiter.check("c", 1, 60)).ok).toBe(true);
+  expect((await limiter.check("b", 1, 60)).ok).toBe(false);
+  expect((await limiter.check("a", 1, 60)).ok).toBe(true);
+});
+
+test("filling the memory limiter with junk keys never locks out a real client", async () => {
+  const limiter = createMemoryRateLimit({ maxEntries: 100 });
+  for (let i = 0; i < 500; i++) await limiter.check(`admin-login:junk${i}`, 10, 900);
+  expect((await limiter.check("admin-login:real", 10, 900)).ok).toBe(true);
+});
+
+test("addressKey groups an IPv6 /64 and leaves IPv4 alone", () => {
+  expect(addressKey("2001:db8:1:2:aaaa::1")).toBe("2001:db8:1:2::/64");
+  expect(addressKey("2001:db8:1:2:ffff:ffff:ffff:ffff")).toBe("2001:db8:1:2::/64");
+  expect(addressKey("2001:0db8:0000:0002::9")).toBe("2001:db8:0:2::/64");
+  expect(addressKey("::1")).toBe("0:0:0:0::/64");
+  expect(addressKey("::ffff:10.0.0.1")).toBe("10.0.0.1");
+  expect(addressKey("10.0.0.1")).toBe("10.0.0.1");
+  expect(addressKey("unknown")).toBe("unknown");
 });

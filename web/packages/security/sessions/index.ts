@@ -43,12 +43,18 @@ export type SessionStoreOptions<TUser extends { id: number | string }> = {
   readonly ttlSeconds?: number;
   /**
    * Build the JWT claims payload from the user. The library always merges in
-   * `{ jti }` regardless of what you return.
+   * `{ jti }` regardless of what you return. Default: the user's fields minus
+   * any whose name matches /password|secret|token/i — JWT payloads are
+   * readable by whoever holds the token.
    */
   readonly payload?: (user: TUser) => Record<string, unknown>;
 };
 
 const DEFAULT_TABLE = "sessions";
+const SENSITIVE_FIELD = /password|secret|token/i;
+
+const defaultPayload = (user: Record<string, unknown>): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(user).filter(([key]) => !SENSITIVE_FIELD.test(key)));
 const DEFAULT_TTL = 86400 * 7;
 
 /**
@@ -73,7 +79,7 @@ export const createSessionStore = <TUser extends { id: number | string }>(
 ): SessionStore<TUser> => {
   const table = opts.table ?? DEFAULT_TABLE;
   const ttl = opts.ttlSeconds ?? DEFAULT_TTL;
-  const buildPayload = opts.payload ?? ((u: TUser) => ({ ...u }) as Record<string, unknown>);
+  const buildPayload = opts.payload ?? ((u: TUser) => defaultPayload(u));
 
   return {
     issue: async (user, ctx = {}) => {

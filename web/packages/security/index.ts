@@ -5,7 +5,14 @@ export { developmentCsp, productionCsp, withSecurityHeaders } from "./headers";
 export type { InlineDecision } from "./inline";
 export { decideInline } from "./inline";
 export type { ClientIpOptions, DbRateLimitOptions, RateLimit, RateLimitResult } from "./ratelimit";
-export { clientIp, createDbRateLimit, createMemoryRateLimit, parseTrustedProxies, userAgent } from "./ratelimit";
+export {
+  addressKey,
+  clientIp,
+  createDbRateLimit,
+  createMemoryRateLimit,
+  parseTrustedProxies,
+  userAgent,
+} from "./ratelimit";
 export type {
   IssuedSession,
   SessionContext,
@@ -20,6 +27,7 @@ export {
   base32Encode,
   generateBackupCodes,
   generateSecret,
+  matchTotp,
   otpauthUrl,
   totpAt,
   verifyTotp,

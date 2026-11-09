@@ -4,6 +4,7 @@ import {
   base32Encode,
   generateBackupCodes,
   generateSecret,
+  matchTotp,
   otpauthUrl,
   totpAt,
   verifyTotp,
@@ -91,4 +92,21 @@ test("generateBackupCodes returns the requested count of formatted codes", () =>
   }
   // Backup codes should be distinct.
   expect(new Set(codes).size).toBe(8);
+});
+
+test("matchTotp returns the step and afterStep stops a code being replayed", () => {
+  const secret = generateSecret();
+  const when = new Date(1_700_000_000_000);
+  const code = totpAt(secret, when);
+  const step = matchTotp(secret, code, { when });
+  expect(step).toBe(Math.floor(when.getTime() / 1000 / 30));
+  // without a stored step the same code passes twice inside its window: the replay
+  expect(verifyTotp(secret, code, { when })).toBe(true);
+  expect(verifyTotp(secret, code, { when: new Date(when.getTime() + 20_000) })).toBe(true);
+  // with it, the second use is refused
+  expect(matchTotp(secret, code, { when, afterStep: step! })).toBeNull();
+  expect(verifyTotp(secret, code, { when: new Date(when.getTime() + 20_000), afterStep: step! })).toBe(false);
+  // the next step's code still works
+  const next = totpAt(secret, new Date(when.getTime() + 30_000));
+  expect(matchTotp(secret, next, { when: new Date(when.getTime() + 30_000), afterStep: step! })).toBe(step! + 1);
 });
