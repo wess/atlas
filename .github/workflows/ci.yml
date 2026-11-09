@@ -46,6 +46,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: bun run typecheck
+      - run: bun run skills:verify
       # The site build validates the survey graph: a choice pointing at a
       # section that does not exist fails here rather than in a reader's face.
       - run: bun run site:build

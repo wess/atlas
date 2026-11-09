@@ -1,4 +1,4 @@
-import { cp, mkdir } from "node:fs/promises";
+import { cp, mkdir, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { Catalog } from "../distribution/build.ts";
 import { sourceRoot } from "../distribution/config.ts";
@@ -42,6 +42,8 @@ export async function validateFixtures(artifacts: string, destination: string): 
   }
   const catalog: Catalog = await Bun.file(join(artifacts, "catalog.json")).json();
   const bootstrap = join(destination, "bootstrap");
+  // same version and tarball path means bun keeps an old install, which would validate the previous build
+  await rm(bootstrap, { recursive: true, force: true });
   await mkdir(bootstrap, { recursive: true });
   await Bun.write(
     join(bootstrap, "package.json"),
@@ -60,6 +62,7 @@ export async function validateFixtures(artifacts: string, destination: string): 
   const names = [...scaffold.listTemplates(), "custom", "customsqlite", "customadmin", "example"];
   for (const name of names) {
     const directory = join(destination, name);
+    await rm(directory, { recursive: true, force: true });
     await mkdir(directory, { recursive: true });
     if (name === "example") {
       await cp(join(sourceRoot, "example"), directory, {
@@ -99,7 +102,13 @@ export async function validateFixtures(artifacts: string, destination: string): 
     }
     await install(directory, artifacts, catalog);
     await run(directory, ["x", "--no-install", "tsc", "--noEmit"], "typecheck.log");
-    if (name !== "example") await run(directory, ["run", "node_modules/.bin/atlas", "help"], "cli.log");
+    if (name !== "example") {
+      await run(directory, ["run", "node_modules/.bin/atlas", "help"], "cli.log");
+      await run(directory, ["run", "node_modules/.bin/atlas", "skills", "install"], "skills.log");
+      if (!(await Bun.file(join(directory, ".claude/skills/atlas/SKILL.md")).exists())) {
+        throw new Error(`${name}: atlas skills install wrote nothing`);
+      }
+    }
     if (["minimal", "custom", "customsqlite", "customadmin", "example"].includes(name)) {
       await smokeFixture(directory, name === "example", name === "customadmin");
     }

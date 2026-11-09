@@ -58,7 +58,7 @@ The `atlas add` command validates public module names and installs the facade, s
 
 ### entry.ts
 
-CLI bin entry point. Registers init, add, check, dev, mcp, and docs commands, then calls `cli("atlas", commands)`.
+CLI bin entry point. Registers init, add, check, dev, mcp, docs, and skills commands, then calls `cli("atlas", commands)`.
 
 ## CLI Commands
 
@@ -86,7 +86,7 @@ atlas add               # lists available packages
 Check an application's manifests, Bun lockfile, installed Atlas links, source imports,
 and TypeScript aliases. Atlas facade and backing libraries must use the same exact
 stable version. Local paths, legacy aliases, and links outside node_modules fail the check.
-Run `bunx --package https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-cli-0.4.10.tgz atlas check` in application CI after a frozen install.
+Run `bunx --package https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz atlas check` in application CI after a frozen install.
 
 ### atlas dev
 
@@ -114,6 +114,17 @@ atlas docs llms.txt     # print root llms.txt
 
 Useful for terminal lookups and for piping into agent tools (`atlas docs db | ...`).
 The same content is exposed as the `docs.list` / `docs.read` tools by `atlas mcp`.
+
+### atlas skills
+
+List, print, or install the agent skills shipped with the CLI.
+
+```sh
+atlas skills                                   # list them
+atlas skills atlasserver                       # print one
+atlas skills install                           # copy all into .claude/skills
+atlas skills install --dir .agents/skills atlasdb
+```
 
 ## Programmatic Usage
 
@@ -147,7 +158,7 @@ const questions = getQuestionSpec()
 ## Global Installation
 
 ```sh
-bun add -g https://github.com/wess/atlas/releases/download/v0.4.10/wess-atlas-cli-0.4.10.tgz
+bun add -g https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz
 atlas init
 ```
 

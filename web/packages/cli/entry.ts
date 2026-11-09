@@ -5,6 +5,7 @@ import { docsCommand } from "./docs/index.ts";
 import { foreman } from "./foreman/index.ts";
 import { initCommand } from "./init/index.ts";
 import { checkCommand } from "./libraries/index.ts";
+import { skillsCommand } from "./skills/index.ts";
 
 const devCommand = command("dev", {
   description: "Start development servers from Procfile",
@@ -27,4 +28,4 @@ const mcpCommand = command("mcp", {
   },
 });
 
-cli("atlas", [initCommand, addCommand, checkCommand, devCommand, mcpCommand, docsCommand]);
+cli("atlas", [initCommand, addCommand, checkCommand, devCommand, mcpCommand, docsCommand, skillsCommand]);
