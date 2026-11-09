@@ -43,7 +43,10 @@ const printIndex = (): void => {
   }
 };
 
+// only names the index itself lists are printable, so ../ or absolute paths
+// can't turn `atlas docs` into a file reader
 const printPackage = (pkg: string): boolean => {
+  if (!listPackages().includes(pkg)) return false;
   const path = `${PACKAGES_DIR}/${pkg}/AGENTS.md`;
   if (!existsSync(path)) return false;
   process.stdout.write(readFileSync(path, "utf-8"));
@@ -53,6 +56,7 @@ const printPackage = (pkg: string): boolean => {
 
 const printDoc = (name: string): boolean => {
   const fname = name.endsWith(".md") ? name : `${name}.md`;
+  if (!listDocs().includes(fname)) return false;
   const path = `${DOCS_DIR}/${fname}`;
   if (!existsSync(path)) return false;
   process.stdout.write(readFileSync(path, "utf-8"));
@@ -61,6 +65,7 @@ const printDoc = (name: string): boolean => {
 };
 
 const printRootDoc = (name: string): boolean => {
+  if (!(ROOT_DOCS as readonly string[]).includes(name)) return false;
   const path = `${ATLAS_ROOT}${name}`;
   if (!existsSync(path)) return false;
   process.stdout.write(readFileSync(path, "utf-8"));

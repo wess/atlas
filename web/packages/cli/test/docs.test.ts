@@ -73,3 +73,12 @@ test("`atlas docs <unknown>` errors and prints the index", async () => {
   expect(captured.stdout).toContain("Atlas documentation");
   expect(captured.exit).toBe(1);
 });
+
+test("`atlas docs` refuses paths outside the listed docs", async () => {
+  for (const target of ["../../../../../../../../etc/passwd", "/etc/hosts", "../package.json", "../README"]) {
+    captured = { stdout: "", stderr: "", exit: null };
+    await expect(docsCommand.run({ args: [target], flags: {} })).rejects.toThrow("__exit_1");
+    expect(captured.stdout).not.toContain("root:");
+    expect(captured.stderr).toContain("Unknown package or doc");
+  }
+});
