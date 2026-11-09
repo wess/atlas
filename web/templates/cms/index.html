@@ -53,6 +53,7 @@
       <input id="reg-email" placeholder="Email" />
       <input id="reg-name" placeholder="Name" />
       <input id="reg-password" type="password" placeholder="Password" />
+      <input id="reg-setup" type="password" placeholder="Setup token (ADMIN_SETUP_SECRET from .env)" />
       <button onclick="register()">Register</button>
     </div>
   </div>
@@ -163,6 +164,7 @@
     async function register() {
       const data = await api("/admin/api/auth/register", {
         method: "POST",
+        headers: { "x-setup-token": document.getElementById("reg-setup").value },
         body: JSON.stringify({
           email: document.getElementById("reg-email").value,
           name: document.getElementById("reg-name").value,
@@ -171,6 +173,16 @@
       })
       if (data.token) { token = data.token; onAuth() }
       else alert(data.error)
+    }
+
+    // every value from the server goes through esc() before it reaches innerHTML
+    function esc(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;")
     }
 
     function onAuth() {
@@ -210,12 +222,12 @@
       const el = document.getElementById("types-list")
       if (rows.length === 0) { el.innerHTML = '<div class="empty">No content types yet</div>'; return }
       el.innerHTML = rows.map((t) =>
-        '<div class="row"><div><strong>' + t.displayName + '</strong> <span class="meta">(' + t.name + ')</span>' +
+        '<div class="row"><div><strong>' + esc(t.displayName) + '</strong> <span class="meta">(' + esc(t.name) + ')</span>' +
         '<br><span class="meta">' + (typeof t.fields === "string" ? JSON.parse(t.fields) : t.fields).length + ' fields</span></div>' +
-        '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteType(' + t.id + ')">Delete</button></div>'
+        '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteType(' + Number(t.id) + ')">Delete</button></div>'
       ).join("")
       const sel = document.getElementById("entry-type")
-      sel.innerHTML = rows.map((t) => '<option value="' + t.id + '">' + t.displayName + '</option>').join("")
+      sel.innerHTML = rows.map((t) => '<option value="' + Number(t.id) + '">' + esc(t.displayName) + '</option>').join("")
     }
 
     async function createType() {
@@ -247,12 +259,12 @@
       const el = document.getElementById("entries-list")
       if (rows.length === 0) { el.innerHTML = '<div class="empty">No entries yet</div>'; return }
       el.innerHTML = rows.map((e) =>
-        '<div class="row"><div><strong>' + e.slug + '</strong> <span class="badge ' + e.status + '">' + e.status + '</span>' +
-        '<br><span class="meta">' + (e.typeName || "") + ' &middot; by ' + (e.authorName || "") + '</span></div>' +
+        '<div class="row"><div><strong>' + esc(e.slug) + '</strong> <span class="badge ' + esc(e.status) + '">' + esc(e.status) + '</span>' +
+        '<br><span class="meta">' + esc(e.typeName) + ' &middot; by ' + esc(e.authorName) + '</span></div>' +
         '<div class="inline" style="width:auto">' +
-        (e.status !== "published" ? '<button style="width:auto;padding:4px 12px" onclick="publishEntry(' + e.id + ')">Publish</button>' : '') +
-        (e.status === "published" ? '<button class="secondary" style="width:auto;padding:4px 12px" onclick="unpublishEntry(' + e.id + ')">Unpublish</button>' : '') +
-        '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteEntry(' + e.id + ')">Delete</button>' +
+        (e.status !== "published" ? '<button style="width:auto;padding:4px 12px" onclick="publishEntry(' + Number(e.id) + ')">Publish</button>' : '') +
+        (e.status === "published" ? '<button class="secondary" style="width:auto;padding:4px 12px" onclick="unpublishEntry(' + Number(e.id) + ')">Unpublish</button>' : '') +
+        '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteEntry(' + Number(e.id) + ')">Delete</button>' +
         '</div></div>'
       ).join("")
     }
@@ -295,9 +307,9 @@
       const el = document.getElementById("media-list")
       if (rows.length === 0) { el.innerHTML = '<div class="empty">No media yet</div>'; return }
       el.innerHTML = rows.map((m) =>
-        '<div class="row"><div><strong>' + m.filename + '</strong>' +
-        '<br><span class="meta">' + m.contentType + ' &middot; ' + Math.round(m.size / 1024) + ' KB</span></div>' +
-        '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteMedia(' + m.id + ')">Delete</button></div>'
+        '<div class="row"><div><strong>' + esc(m.filename) + '</strong>' +
+        '<br><span class="meta">' + esc(m.contentType) + ' &middot; ' + Math.round(m.size / 1024) + ' KB</span></div>' +
+        '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteMedia(' + Number(m.id) + ')">Delete</button></div>'
       ).join("")
     }
 
@@ -325,10 +337,10 @@
       const el = document.getElementById("keys-list")
       if (rows.length === 0) { el.innerHTML = '<div class="empty">No API keys yet</div>'; return }
       el.innerHTML = rows.map((k) =>
-        '<div class="row"><div><strong>' + k.name + '</strong>' +
-        '<br><code style="font-size:11px;color:#666">' + k.key.slice(0, 12) + '...</code>' +
-        '<br><span class="meta">Last used: ' + (k.lastUsedAt || "never") + '</span></div>' +
-        '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteKey(' + k.id + ')">Revoke</button></div>'
+        '<div class="row"><div><strong>' + esc(k.name) + '</strong>' +
+        '<br><code style="font-size:11px;color:#666">' + esc(k.key.slice(0, 12)) + '...</code>' +
+        '<br><span class="meta">Last used: ' + esc(k.lastUsedAt || "never") + '</span></div>' +
+        '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteKey(' + Number(k.id) + ')">Revoke</button></div>'
       ).join("")
     }
 
@@ -354,9 +366,9 @@
       if (rows.length === 0) { el.innerHTML = '<div class="empty">No webhooks yet</div>'; return }
       el.innerHTML = rows.map((w) => {
         const events = typeof w.events === "string" ? JSON.parse(w.events) : w.events
-        return '<div class="row"><div><strong>' + w.url + '</strong>' +
-          '<br><span class="meta">' + events.join(", ") + ' &middot; ' + (w.active ? "active" : "paused") + '</span></div>' +
-          '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteWebhook(' + w.id + ')">Delete</button></div>'
+        return '<div class="row"><div><strong>' + esc(w.url) + '</strong>' +
+          '<br><span class="meta">' + esc(events.join(", ")) + ' &middot; ' + (w.active ? "active" : "paused") + '</span></div>' +
+          '<button class="danger" style="width:auto;padding:4px 12px" onclick="deleteWebhook(' + Number(w.id) + ')">Delete</button></div>'
       }).join("")
     }
 

@@ -33,7 +33,9 @@ RAG:
 - `query(rag, question)` → `{ answer, sources }`
 
 Agents:
-- `runAgent({ ai, system?, tools, maxIterations? }, prompt)` → result
+- `runAgent({ ai, system?, tools, maxIterations?, approve? }, prompt)` → result
+  - `approve(call) => boolean | Promise<boolean>` runs before each tool call; `false` refuses it and the model gets `Error: tool call <name> was not approved` as the result
+  - A handler that throws, an unknown tool, or unparseable arguments (`ToolCall.error`) becomes an `Error: <message>` tool result; the loop keeps going and no stack is sent
 
 Server pipe:
 - `withAi(provider)` → `PipeFn` — adds `provider` to `conn.assigns.ai`
@@ -136,8 +138,12 @@ const result = await runAgent({
     handler: async (args) => String((args.a as number) * (args.b as number)),
   }],
   maxIterations: 5,
+  // optional: gate calls, e.g. refuse anything destructive without a human
+  approve: (call) => call.name !== "delete_account",
 }, "What is 6 times 7?")
 ```
+
+Tool arguments are model output, and a prompt-injected document can choose them. Never `eval`, `new Function`, shell out, or interpolate them into SQL; parse them into the narrow shape the tool needs and reject the rest.
 
 ## Server pipe
 

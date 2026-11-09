@@ -79,7 +79,34 @@ export const run = (prompt: string) =>
   runAgent({ ai, tools: [weather], system: "Use tools when needed.", maxIterations: 10 }, prompt)
 ```
 
-Tool arguments come from the model, so validate them, and don't give a tool write access to anything without its own check.
+A handler that throws, an unknown tool name, or arguments that aren't valid JSON (`call.error`) come back to the model as an `Error: ...` tool result instead of ending the run. Pass `approve: (call) => boolean | Promise<boolean>` to refuse calls before they run, for example anything that writes.
+
+Tool arguments come from the model, and a prompt-injected document or user message can choose them. Treat them like request input from a stranger:
+
+```ts
+import type { AgentTool } from "@wess/atlas/ai"
+import { tool } from "@wess/atlas/ai"
+
+const schema = { type: "object", properties: { a: { type: "number" }, b: { type: "number" } } }
+
+// Never: this runs whatever the model (or the page it just read) wrote, as code on your server.
+export const unsafe: AgentTool = {
+  definition: tool("calculate", "Evaluate math", { type: "object", properties: { expression: { type: "string" } } }),
+  handler: async (args) => String(new Function(`return ${args.expression}`)()),
+}
+
+// Instead: parse into the narrow shape the tool needs and reject everything else.
+export const multiply: AgentTool = {
+  definition: tool("multiply", "Multiply two numbers", schema),
+  handler: async (args) => {
+    const a = Number(args.a)
+    const b = Number(args.b)
+    return Number.isFinite(a) && Number.isFinite(b) ? String(a * b) : "Error: a and b must be numbers"
+  },
+}
+```
+
+The same goes for SQL, shell commands, file paths, and URLs: no `eval`, no string-built queries, and no write access without its own check.
 
 ## UI
 

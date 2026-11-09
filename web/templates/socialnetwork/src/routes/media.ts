@@ -4,9 +4,7 @@ import { config } from "../config.ts"
 import { db } from "../db.ts"
 import { currentUserId, uploads } from "../pipes/auth.ts"
 import { media } from "../schema.ts"
-import { saveUpload } from "../storage.ts"
-
-const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+import { kindForKey, saveUpload } from "../storage.ts"
 
 export const mediaRoutes = [
   post(
@@ -16,14 +14,13 @@ export const mediaRoutes = [
       const file = body.files?.file
 
       if (!file || !(file instanceof File)) return json(c, 400, { error: "file is required" })
-      if (!allowedTypes.includes(file.type)) {
-        return json(c, 400, { error: "Only jpeg, png, gif, and webp images are allowed" })
-      }
 
       const saved = await saveUpload(file)
+      if (!saved) return json(c, 400, { error: "Only jpeg, png, gif, and webp images are allowed" })
+
       const rows = await db.execute(
         from(media)
-          .insert({ userId: currentUserId(c), key: saved.key, url: saved.url, contentType: file.type })
+          .insert({ userId: currentUserId(c), key: saved.key, url: saved.url, contentType: saved.contentType })
           .returning("id", "key", "url", "contentType", "createdAt"),
       )
 
@@ -35,12 +32,20 @@ export const mediaRoutes = [
     "/uploads/:key",
     pipe(async (c) => {
       const key = c.params.key ?? ""
-      if (!key || key.includes("/") || key.includes("..")) return halt(c, 404, { error: "Not found" })
+      const kind = kindForKey(key)
+      if (!kind) return halt(c, 404, { error: "Not found" })
 
       const file = Bun.file(`${config.storage.path}/${key}`)
       if (!(await file.exists())) return halt(c, 404, { error: "Not found" })
 
-      return stream(putHeader(c, "content-type", file.type), 200, file.stream())
+      // nosniff and a sandbox CSP keep a mislabeled file from running as a page on this origin
+      const headers = {
+        "content-type": kind.type,
+        "x-content-type-options": "nosniff",
+        "content-security-policy": "default-src 'none'; sandbox",
+      }
+      const conn = Object.entries(headers).reduce((acc, [name, value]) => putHeader(acc, name, value), c)
+      return stream(conn, 200, file.stream())
     }),
   ),
 ]

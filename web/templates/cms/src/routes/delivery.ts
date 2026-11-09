@@ -23,12 +23,11 @@ const publishedEntries = (contentTypeId: number, query: Record<string, string>) 
   const offset = Number(query.offset) || 0
   const sort = query.sort && sortColumns.includes(query.sort) ? query.sort : "publishedAt"
   const order = query.order === "asc" ? ("ASC" as const) : ("DESC" as const)
-  const status = query.status || "published"
 
   return from("entries", "e")
     .select(...entryColumns)
     .where((q) => q("e.contentTypeId").equals(contentTypeId))
-    .where((q) => q("e.status").equals(status))
+    .where((q) => q("e.status").equals("published"))
     .orderBy(`e.${sort}`, order)
     .limit(limit)
     .offset(offset)

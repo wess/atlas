@@ -153,12 +153,22 @@
         : posts.map(renderPost).join("")
     }
 
+    // every value from the server goes through esc() before it reaches innerHTML
+    function esc(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;")
+    }
+
     function renderPost(post) {
       return `<div class="card post">
-        <div class="meta">@${post.username} &middot; ${new Date(post.createdAt).toLocaleString()}</div>
-        <div class="content">${post.content}</div>
+        <div class="meta">@${esc(post.username)} &middot; ${esc(new Date(post.createdAt).toLocaleString())}</div>
+        <div class="content">${esc(post.content)}</div>
         <div class="actions">
-          <a onclick="likePost(${post.id})">${post.likeCount} likes</a>
+          <a onclick="likePost(${Number(post.id)})">${Number(post.likeCount)} likes</a>
         </div>
       </div>`
     }

@@ -42,6 +42,10 @@
     .doc-item span { font-size: 14px; }
     .doc-item button { padding: 4px 10px; border-radius: 4px; border: none; background: #dc2626; color: #fff; font-size: 12px; cursor: pointer; }
     .status { font-size: 12px; color: #666; text-align: center; padding: 8px; }
+    .signout { margin-left: auto; }
+    .signin-form button { padding: 10px; border-radius: 8px; border: none; background: #3b82f6; color: #fff; font-size: 14px; cursor: pointer; }
+    .signin-form button.secondary { background: #2a2a2a; }
+    .signin-form p { font-size: 13px; color: #888; line-height: 1.5; }
   </style>
 </head>
 <body>
@@ -53,9 +57,24 @@
       <button class="tab" data-screen="agent" onclick="go('agent')">Agent</button>
       <button class="tab" data-screen="documents" onclick="go('documents')">Documents</button>
     </div>
+    <button class="tab signout" id="signout" onclick="signOut()">Sign out</button>
   </header>
 
   <main>
+    <!-- Sign-in Panel -->
+    <div id="panel-signin" class="panel">
+      <div class="results">
+        <div class="doc-form signin-form">
+          <input type="email" id="signin-email" placeholder="Email" autocomplete="username" />
+          <input type="password" id="signin-password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')signIn()" />
+          <button onclick="signIn()">Sign in</button>
+          <p>New account? Enter the setup token (ADMIN_SETUP_SECRET from .env) as well, then create the account.</p>
+          <input type="password" id="signin-setup" placeholder="Setup token" autocomplete="off" />
+          <button class="secondary" onclick="register()">Create account</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Chat Panel -->
     <div id="panel-chat" class="panel">
       <div id="chat-messages" class="messages"></div>
@@ -104,13 +123,67 @@
 
   <script>
     let conversationId = null
+    // session storage so a reload keeps you signed in until the tab closes
+    let token = sessionStorage.getItem("token")
 
     const screens = ["chat", "rag", "agent", "documents"]
 
+    // fetch with the bearer token; a 401 means the token is missing or expired, so sign in again
+    async function api(path, opts = {}) {
+      const res = await fetch(path, {
+        ...opts,
+        headers: {
+          ...(opts.body ? { "Content-Type": "application/json" } : {}),
+          ...(token ? { Authorization: "Bearer " + token } : {}),
+        },
+      })
+      if (res.status === 401) {
+        signOut()
+        throw new Error("Please sign in")
+      }
+      return res
+    }
+
+    async function authenticate(path, headers) {
+      const res = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify({
+          email: document.getElementById("signin-email").value.trim(),
+          password: document.getElementById("signin-password").value,
+        }),
+      })
+      const data = await res.json()
+      if (!data.token) return alert(data.error || "Sign-in failed")
+      token = data.token
+      sessionStorage.setItem("token", token)
+      document.getElementById("signin-password").value = ""
+      document.getElementById("signin-setup").value = ""
+      go("chat")
+    }
+
+    function signIn() {
+      return authenticate("/api/auth/login", {})
+    }
+
+    function register() {
+      return authenticate("/api/auth/register", { "x-setup-token": document.getElementById("signin-setup").value })
+    }
+
+    function signOut() {
+      token = null
+      conversationId = null
+      sessionStorage.removeItem("token")
+      go("signin")
+    }
+
     function renderRoute() {
       const name = location.pathname.split("/")[2]
-      const screen = screens.includes(name) ? name : "chat"
-      if (screen !== name) history.replaceState(null, "", "/app/chat")
+      const fallback = token ? "chat" : "signin"
+      const screen = token ? (screens.includes(name) ? name : fallback) : "signin"
+      if (screen !== name) history.replaceState(null, "", "/app/" + screen)
+      document.querySelector(".tabs").style.display = token ? "flex" : "none"
+      document.getElementById("signout").style.display = token ? "block" : "none"
       document.querySelectorAll(".tab").forEach((button) => {
         button.classList.toggle("active", button.dataset.screen === screen)
       })
@@ -144,11 +217,11 @@
       document.getElementById('chat-send').disabled = true
 
       try {
-        const res = await fetch('/api/chat', {
+        const res = await api('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message, conversationId }),
         })
+        if (!res.ok) throw new Error((await res.json()).error || 'Request failed')
 
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
@@ -191,9 +264,8 @@
       document.getElementById('rag-send').disabled = true
 
       try {
-        const res = await fetch('/api/rag', {
+        const res = await api('/api/rag', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ question }),
         })
         const data = await res.json()
@@ -202,7 +274,7 @@
         if (data.sources && data.sources.length > 0) {
           html += '<div style="margin-top:10px;font-size:12px;color:#888;">Sources:</div>'
           for (const s of data.sources) {
-            html += `<div class="source">${esc(s.text.slice(0, 200))}... <span class="score">(score: ${s.score.toFixed(3)})</span></div>`
+            html += `<div class="source">${esc(s.text.slice(0, 200))}... <span class="score">(score: ${Number(s.score).toFixed(3)})</span></div>`
           }
         }
         html += '</div>'
@@ -226,9 +298,8 @@
       document.getElementById('agent-send').disabled = true
 
       try {
-        const res = await fetch('/api/agent', {
+        const res = await api('/api/agent', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message }),
         })
         const data = await res.json()
@@ -240,7 +311,7 @@
             html += `<div class="tool-call">${esc(tc.name)}(${esc(JSON.stringify(tc.arguments))})</div>`
           }
         }
-        html += `<div class="score">Iterations: ${data.iterations}</div></div>`
+        html += `<div class="score">Iterations: ${Number(data.iterations)}</div></div>`
         resultsEl.innerHTML += html
       } catch (err) {
         resultsEl.innerHTML += `<div class="result-card"><p>Error: ${esc(err.message)}</p></div>`
@@ -256,9 +327,8 @@
       if (!title || !content) return alert('Title and content are required')
 
       try {
-        const res = await fetch('/api/documents', {
+        const res = await api('/api/documents', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title, content }),
         })
         if (!res.ok) throw new Error('Upload failed')
@@ -272,17 +342,17 @@
 
     async function loadDocuments() {
       try {
-        const res = await fetch('/api/documents')
+        const res = await api('/api/documents')
         const docs = await res.json()
         const listEl = document.getElementById('doc-list')
         listEl.innerHTML = docs.map(d =>
-          `<div class="doc-item"><span>${esc(d.title)}</span><button onclick="deleteDoc(${d.id})">Delete</button></div>`
+          `<div class="doc-item"><span>${esc(d.title)}</span><button onclick="deleteDoc(${Number(d.id)})">Delete</button></div>`
         ).join('')
       } catch {}
     }
 
     async function deleteDoc(id) {
-      await fetch(`/api/documents/${id}`, { method: 'DELETE' })
+      await api(`/api/documents/${id}`, { method: 'DELETE' })
       loadDocuments()
     }
 

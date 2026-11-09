@@ -1,4 +1,5 @@
 import { parseSSE } from "../stream/index.ts";
+import { parseToolArguments } from "./arguments.ts";
 import { messageImages } from "./images.ts";
 import type {
   AiProvider,
@@ -75,7 +76,7 @@ const parseToolCalls = (choices: any[]): ToolCall[] | undefined => {
   return calls.map((tc: any) => ({
     id: tc.id,
     name: tc.function.name,
-    arguments: JSON.parse(tc.function.arguments),
+    ...parseToolArguments(tc.function.arguments),
   }));
 };
 
@@ -174,7 +175,7 @@ export const createOpenAi = (config: OpenAiConfig): AiProvider => {
         for (const [, acc] of toolCallAccumulator) {
           yield {
             type: "tool_call",
-            toolCall: { id: acc.id, name: acc.name, arguments: JSON.parse(acc.args) },
+            toolCall: { id: acc.id, name: acc.name, ...parseToolArguments(acc.args) },
           };
         }
       }

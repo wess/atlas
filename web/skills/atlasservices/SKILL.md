@@ -15,8 +15,10 @@ import { createStore, presign, remove, upload } from "@wess/atlas/storage"
 const store = createStore({ endpoint: "https://s3.test", bucket: "files", region: "auto", accessKey: "k", secretKey: "s" })
 
 export const save = async (file: File) => {
-  await upload(store, { key: `avatars/${file.name}`, body: file, contentType: file.type, maxBytes: 5_000_000 })
-  return presign(store, `avatars/${file.name}`, { expires: 3600 })
+  // a random key, because the client picks file.name and could overwrite or path into another user's object
+  const key = `avatars/${crypto.randomUUID()}`
+  await upload(store, { key, body: file, contentType: file.type, maxBytes: 5_000_000 })
+  return presign(store, key, { expires: 3600 })
 }
 
 export const drop = (key: string) => remove(store, key)
