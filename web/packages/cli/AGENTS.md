@@ -238,6 +238,6 @@ bun test packages/cli/
 - All file names lowercase, no dashes or underscores
 - Zero external dependencies, Bun APIs only
 
-Scaffolds use public `@wess/atlas/*` imports. The distributed package includes the CLI bin and all ten templates. `atlas init` creates a local `.env` with fresh 32-byte authentication/state secrets; templates reject short auth secrets. Custom servers use the same connection, route, guard, and admin APIs as the library.
+Scaffolds use public `@wess/atlas/*` imports. The distributed package includes the CLI bin and all ten templates. `atlas init` creates a local `.env` with fresh 32-byte authentication/state secrets and mode 0600 (owner-only; `.env.example` keeps the default mode); templates reject short auth secrets. Custom servers use the same connection, route, guard, and admin APIs as the library.
 
 The `/cli` root exports only command parsing and process management. Import project generation from `/cli/scaffold` and documentation commands from `/cli/docs`. The CLI executable resolves optional MCP from the consuming project; run `atlas add mcp` before `atlas mcp`.

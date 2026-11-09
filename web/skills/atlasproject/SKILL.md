@@ -33,7 +33,7 @@ atlas skills install          # put these skills in .claude/skills
 | `edge` | TLS reverse proxy |
 | `socialnetwork`, `cms` | Fuller reference apps |
 
-`atlas init` writes `.env` with fresh secrets, so keep that file. Prefer a template over assembling from nothing.
+`atlas init` writes `.env` with fresh secrets and owner-only permissions (0600), so keep that file. Prefer a template over assembling from nothing.
 
 ## Modules
 
