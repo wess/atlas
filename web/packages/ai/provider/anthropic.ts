@@ -1,3 +1,4 @@
+import { parseToolArguments } from "./arguments.ts";
 import { messageImages } from "./images.ts";
 import type {
   AiProvider,
@@ -202,7 +203,7 @@ export const createAnthropic = (config: AnthropicConfig): AiProvider => {
             toolCall: {
               id: currentToolId,
               name: currentToolName,
-              arguments: currentToolArgs ? JSON.parse(currentToolArgs) : {},
+              ...parseToolArguments(currentToolArgs),
             },
           };
           currentToolId = "";

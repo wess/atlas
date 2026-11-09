@@ -20,6 +20,8 @@ export type ToolCall = {
   readonly id: string;
   readonly name: string;
   readonly arguments: Record<string, unknown>;
+  // Set when the model sent arguments that could not be parsed; `arguments` is then empty.
+  readonly error?: string;
 };
 
 export type ChatOptions = {
