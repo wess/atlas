@@ -68,7 +68,7 @@ schema is provided — no need to add `parseJson` to `before`.
 - `stream(conn, status, readable)` — streaming response
 
 ### Parsers (`parsers/index.ts`)
-- `parseJson` — pipe that parses JSON body
+- `parseJson` — pipe that parses JSON body when the content-type essence is `application/json` or `*/*+json` (parameters ignored; `text/plain; x=application/json` is not JSON)
 - `parseForm` — pipe that parses URL-encoded form body
 - `parseMultipart` — pipe that parses multipart form data
 

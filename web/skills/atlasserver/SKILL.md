@@ -32,7 +32,7 @@ serve({
 
 ## Typed routes
 
-Prefer these over parsing by hand. A `body` schema parses JSON itself, so don't add `parseJson` to `before`. Validators can be Zod, a function, or anything with `.parse`.
+Prefer these over parsing by hand. A `body` schema parses JSON itself, so don't add `parseJson` to `before`. Both accept only a content-type of `application/json` or `*/*+json` (parameters like `charset` are fine). Validators can be Zod, a function, or anything with `.parse`.
 
 ```ts
 import { requireAuth } from "@wess/atlas/auth/flows"

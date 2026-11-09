@@ -126,7 +126,7 @@ json(conn, status, data) → Conn
 text(conn, status, body) → Conn
 redirect(conn, location, status?) → Conn
 stream(conn, status, readable) → Conn
-parseJson | parseForm | parseMultipart   built-in parser pipes
+parseJson | parseForm | parseMultipart   built-in parser pipes (parseJson: essence application/json or */*+json)
 onError(handler) → error pipe
 createAdapter(name, start) → ServerAdapter
 compose(adapters) → ComposedServer
@@ -138,7 +138,7 @@ getR | postR | putR | patchR | delR(path, schemas, handler) → Route
     (Zod, plain functions, or any Standard-Schema-shape qualify)
   - before: PipeFn[] (run ahead of validation; e.g., requireAuth)
   - assigns: phantom — `{} as MyClaims` types c.assigns for the handler
-  body schema auto-parses JSON; rejects non-application/json content-types.
+  body schema auto-parses JSON; rejects content-types whose MIME essence isn't application/json or */*+json.
   validation failures → unprocessable("Invalid <where>", VALIDATION_FAILED)
 
 httpError(status, message, { code?, details?, headers? }) → HttpError
