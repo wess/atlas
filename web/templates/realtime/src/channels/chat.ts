@@ -6,6 +6,9 @@ const identities = new Map<WsConn, { room: string; user: string }>()
 const chat = channel("chat", {
   join: (ws, params) => {
     const room = typeof params.room === "string" ? params.room : "general"
+    // Demo identity: the client names itself, so anyone can post as anyone. In a real app, send a
+    // token in the join params, make `join` async, `await verify(params.token, secret)` from
+    // @wess/atlas/auth/token (return false if it throws), and take the name from its claims.
     const user = typeof params.user === "string" ? params.user : "anon"
     identities.set(ws, { room, user })
     rooms.join(ws, room)
