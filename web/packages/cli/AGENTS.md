@@ -90,7 +90,7 @@ atlas add               # lists available packages
 Check an application's manifests, Bun lockfile, installed Atlas links, source imports,
 and TypeScript aliases. Atlas facade and backing libraries must use the same exact
 stable version. Local paths, legacy aliases, and links outside node_modules fail the check.
-Run `bunx --package https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz atlas check` in application CI after a frozen install.
+Run `bunx --package https://github.com/wess/atlas/releases/download/v0.5.1/wess-atlas-cli-0.5.1.tgz atlas check` in application CI after a frozen install.
 
 ### atlas migrate
 
@@ -178,7 +178,7 @@ const questions = getQuestionSpec()
 ## Global Installation
 
 ```sh
-bun add -g https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz
+bun add -g https://github.com/wess/atlas/releases/download/v0.5.1/wess-atlas-cli-0.5.1.tgz
 atlas init
 ```
 

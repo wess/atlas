@@ -18,6 +18,8 @@ original dependency declarations; it is not a claim about deployed versions.
 
 ## Current validation and release status
 
+**Atlas 0.5.1 (2026-11-09)** follows 0.5.0, which replaced Mantine in `@wess/atlas/ui` with Atlas UI, made the admin work in a browser with session sign-in, and added agent skills. 0.5.1 adds `atlas migrate`, revocable admin sessions, a fix for SQLite migrations that skipped every statement after the first, and the fixes from a full security audit. Consumers below are still on 0.4.x and move to 0.5.1 on branches; the status that follows predates that.
+
 The modular **[0.4.9 release](https://github.com/wess/atlas/releases/tag/v0.4.9) is
 published** with 22 library artifacts and its integrity catalog. Independently
 downloaded bytes match both the catalog and the tested candidate. All 11 direct

@@ -37,7 +37,7 @@ the document head.
 Select released library modules with the Atlas installer:
 
 ```sh
-bunx --package https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz atlas add server config db/postgres db/query
+bunx --package https://github.com/wess/atlas/releases/download/v0.5.1/wess-atlas-cli-0.5.1.tgz atlas add server config db/postgres db/query
 ```
 
 See README.md for the release candidate's publication status. Import public
@@ -95,7 +95,8 @@ not infer an API from a neighboring framework or package.
 
 Additional tools appear only when their service is present in the MCP context. Read-only
 introspection includes schema, route, migration-status, cache-read, storage-list, and log-tail
-operations. Migration, cache-write, cache-delete, cache-flush, and other state-changing tools must
+operations. Migration, cache-write, cache-delete, and cache-flush tools exist only when writes are allowed
+(`ATLAS_MCP_ALLOW_WRITES=1`), and these and other state-changing tools must
 be treated as mutations, not discovery.
 
 Recommended sequence:

@@ -10,7 +10,7 @@ description: Create and run Atlas projects. Use when scaffolding with atlas init
 Atlas ships from GitHub releases, not npm. Never add an npm token, a `file:` or `link:` path, or a source alias.
 
 ```sh
-bun add -g https://github.com/wess/atlas/releases/download/v0.5.0/wess-atlas-cli-0.5.0.tgz
+bun add -g https://github.com/wess/atlas/releases/download/v0.5.1/wess-atlas-cli-0.5.1.tgz
 ```
 
 ## Start
